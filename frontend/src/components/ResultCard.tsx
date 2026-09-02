@@ -1,0 +1,104 @@
+import type { ReactNode } from 'react'
+import { Link } from 'react-router-dom'
+import { ExternalLink } from 'lucide-react'
+import { Cell, CellGrid, Framed, inset } from '@/components/frame'
+import { RuntimeBadge } from '@/components/RuntimeBadge'
+import { VerificationBadge } from '@/components/VerificationBadge'
+import { UserLink } from '@/components/UserLink'
+import { HardwareLink } from '@/components/HardwareLink'
+import type { Model, Quant, Result, ResultRank, Runtime } from '@/lib/api/types'
+import { fmtDate, fmtInt, fmtMs, fmtTps } from '@/lib/format'
+import { cn } from '@/lib/utils'
+
+function Field({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <Cell className="py-5 md:py-5">
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="mt-1 text-sm">{children}</div>
+    </Cell>
+  )
+}
+
+type Props = {
+  result: Result
+  models: Model[]
+  quants: Quant[]
+  runtimes: Runtime[]
+  rank?: ResultRank
+  /** Shown top-left instead of "Decode speed", for example "Preview". */
+  eyebrow?: string
+  /** Tighter layout for a side column: two field columns and a smaller figure. */
+  compact?: boolean
+  footer?: ReactNode
+}
+
+/** The result as a framed block: figure, rank, fields, notes. Used by the result page and the submit preview. */
+export function ResultCard({ result: r, models, quants, runtimes, rank, eyebrow = 'Decode speed', compact = false, footer }: Props) {
+  const model = models.find((m) => m.id === r.modelId)
+  const quant = quants.find((q) => q.id === r.quant)?.label ?? r.quant
+  const runtime = runtimes.find((x) => x.id === r.runtimeId)
+  const hasFigure = Number.isFinite(r.decodeTps) && r.decodeTps > 0
+  return (
+    <Framed padded={false}>
+      <div className={cn('flex flex-wrap items-start justify-between gap-6', compact ? 'py-8' : 'py-10 md:py-14', inset)}>
+        <div>
+          <div className="text-xs font-medium uppercase tracking-label text-muted-foreground">{eyebrow}</div>
+          <div className={cn('mt-2 font-mono font-semibold tnum', compact ? 'text-5xl' : 'text-6xl md:text-7xl')}>
+            {hasFigure ? fmtTps(r.decodeTps) : '—'} <span className={cn('font-normal text-muted-foreground', compact ? 'text-lg' : 'text-2xl')}>tok/s</span>
+          </div>
+          {rank ? (
+            <Link to={`/models/${r.modelId}/${r.quant}?kind=${rank.kind}`} className="mt-3 inline-block text-sm text-muted-foreground hover:text-foreground">
+              #{rank.position} of {rank.boardSize} on the {model?.name} {quant} {rank.kind} board
+            </Link>
+          ) : null}
+        </div>
+        <VerificationBadge verification={r.verification} moderation={r.moderation} className="h-6 px-2.5" />
+      </div>
+      <CellGrid cols={compact ? 2 : 3} className={cn('border-t', !r.notes && !footer && 'border-b')}>
+        <Field label="Model">
+          {model ? (
+            <>
+              <Link to={`/models/${r.modelId}/${r.quant}`} className="hover:underline underline-offset-4">{model.name}</Link>
+              <span className="ml-1.5 font-mono text-xs text-muted-foreground">{quant}</span>
+            </>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          )}
+        </Field>
+        <Field label={r.component ? 'Part' : 'Rig'}>
+          {r.component ? (
+            <HardwareLink hardware={r.component} quantity={r.componentQuantity} />
+          ) : r.rig ? (
+            <Link to={`/rigs/${r.rigId}`} className="hover:underline underline-offset-4">{r.rig.name}</Link>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          )}
+        </Field>
+        {r.component ? (
+          <Field label="In rig">{r.rig ? <Link to={`/rigs/${r.rigId}`} className="hover:underline underline-offset-4">{r.rig.name}</Link> : '—'}</Field>
+        ) : (
+          <Field label="Summary">{r.rig?.summary ?? '—'}</Field>
+        )}
+        <Field label="Runtime"><RuntimeBadge runtime={runtime} version={r.runtimeVersion || undefined} /></Field>
+        <Field label="Prompt tok/s"><span className="font-mono tnum">{fmtTps(r.promptTps)}</span></Field>
+        <Field label="Time to first token"><span className="font-mono tnum">{fmtMs(r.ttftMs)}</span></Field>
+        <Field label="Context length"><span className="font-mono tnum">{r.contextLength ? fmtInt(r.contextLength) : '—'}</span></Field>
+        <Field label="Batch size"><span className="font-mono tnum">{r.batchSize ?? '—'}</span></Field>
+        <Field label="Run date">{r.runDate ? fmtDate(r.runDate) : '—'}</Field>
+        <Field label="Submitted by"><UserLink user={r.submitter} /></Field>
+        <Field label="Evidence">
+          {r.repoUrl ? (
+            <a href={r.repoUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 break-all hover:underline underline-offset-4">
+              {r.repoUrl.replace(/^https?:\/\//, '').slice(0, 40)}
+              <ExternalLink className="size-3 shrink-0" />
+            </a>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          )}
+        </Field>
+      </CellGrid>
+      {r.notes ? <p className={cn('border-t py-5 text-sm text-pretty', inset)}>{r.notes}</p> : null}
+      {footer ? <div className={cn('flex flex-wrap items-center justify-between gap-3 border-t py-5', inset)}>{footer}</div> : null}
+    </Framed>
+  )
+}

@@ -1,0 +1,89 @@
+import { Link, useNavigate } from 'react-router-dom'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { RuntimeBadge } from '@/components/RuntimeBadge'
+import { VerificationBadge } from '@/components/VerificationBadge'
+import { UserLink } from '@/components/UserLink'
+import { HardwareLink } from '@/components/HardwareLink'
+import { td, th } from '@/components/table-styles'
+import type { BoardRow, Model, Quant, Runtime } from '@/lib/api/types'
+import { fmtDate, fmtMs, fmtTps } from '@/lib/format'
+
+type Props = { rows: BoardRow[]; runtimes: Runtime[]; models?: Model[]; quants?: Quant[] }
+
+/** Ranked rows. Pass `models` and `quants` to add a Model column for cross-board lists. */
+export function LeaderboardTable({ rows, runtimes, models, quants }: Props) {
+  const navigate = useNavigate()
+  const byId = Object.fromEntries(runtimes.map((r) => [r.id, r]))
+  const showModel = !!models
+  const md = Object.fromEntries((models ?? []).map((m) => [m.id, m]))
+  const qt = Object.fromEntries((quants ?? []).map((q) => [q.id, q]))
+  return (
+    <div className="overflow-x-auto">
+      <Table className="min-w-[820px]">
+        <TableHeader>
+          <TableRow className="hover:bg-transparent">
+            <TableHead className={`${th} w-16 text-right`}>#</TableHead>
+            <TableHead className={th}>Hardware</TableHead>
+            {showModel ? <TableHead className={th}>Model</TableHead> : null}
+            <TableHead className={th}>Runtime</TableHead>
+            <TableHead className={`${th} text-right`}>Decode tok/s</TableHead>
+            <TableHead className={`${th} hidden text-right md:table-cell`}>Prompt tok/s</TableHead>
+            <TableHead className={`${th} hidden text-right lg:table-cell`}>TTFT</TableHead>
+            <TableHead className={th}>By</TableHead>
+            <TableHead className={th}>Status</TableHead>
+            <TableHead className={`${th} hidden text-right lg:table-cell`}>Date</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rows.map(({ rank, result, unit }) => (
+            <TableRow key={result.id} className="cursor-pointer" onClick={() => navigate(`/results/${result.id}`)}>
+              <TableCell className={`${td} text-right font-mono text-muted-foreground tnum`}>{rank}</TableCell>
+              <TableCell className={`${td} max-w-[340px]`}>
+                {unit.kind === 'rig' ? (
+                  <div className="min-w-0">
+                    <Link to={`/rigs/${unit.rig.id}`} onClick={(e) => e.stopPropagation()} className="font-medium hover:underline underline-offset-4">
+                      {unit.rig.name}
+                    </Link>
+                    <div className="truncate text-xs text-muted-foreground">{unit.rig.summary}</div>
+                  </div>
+                ) : (
+                  <div className="min-w-0">
+                    <HardwareLink hardware={unit.hardware} quantity={unit.quantity} className="font-medium" />
+                    <div className="truncate text-xs text-muted-foreground">
+                      {unit.hardware.vendor} · in {result.rig?.name}
+                    </div>
+                  </div>
+                )}
+              </TableCell>
+              {showModel ? (
+                <TableCell className={td}>
+                  <Link to={`/models/${result.modelId}/${result.quant}`} onClick={(e) => e.stopPropagation()} className="font-medium hover:underline underline-offset-4">
+                    {md[result.modelId]?.name ?? result.modelId}
+                  </Link>
+                  <span className="ml-1.5 font-mono text-xs text-muted-foreground">{qt[result.quant]?.label ?? result.quant}</span>
+                </TableCell>
+              ) : null}
+              <TableCell className={td}>
+                <RuntimeBadge runtime={byId[result.runtimeId]} version={result.runtimeVersion} />
+              </TableCell>
+              <TableCell className={`${td} text-right font-mono text-base font-medium tnum`}>
+                <Link to={`/results/${result.id}`} onClick={(e) => e.stopPropagation()} className="rounded-sm hover:underline underline-offset-4" aria-label={`${fmtTps(result.decodeTps)} tokens per second, open result`}>
+                  {fmtTps(result.decodeTps)}
+                </Link>
+              </TableCell>
+              <TableCell className={`${td} hidden text-right font-mono text-muted-foreground tnum md:table-cell`}>{fmtTps(result.promptTps)}</TableCell>
+              <TableCell className={`${td} hidden text-right font-mono text-muted-foreground tnum lg:table-cell`}>{fmtMs(result.ttftMs)}</TableCell>
+              <TableCell className={td}>
+                <UserLink user={result.submitter} />
+              </TableCell>
+              <TableCell className={td}>
+                <VerificationBadge verification={result.verification} />
+              </TableCell>
+              <TableCell className={`${td} hidden text-right text-xs text-muted-foreground lg:table-cell`}>{fmtDate(result.runDate)}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  )
+}

@@ -1,0 +1,111 @@
+import { useParams, useSearchParams } from 'react-router-dom'
+import { ExternalLink } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
+import { UserAvatar } from '@/components/UserAvatar'
+import { GitHubMark } from '@/components/GitHubMark'
+import { RigCard } from '@/components/cards'
+import { ResultsTable } from '@/components/ResultsTable'
+import { EmptyState } from '@/components/EmptyState'
+import { ErrorState } from '@/components/ErrorState'
+import { Block, Cell, CellGrid, PillTabs, Section, Toolbar, inset } from '@/components/frame'
+import { useAsync } from '@/hooks/useAsync'
+import { useCatalog } from '@/hooks/useCatalog'
+import { usePageTitle } from '@/hooks/usePageTitle'
+import { api } from '@/lib/api'
+import { fmtDate, fmtInt } from '@/lib/format'
+import { QUANT_BY_ID } from '@/mocks/catalog'
+import { cn } from '@/lib/utils'
+
+type Tab = 'rigs' | 'results'
+
+function Stat({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <Cell className="py-5 md:py-5">
+      <div className="font-mono text-2xl font-semibold tnum">{value}</div>
+      <div className="mt-1 text-xs text-muted-foreground">{label}</div>
+    </Cell>
+  )
+}
+
+export default function Profile() {
+  const { handle = '' } = useParams()
+  const [sp, setSp] = useSearchParams()
+  const tab = (sp.get('tab') as Tab) || 'rigs'
+  const cat = useCatalog()
+  const data = useAsync(
+    () => Promise.all([api.user(handle), api.userRigs(handle), api.userResults(handle)]),
+    [handle],
+  )
+  usePageTitle(handle ? `@${handle}` : 'Profile')
+  if (data.error)
+    return (
+      <Block>
+        <ErrorState error={data.error} />
+      </Block>
+    )
+  if (!data.data || !cat.data)
+    return (
+      <Block>
+        <Skeleton className="h-96" />
+      </Block>
+    )
+  const [user, rigs, results] = data.data
+  const s = user.stats
+  const model = s?.bestRank ? cat.data.models.find((m) => m.id === s.bestRank!.modelId) : undefined
+  return (
+    <div>
+      <header className={cn('flex flex-col gap-5 py-10 sm:flex-row sm:items-start md:py-14', inset)}>
+        <UserAvatar user={user} size="lg" className="size-16 sm:size-20" />
+        <div className="min-w-0 flex-1">
+          <h1 className="text-3xl font-semibold">{user.name ?? user.handle}</h1>
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+            <a href={`https://github.com/${user.handle}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 hover:text-foreground">
+              <GitHubMark className="size-3.5" /> @{user.handle} <ExternalLink className="size-3" />
+            </a>
+            <span>member since {fmtDate(user.createdAt)}</span>
+          </div>
+          {user.bio ? <p className="mt-3 max-w-xl text-sm text-pretty">{user.bio}</p> : null}
+        </div>
+      </header>
+      <Section>
+        <CellGrid cols={4}>
+          <Stat label="results" value={fmtInt(s?.results ?? 0)} />
+          <Stat label="rigs" value={fmtInt(s?.rigs ?? 0)} />
+          <Stat
+            label={s?.bestRank ? `best rank · ${model?.name ?? ''} ${QUANT_BY_ID[s.bestRank.quant]?.label ?? ''} ${s.bestRank.kind}` : 'best rank'}
+            value={s?.bestRank ? `#${s.bestRank.position}` : '—'}
+          />
+          <Stat label="confirmations given" value={fmtInt(s?.confirmationsGiven ?? 0)} />
+        </CellGrid>
+      </Section>
+      <Section>
+        <Toolbar>
+          <PillTabs<Tab>
+            className="-ml-3"
+            value={tab}
+            onChange={(v) => setSp({ tab: v }, { replace: true })}
+            items={[
+              { value: 'rigs', label: 'Rigs', count: rigs.items.length },
+              { value: 'results', label: 'Results', count: results.items.length },
+            ]}
+          />
+        </Toolbar>
+        {tab === 'rigs' ? (
+          rigs.items.length ? (
+            <CellGrid cols={3}>
+              {rigs.items.map((r) => (
+                <RigCard key={r.id} rig={r} />
+              ))}
+            </CellGrid>
+          ) : (
+            <EmptyState title="No rigs yet" />
+          )
+        ) : results.items.length ? (
+          <ResultsTable results={results.items} runtimes={cat.data.runtimes} models={cat.data.models} quants={cat.data.quants} showSubmitter={false} />
+        ) : (
+          <EmptyState title="No results yet" />
+        )}
+      </Section>
+    </div>
+  )
+}
