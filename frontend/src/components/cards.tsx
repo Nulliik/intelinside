@@ -7,8 +7,9 @@ import { ModelLogo } from '@/components/ModelLogo'
 import { VendorMark } from '@/components/VendorMark'
 import type { HardwareItem, ModelSummary, RigSummary, Runtime } from '@/lib/api/types'
 import { RuntimeMark } from '@/components/RuntimeMark'
+import { GhostList } from '@/components/launch'
 import { HARDWARE_TYPE_LABEL, QUANT_BY_ID, quantHint } from '@/mocks/catalog'
-import { fmtTps, pluralize } from '@/lib/format'
+import { fmtInstant, fmtTps, pluralize } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
 // Grid cells, not floating cards: each paints its own background so CellGrid's hairlines show between them.
@@ -23,7 +24,8 @@ function More({ children }: { children: string }) {
   )
 }
 
-export function RigCard({ rig }: { rig: RigSummary }) {
+/** `sealed` hides the result count and best tok/s, for launch week while results are sealed. */
+export function RigCard({ rig, sealed = false }: { rig: RigSummary; sealed?: boolean }) {
   return (
     <Link to={`/rigs/${rig.id}`} className={cell}>
       <div className="aspect-[16/10] overflow-hidden rounded-xl">
@@ -33,14 +35,18 @@ export function RigCard({ rig }: { rig: RigSummary }) {
         <span className="inline-flex items-center gap-2">
           <UserAvatar user={rig.owner} size="sm" /> {rig.owner?.handle}
         </span>
-        <span>{pluralize(rig.resultsCount, 'result')}</span>
+        <span>{sealed ? null : pluralize(rig.resultsCount, 'result')}</span>
       </div>
       <div>
         <h3 className="text-lg font-semibold">{rig.name}</h3>
         <p className="mt-1 text-sm text-muted-foreground">{rig.summary}</p>
       </div>
       <div className="mt-auto flex items-center justify-between pt-2">
-        <span className="font-mono text-sm tnum">{rig.bestTps != null ? `${fmtTps(rig.bestTps)} tok/s` : 'No results yet'}</span>
+        {sealed ? (
+          <span className="text-sm text-muted-foreground">Results sealed</span>
+        ) : (
+          <span className="font-mono text-sm tnum">{rig.bestTps != null ? `${fmtTps(rig.bestTps)} tok/s` : 'No results yet'}</span>
+        )}
         <More>View rig</More>
       </div>
     </Link>
@@ -63,7 +69,8 @@ export function keySpec(h: HardwareItem): string {
   }
 }
 
-export function HardwareCard({ hardware }: { hardware: HardwareItem }) {
+/** `counts={false}` shows the series instead of result and rig counts, for launch week. */
+export function HardwareCard({ hardware, counts = true }: { hardware: HardwareItem; counts?: boolean }) {
   return (
     <Link to={`/hardware/${hardware.id}`} className={cell}>
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -77,7 +84,13 @@ export function HardwareCard({ hardware }: { hardware: HardwareItem }) {
       </div>
       <div className="mt-auto flex items-center justify-between pt-2 text-sm text-muted-foreground">
         <span>
-          {pluralize(hardware.resultsCount ?? 0, 'result')} · {pluralize(hardware.rigsCount ?? 0, 'rig')}
+          {counts ? (
+            <>
+              {pluralize(hardware.resultsCount ?? 0, 'result')} · {pluralize(hardware.rigsCount ?? 0, 'rig')}
+            </>
+          ) : (
+            hardware.series
+          )}
         </span>
         <More>View</More>
       </div>
@@ -85,9 +98,12 @@ export function HardwareCard({ hardware }: { hardware: HardwareItem }) {
   )
 }
 
-export function ModelBoardCard({ summary, runtimes }: { summary: ModelSummary; runtimes: Record<string, Runtime> }) {
+/** `sealedUntil` hides result counts and shows a silhouette in place of the top three, with a submit link, for launch week. */
+export function ModelBoardCard({ summary, runtimes, sealedUntil }: { summary: ModelSummary; runtimes: Record<string, Runtime>; sealedUntil?: Date | null }) {
   const { model, board, top } = summary
+  const sealed = sealedUntil != null
   const total = Object.values(model.resultCounts ?? {}).reduce((a, b) => a + b, 0)
+  const boardHref = `/models/${model.id}/${board.quant}`
   return (
     <div className={cn(cell, 'hover:bg-background')}>
       <div className="flex items-start gap-3">
@@ -95,10 +111,11 @@ export function ModelBoardCard({ summary, runtimes }: { summary: ModelSummary; r
         <div className="min-w-0">
           <div className="text-sm text-muted-foreground">
             {model.family} · {model.params}
-            {model.architecture === 'moe' ? ` · MoE, ${model.activeParams} active` : ''} · {pluralize(total, 'result')}
+            {model.architecture === 'moe' ? ` · MoE, ${model.activeParams} active` : ''}
+            {sealed ? '' : ` · ${pluralize(total, 'result')}`}
           </div>
           <h3 className="mt-0.5 text-lg font-semibold">
-            <Link to={`/models/${model.id}/${board.quant}`} className="hover:underline underline-offset-4">
+            <Link to={boardHref} className="hover:underline underline-offset-4">
               {model.name}
             </Link>
           </h3>
@@ -111,37 +128,50 @@ export function ModelBoardCard({ summary, runtimes }: { summary: ModelSummary; r
           <Link
             key={q}
             to={`/models/${model.id}/${q}`}
-            title={`${quantHint(q)} · ${model.resultCounts?.[q] ?? 0} results`}
+            title={sealed ? quantHint(q) : `${quantHint(q)} · ${model.resultCounts?.[q] ?? 0} results`}
             className={cn(
               'rounded-md border px-2 py-1 font-mono text-xs transition-colors hover:border-foreground/30 hover:text-foreground',
               q === board.quant ? 'border-foreground/30 text-foreground' : 'text-muted-foreground',
             )}
           >
-            {QUANT_BY_ID[q]?.label ?? q} <span className="opacity-60">{model.resultCounts?.[q] ?? 0}</span>
+            {QUANT_BY_ID[q]?.label ?? q}
+            {sealed ? null : <span className="opacity-60"> {model.resultCounts?.[q] ?? 0}</span>}
           </Link>
         ))}
         </div>
       </div>
       <div>
         <div className="text-xs font-medium uppercase tracking-label text-muted-foreground">
-          <span className="font-mono normal-case tracking-normal">{QUANT_BY_ID[board.quant]?.label ?? board.quant}</span> · rigs · {board.total} ranked
+          <span className="font-mono normal-case tracking-normal">{QUANT_BY_ID[board.quant]?.label ?? board.quant}</span> · rigs · {sealedUntil ? `results will be shown on ${fmtInstant(sealedUntil)}` : `${board.total} ranked`}
         </div>
-        <ol className="mt-1 divide-y">
-          {top.map((row) => (
-            <li key={row.result.id} className="flex items-center gap-3 py-2.5 text-sm">
-              <span className="w-4 font-mono text-xs text-muted-foreground tnum">{row.rank}</span>
-              <Link to={`/results/${row.result.id}`} className="min-w-0 flex-1 truncate hover:underline underline-offset-4">
-                {row.unit.kind === 'rig' ? row.unit.rig.name : row.unit.hardware.name}
-              </Link>
-              <RuntimeMark runtime={runtimes[row.result.runtimeId]} size="sm" />
-              <span className="font-mono tnum">{fmtTps(row.result.decodeTps)}</span>
-            </li>
-          ))}
-          {top.length === 0 ? <li className="py-2.5 text-sm text-muted-foreground">No results yet.</li> : null}
-        </ol>
+        {sealed ? (
+          <GhostList />
+        ) : (
+          <ol className="mt-1 divide-y">
+            {top.map((row) => (
+              <li key={row.result.id} className="flex items-center gap-3 py-2.5 text-sm">
+                <span className="w-4 font-mono text-xs text-muted-foreground tnum">{row.rank}</span>
+                <Link to={`/results/${row.result.id}`} className="min-w-0 flex-1 truncate hover:underline underline-offset-4">
+                  {row.unit.kind === 'rig' ? row.unit.rig.name : row.unit.hardware.name}
+                </Link>
+                <RuntimeMark runtime={runtimes[row.result.runtimeId]} size="sm" />
+                <span className="font-mono tnum">{fmtTps(row.result.decodeTps)}</span>
+              </li>
+            ))}
+            {top.length === 0 ? <li className="py-2.5 text-sm text-muted-foreground">No results yet.</li> : null}
+          </ol>
+        )}
       </div>
-      <div className="mt-auto pt-1">
-        <Link to={`/models/${model.id}/${board.quant}`} className="group inline-flex items-center gap-1 text-sm font-medium text-foreground hover:underline underline-offset-4">
+      <div className="mt-auto flex items-center justify-between gap-3 pt-1">
+        {sealed ? (
+          <Link to={`/submit?model=${model.id}&quant=${board.quant}`} className="group inline-flex items-center gap-1 text-sm font-medium text-foreground hover:underline underline-offset-4">
+            Submit a result <ChevronRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+          </Link>
+        ) : null}
+        <Link
+          to={boardHref}
+          className={cn('group inline-flex items-center gap-1 text-sm font-medium hover:underline underline-offset-4', sealed ? 'text-muted-foreground hover:text-foreground' : 'text-foreground')}
+        >
           Full board <ChevronRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
         </Link>
       </div>
