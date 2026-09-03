@@ -13,8 +13,8 @@ import { cn } from '@/lib/utils'
   - PillTabs are the bordered text tabs.
 */
 
-/** Page gutter outside the frame: small side margins so the frame can be as wide as the screen allows. */
-export const gutter = 'px-4 md:px-6 xl:px-10'
+/** Page gutter outside the frame: small side margins so the frame can be as wide as the screen allows. None on phones, where the frame has no guides. */
+export const gutter = 'md:px-6 xl:px-10'
 
 /** The frame itself: fluid up to 1600px, with the two vertical guides. Nav, main, and footer all use it. */
 export const frame = 'mx-auto w-full max-w-[1600px] md:border-x'

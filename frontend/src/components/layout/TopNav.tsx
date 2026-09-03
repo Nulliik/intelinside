@@ -41,9 +41,6 @@ export function TopNav() {
     <header className="sticky top-0 z-40 border-b bg-background">
       <div className={gutter}>
       <div className={cn(frame, inset, 'flex h-14 items-center gap-3')}>
-        <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setOpen(true)} aria-label="Open menu">
-          <Menu />
-        </Button>
         <Link to="/" className="flex items-center gap-2 font-semibold">
           <span className="inline-block size-2.5 rounded-sm bg-primary" aria-hidden />
           {BRAND_NAME}
@@ -86,11 +83,14 @@ export function TopNav() {
               <GitHubMark data-icon="inline-start" className="size-4" /> Sign in
             </Button>
           )}
+          <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setOpen(true)} aria-label="Open menu">
+            <Menu />
+          </Button>
         </div>
       </div>
       </div>
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent side="left" className="w-72">
+        <SheetContent side="right" className="w-72">
           <SheetHeader>
             <SheetTitle>{BRAND_NAME}</SheetTitle>
           </SheetHeader>
