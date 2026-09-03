@@ -41,9 +41,8 @@ export function TopNav() {
     <header className="sticky top-0 z-40 border-b bg-background">
       <div className={gutter}>
       <div className={cn(frame, inset, 'flex h-14 items-center gap-3')}>
-        <Link to="/" className="flex items-center gap-2 font-semibold">
-          <span className="inline-block size-2.5 rounded-sm bg-primary" aria-hidden />
-          {BRAND_NAME}
+        <Link to="/" className="flex items-center">
+          <img src="/logos/intelinside-lockup.svg" alt={BRAND_NAME} width={97} height={19} className="h-5 w-auto" />
         </Link>
         <nav aria-label="Primary" className="ml-4 hidden items-center gap-1 md:flex">
           {LINKS.map((l) => (
@@ -92,7 +91,9 @@ export function TopNav() {
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent side="right" className="w-72">
           <SheetHeader>
-            <SheetTitle>{BRAND_NAME}</SheetTitle>
+            <SheetTitle>
+              <img src="/logos/intelinside-lockup.svg" alt={BRAND_NAME} width={97} height={19} className="h-5 w-auto" />
+            </SheetTitle>
           </SheetHeader>
           <nav aria-label="Primary, mobile" className="flex flex-col gap-1 px-4">
             {LINKS.map((l) => (
