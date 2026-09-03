@@ -6,6 +6,7 @@ import type {
 import { ApiError } from './types'
 import { HARDWARE, HARDWARE_BY_ID, MODELS, MODEL_BY_ID, QUANTS, QUANT_BY_ID, RUNTIMES } from '@/mocks/catalog'
 import { createSeed, rigSummaryLine, type SeedDb } from '@/mocks/seed'
+import { DEMO } from '@/lib/demo'
 
 // In-memory implementation of the API contract. Same ranking, thresholds, and
 // permission rules the backend will enforce, so every flow is clickable offline.
@@ -15,10 +16,10 @@ const FLAG_THRESHOLD = 3
 const LATENCY_MS = 160
 const SESSION_KEY = 'intelinside.mock.session'
 
-/** The seed, or with VITE_MOCK_EMPTY=true the seed's users alone: launch morning, before anyone has registered a rig. */
+/** The seed, or with VITE_MOCK_EMPTY=true or ?demo=launch the seed's users alone: launch morning, before anyone has registered a rig. */
 function seed(): SeedDb {
   const s = createSeed()
-  if (import.meta.env.VITE_MOCK_EMPTY === 'true') return { ...s, rigs: [], results: [], confirmations: new Map(), flags: new Map() }
+  if (import.meta.env.VITE_MOCK_EMPTY === 'true' || DEMO === 'launch') return { ...s, rigs: [], results: [], confirmations: new Map(), flags: new Map() }
   return s
 }
 
