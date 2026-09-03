@@ -14,14 +14,16 @@ import { ResultsTable } from '@/components/ResultsTable'
 import { keySpec } from '@/components/cards'
 import { EmptyState } from '@/components/EmptyState'
 import { ErrorState } from '@/components/ErrorState'
+import { SealedBoard, sealedLabel } from '@/components/launch'
 import { Block, Cell, Framed, Section, inset } from '@/components/frame'
 import { useAsync } from '@/hooks/useAsync'
 import { useCatalog } from '@/hooks/useCatalog'
+import { useSealed } from '@/hooks/useSealed'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { useSession } from '@/hooks/useSession'
 import { api } from '@/lib/api'
 import { ApiError } from '@/lib/api/types'
-import { fmtDate, pluralize } from '@/lib/format'
+import { fmtDate, fmtWeekday, pluralize } from '@/lib/format'
 import { HARDWARE_TYPE_LABEL } from '@/mocks/catalog'
 import { cn } from '@/lib/utils'
 
@@ -31,6 +33,7 @@ export default function RigDetail() {
   const { user } = useSession()
   const rig = useAsync(() => api.rig(rigId), [rigId])
   const cat = useCatalog()
+  const { sealed, revealAt } = useSealed()
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [busy, setBusy] = useState(false)
   usePageTitle(rig.data?.name)
@@ -87,7 +90,7 @@ export default function RigDetail() {
         <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
           <UserLink user={r.owner} />
           <span>added {fmtDate(r.createdAt)}</span>
-          <span>{pluralize(visible, 'result')}</span>
+          {sealed ? null : <span>{pluralize(visible, 'result')}</span>}
         </div>
       </PageHeader>
 
@@ -114,19 +117,33 @@ export default function RigDetail() {
         </div>
       </Section>
 
-      <Section label="Best decode tok/s per model, quant, and part">
-        <Framed>
-          <TpsBarChart bars={r.chart} runtimes={cat.data.runtimes} />
-        </Framed>
-      </Section>
+      {sealed && revealAt ? (
+        <Section label="Results" action={sealedLabel(revealAt)}>
+          <SealedBoard
+            revealAt={revealAt}
+            variant="chart"
+            lead={`Results for this rig are sealed until ${fmtWeekday(revealAt)}.`}
+            ask={isOwner ? "Post what it does and you're on the board when it goes live." : "Post what yours does and you're on the board when it goes live."}
+            submitTo={isOwner ? `/submit?rig=${r.id}` : '/submit'}
+          />
+        </Section>
+      ) : (
+        <>
+          <Section label="Best decode tok/s per model, quant, and part">
+            <Framed>
+              <TpsBarChart bars={r.chart} runtimes={cat.data.runtimes} />
+            </Framed>
+          </Section>
 
-      <Section label="Results">
-        {r.results.length ? (
-          <ResultsTable results={r.results} runtimes={cat.data.runtimes} models={cat.data.models} quants={cat.data.quants} showSubmitter={false} />
-        ) : (
-          <EmptyState title="No results for this rig yet" action={isOwner ? <Button render={<Link to={`/submit?rig=${r.id}`} />} nativeButton={false}>Submit the first</Button> : undefined} />
-        )}
-      </Section>
+          <Section label="Results">
+            {r.results.length ? (
+              <ResultsTable results={r.results} runtimes={cat.data.runtimes} models={cat.data.models} quants={cat.data.quants} showSubmitter={false} />
+            ) : (
+              <EmptyState title="No results for this rig yet" action={isOwner ? <Button render={<Link to={`/submit?rig=${r.id}`} />} nativeButton={false}>Submit the first</Button> : undefined} />
+            )}
+          </Section>
+        </>
+      )}
 
       <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <DialogContent>

@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { Search } from 'lucide-react'
+import { Plus, Search } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PageHeader } from '@/components/PageHeader'
@@ -9,12 +11,17 @@ import { EmptyState } from '@/components/EmptyState'
 import { Block, Cell, CellGrid, Section, Toolbar } from '@/components/frame'
 import { useAsync } from '@/hooks/useAsync'
 import { useCatalog } from '@/hooks/useCatalog'
+import { useSealed } from '@/hooks/useSealed'
+import { useSession } from '@/hooks/useSession'
 import { api } from '@/lib/api'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { fmtInstant } from '@/lib/format'
 
 export default function Models() {
   usePageTitle('Models')
   const cat = useCatalog()
+  const { sealed, revealAt } = useSealed()
+  const { user, requestSignIn } = useSession()
   const summaries = useAsync(() => api.modelSummaries(), [])
   const [q, setQ] = useState('')
   const runtimes = Object.fromEntries((cat.data?.runtimes ?? []).map((r) => [r.id, r]))
@@ -28,7 +35,24 @@ export default function Models() {
             <span className="text-muted-foreground">Every board is one model</span> at one quantization.
           </>
         }
-        description="Each tile shows the busiest quant's top rigs. Pick any quant to open its rigs and components boards."
+        description={
+          sealed && revealAt
+            ? `Boards are sealed until ${fmtInstant(revealAt)}. Pick a model and post a result now; it ranks the moment the board goes live.`
+            : "Each tile shows the busiest quant's top rigs. Pick any quant to open its rigs and components boards."
+        }
+        actions={
+          sealed ? (
+            user ? (
+              <Button render={<Link to="/submit" />} nativeButton={false}>
+                <Plus data-icon="inline-start" /> Submit a result
+              </Button>
+            ) : (
+              <Button onClick={() => requestSignIn('/submit')}>
+                <Plus data-icon="inline-start" /> Submit a result
+              </Button>
+            )
+          ) : undefined
+        }
       />
       <Section>
         <Toolbar>
@@ -52,7 +76,7 @@ export default function Models() {
         ) : models.length ? (
           <CellGrid cols={2}>
             {models.map((sm) => (
-              <ModelBoardCard key={sm.model.id} summary={sm} runtimes={runtimes} />
+              <ModelBoardCard key={sm.model.id} summary={sm} runtimes={runtimes} sealedUntil={revealAt} />
             ))}
           </CellGrid>
         ) : (
