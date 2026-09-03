@@ -9,12 +9,14 @@ import { ResultsTable } from '@/components/ResultsTable'
 import { RigCard } from '@/components/cards'
 import { EmptyState } from '@/components/EmptyState'
 import { ErrorState } from '@/components/ErrorState'
+import { SealedBoard, sealedLabel } from '@/components/launch'
 import { Block, Cell, CellGrid, Framed, Section } from '@/components/frame'
 import { useAsync } from '@/hooks/useAsync'
 import { useCatalog } from '@/hooks/useCatalog'
+import { useSealed } from '@/hooks/useSealed'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { api } from '@/lib/api'
-import { fmtDate, pluralize } from '@/lib/format'
+import { fmtDate, fmtWeekday, pluralize } from '@/lib/format'
 import { HARDWARE_TYPE_LABEL } from '@/mocks/catalog'
 
 const SPEC_LABEL: Record<string, string> = {
@@ -27,6 +29,7 @@ export default function HardwareDetail() {
   const { hardwareId = '' } = useParams()
   const item = useAsync(() => api.hardwareItem(hardwareId), [hardwareId])
   const cat = useCatalog()
+  const { sealed, revealAt } = useSealed()
   usePageTitle(item.data?.name)
   if (item.error)
     return (
@@ -51,7 +54,13 @@ export default function HardwareDetail() {
           </span>
         }
         title={h.name}
-        description={`${pluralize(h.resultsCount ?? 0, 'result')} · ${pluralize(h.rigsCount ?? 0, 'rig')}${h.releaseDate ? ` · released ${fmtDate(h.releaseDate)}` : ''}`}
+        description={
+          sealed
+            ? h.releaseDate
+              ? `Released ${fmtDate(h.releaseDate)}`
+              : undefined
+            : `${pluralize(h.resultsCount ?? 0, 'result')} · ${pluralize(h.rigsCount ?? 0, 'rig')}${h.releaseDate ? ` · released ${fmtDate(h.releaseDate)}` : ''}`
+        }
         actions={<Badge variant="outline">{h.source === 'seeded' ? 'Seeded' : 'Community added'}</Badge>}
       />
       <Section label="Specifications">
@@ -67,23 +76,37 @@ export default function HardwareDetail() {
           ))}
         </CellGrid>
       </Section>
-      <Section label="Best decode tok/s per model and quant">
-        <Framed>
-          <TpsBarChart bars={h.chart} runtimes={cat.data.runtimes} />
-        </Framed>
-      </Section>
-      <Section label="Results on this part">
-        {h.results.length ? (
-          <ResultsTable results={h.results} runtimes={cat.data.runtimes} models={cat.data.models} quants={cat.data.quants} />
-        ) : (
-          <EmptyState title="No results name this part yet" description="Component-level results show here. Whole-rig results live on the rig pages." />
-        )}
-      </Section>
+      {sealed && revealAt ? (
+        <Section label="Results on this part" action={sealedLabel(revealAt)}>
+          <SealedBoard
+            revealAt={revealAt}
+            variant="chart"
+            lead={`Results are sealed until ${fmtWeekday(revealAt)}.`}
+            ask="Post what this part does and you're on the board when it goes live."
+            body={`Submissions are open now. A component result names the part and how many of it you used. Everything posted before then ranks the moment the board goes live on ${fmtWeekday(revealAt)}.`}
+          />
+        </Section>
+      ) : (
+        <>
+          <Section label="Best decode tok/s per model and quant">
+            <Framed>
+              <TpsBarChart bars={h.chart} runtimes={cat.data.runtimes} />
+            </Framed>
+          </Section>
+          <Section label="Results on this part">
+            {h.results.length ? (
+              <ResultsTable results={h.results} runtimes={cat.data.runtimes} models={cat.data.models} quants={cat.data.quants} />
+            ) : (
+              <EmptyState title="No results name this part yet" description="Component-level results show here. Whole-rig results live on the rig pages." />
+            )}
+          </Section>
+        </>
+      )}
       <Section label="Rigs with this part">
         {h.rigs.length ? (
           <CellGrid cols={3}>
             {h.rigs.map((r) => (
-              <RigCard key={r.id} rig={r} />
+              <RigCard key={r.id} rig={r} sealed={sealed} />
             ))}
           </CellGrid>
         ) : (

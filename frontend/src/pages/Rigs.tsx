@@ -6,12 +6,13 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { PageHeader } from '@/components/PageHeader'
 import { RigCard } from '@/components/cards'
-import { EmptyState } from '@/components/EmptyState'
+import { RigSilhouette } from '@/components/launch'
 import { ErrorState } from '@/components/ErrorState'
 import { LoadMore } from '@/components/LoadMore'
 import { Block, Cell, CellGrid, Section, Toolbar } from '@/components/frame'
 import { useAsync } from '@/hooks/useAsync'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { useSealed } from '@/hooks/useSealed'
 import { useSession } from '@/hooks/useSession'
 import { api } from '@/lib/api'
 import type { RigSummary, RigsParams } from '@/lib/api/types'
@@ -25,8 +26,10 @@ const sortItems = [
 export default function Rigs() {
   usePageTitle('Rigs')
   const { user, requestSignIn } = useSession()
+  const { sealed, revealAt } = useSealed()
   const [sort, setSort] = useState<NonNullable<RigsParams['sort']>>('newest')
-  const list = useAsync(() => api.rigs({ sort }), [sort])
+  // Sorting by tok/s or result count would rank the rigs, so the week is newest-first only.
+  const list = useAsync(() => api.rigs({ sort: sealed ? 'newest' : sort }), [sort, sealed])
   const [extra, setExtra] = useState<RigSummary[]>([])
   const [cursor, setCursor] = useState<string | undefined>()
   useEffect(() => {
@@ -56,6 +59,7 @@ export default function Rigs() {
         }
       />
       <Section>
+        {sealed ? null : (
         <Toolbar>
           <span className="text-sm text-muted-foreground">Sort</span>
           <Select value={sort} onValueChange={(v) => setSort(v as typeof sort)} items={sortItems}>
@@ -63,6 +67,7 @@ export default function Rigs() {
             <SelectContent>{sortItems.map((i) => <SelectItem key={i.value} value={i.value}>{i.label}</SelectItem>)}</SelectContent>
           </Select>
         </Toolbar>
+        )}
         {list.error ? (
           <Block>
             <ErrorState error={list.error} />
@@ -79,7 +84,7 @@ export default function Rigs() {
           <>
             <CellGrid cols={3}>
               {rigs.map((r) => (
-                <RigCard key={r.id} rig={r} />
+                <RigCard key={r.id} rig={r} sealed={sealed} />
               ))}
             </CellGrid>
             {cursor ? (
@@ -87,7 +92,7 @@ export default function Rigs() {
                 <LoadMore
                   hasMore={!!cursor}
                   onLoad={async () => {
-                    const page = await api.rigs({ sort, cursor })
+                    const page = await api.rigs({ sort: sealed ? 'newest' : sort, cursor })
                     setExtra((e) => [...e, ...page.items])
                     setCursor(page.nextCursor)
                   }}
@@ -96,7 +101,7 @@ export default function Rigs() {
             ) : null}
           </>
         ) : (
-          <EmptyState title="No rigs yet" description="Sign in and register the machine you run models on." />
+          <RigSilhouette revealAt={revealAt} />
         )}
       </Section>
     </div>

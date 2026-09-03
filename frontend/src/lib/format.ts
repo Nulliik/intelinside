@@ -33,6 +33,16 @@ export function relativeTime(iso: string): string {
   return `${Math.round(mo / 12)}y ago`
 }
 
+/** An instant in the viewer's own zone, zone named: "Fri, Sep 11, 9:00 AM PDT". */
+export function fmtInstant(d: Date): string {
+  return new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' }).format(d)
+}
+
+/** "Friday", in the viewer's zone. */
+export function fmtWeekday(d: Date): string {
+  return d.toLocaleDateString('en-US', { weekday: 'long' })
+}
+
 export function pluralize(n: number, one: string, many = `${one}s`): string {
   return `${fmtInt(n)} ${n === 1 ? one : many}`
 }

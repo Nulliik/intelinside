@@ -15,7 +15,14 @@ const FLAG_THRESHOLD = 3
 const LATENCY_MS = 160
 const SESSION_KEY = 'intelinside.mock.session'
 
-let db: SeedDb = createSeed()
+/** The seed, or with VITE_MOCK_EMPTY=true the seed's users alone: launch morning, before anyone has registered a rig. */
+function seed(): SeedDb {
+  const s = createSeed()
+  if (import.meta.env.VITE_MOCK_EMPTY === 'true') return { ...s, rigs: [], results: [], confirmations: new Map(), flags: new Map() }
+  return s
+}
+
+let db: SeedDb = seed()
 let sessionUserId: string | null = readSession()
 let idCounter = 1000
 
@@ -490,5 +497,5 @@ export const mockApi: Api = {
 
 /** Reset the in-memory database to the seed. Handy from the console during review. */
 export function resetMockDb() {
-  db = createSeed()
+  db = seed()
 }

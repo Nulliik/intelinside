@@ -13,8 +13,8 @@ import { cn } from '@/lib/utils'
   - PillTabs are the bordered text tabs.
 */
 
-/** Page gutter outside the frame: small side margins so the frame can be as wide as the screen allows. */
-export const gutter = 'px-4 md:px-6 xl:px-10'
+/** Page gutter outside the frame: small side margins so the frame can be as wide as the screen allows. None on phones, where the frame has no guides. */
+export const gutter = 'md:px-6 xl:px-10'
 
 /** The frame itself: fluid up to 1600px, with the two vertical guides. Nav, main, and footer all use it. */
 export const frame = 'mx-auto w-full max-w-[1600px] md:border-x'
@@ -51,13 +51,15 @@ export function Block({ className, children }: { className?: string; children: R
   return <div className={cn('py-8', inset, className)}>{children}</div>
 }
 
-type Cols = 1 | 2 | 3 | 4 | 5
+/** Column counts. '2/4' is two on phones and four from lg, for strips of four figures. */
+type Cols = 1 | 2 | 3 | 4 | 5 | '2/4'
 const PRESET: Record<Cols, { cls: string; base: number; sm: number; lg: number }> = {
   1: { cls: 'grid-cols-1', base: 1, sm: 1, lg: 1 },
   2: { cls: 'grid-cols-1 sm:grid-cols-2', base: 1, sm: 2, lg: 2 },
   3: { cls: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3', base: 1, sm: 2, lg: 3 },
   4: { cls: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4', base: 1, sm: 2, lg: 4 },
   5: { cls: 'grid-cols-2 lg:grid-cols-5', base: 2, sm: 2, lg: 5 },
+  '2/4': { cls: 'grid-cols-2 lg:grid-cols-4', base: 2, sm: 2, lg: 4 },
 }
 
 /** Cells separated by hairlines. Children must paint their own background (Cell does). */
