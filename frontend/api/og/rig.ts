@@ -2,11 +2,11 @@
 // A plain .ts file at a fixed path with a named GET export: the shape Vercel routes on every runtime.
 import { ImageResponse } from '@vercel/og'
 import { jsx } from 'react/jsx-runtime'
-import { bundledAssets, httpAssets, loadCardAssets, loadFonts } from '../../src/og/assets'
-import { BUNDLED_OG_ASSETS } from '../../src/og/bundled'
-import { RigCardImage } from '../../src/og/cards'
-import { loadRigCard, ogEnv } from '../../src/og/data'
-import { cardId, CARD_HEADERS } from '../../src/og/http'
+import { bundledAssets, httpAssets, loadCardAssets, loadFonts } from '../../src/og/assets.js'
+import { BUNDLED_OG_ASSETS } from '../../src/og/bundled.js'
+import { RigCardImage } from '../../src/og/cards.js'
+import { loadRigCard, ogEnv } from '../../src/og/data.js'
+import { cardId, CARD_HEADERS } from '../../src/og/http.js'
 
 export async function GET(request: Request): Promise<Response> {
   const url = new URL(request.url)

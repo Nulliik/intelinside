@@ -2,8 +2,8 @@
 // page. For rig and result pages, a crawler user agent gets a small HTML shell with the page's own title,
 // description, and card; everyone else falls through to the SPA as before.
 import { next } from '@vercel/functions'
-import { loadResultCard, loadRigCard, ogEnv } from './src/og/data'
-import { isCrawler, metaShell, resultMeta, rigMeta } from './src/og/meta'
+import { loadResultCard, loadRigCard, ogEnv } from './src/og/data.js'
+import { isCrawler, metaShell, resultMeta, rigMeta } from './src/og/meta.js'
 
 export const config = { matcher: ['/results/:id', '/rigs/:id'] }
 

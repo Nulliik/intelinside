@@ -1,7 +1,7 @@
 // The HTML shell crawlers get instead of the SPA: title, description, and the card, nothing else to render.
-import { BRAND_NAME } from '../lib/brand'
-import { fmtTps } from '../lib/format'
-import type { ResultCardData, RigCardData } from './data'
+import { BRAND_NAME } from '../lib/brand.js'
+import { fmtTps } from '../lib/format.js'
+import type { ResultCardData, RigCardData } from './data.js'
 
 export type PageMeta = { title: string; description: string; path: string; image: string }
 
