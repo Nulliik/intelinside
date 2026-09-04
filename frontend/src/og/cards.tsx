@@ -2,9 +2,9 @@
 // more than one child is a flex container, text sits alone in its element, sizes are absolute, and long names
 // scale down before they wrap. Positions match the design canvas at 1200×630.
 import type { CSSProperties, ReactNode } from 'react'
-import { fmtDate, fmtTps } from '../lib/format'
-import type { CardAssets } from './assets'
-import type { Owner, ResultCardData, RigCardData } from './data'
+import { fmtDate, fmtTps } from '../lib/format.js'
+import type { CardAssets } from './assets.js'
+import type { Owner, ResultCardData, RigCardData } from './data.js'
 
 const FG = '#f4f4f5'
 const MUTED = '#a1a1aa'

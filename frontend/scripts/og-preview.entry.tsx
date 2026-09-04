@@ -4,9 +4,9 @@ import fs from 'node:fs'
 import path from 'node:path'
 import satori from 'satori'
 import { Resvg } from '@resvg/resvg-js'
-import { loadCardAssets, loadFonts, type AssetSource } from '../src/og/assets'
-import { ResultCardImage, RigCardImage } from '../src/og/cards'
-import type { ResultCardData, RigCardData } from '../src/og/data'
+import { loadCardAssets, loadFonts, type AssetSource } from '../src/og/assets.js'
+import { ResultCardImage, RigCardImage } from '../src/og/cards.js'
+import type { ResultCardData, RigCardData } from '../src/og/data.js'
 
 const root = path.resolve(process.cwd())
 const outDir = path.resolve(process.argv[2] ?? '.og-preview')
