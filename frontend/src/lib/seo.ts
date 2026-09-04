@@ -15,9 +15,6 @@ export function pageTitle(title?: string, brandFirst = false): string {
 export const SITE_DESCRIPTION =
   'Local LLM speed on Intel hardware: real decode tok/s by model, quant, and runtime on Arc GPUs, Core Ultra chips, and Xeon boxes, posted by the community. Add your rig.'
 
-/** The landing card's line, used as the social title for pages that share the landing image. */
-export const LANDING_TITLE = 'Show your rig. Post your tok/s.'
-
 export type PageSeo = { path: string; title: string; description: string; brandFirst?: boolean }
 
 export const PAGE_SEO = {
