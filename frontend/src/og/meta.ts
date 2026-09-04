@@ -26,7 +26,7 @@ export function rigMeta(data: RigCardData): PageMeta {
   const parts = data.parts.map((part) => `${part.quantity > 1 ? `${part.quantity}× ` : ''}${part.name}`).join(' · ')
   const best = data.best ? ` Best ${fmtTps(data.best.tps)} tok/s on ${data.best.model} ${data.best.quant}.` : ''
   return {
-    title: `${data.name} · ${data.owner.handle} on ${BRAND_NAME}`,
+    title: `${data.name} · ${data.owner.handle}`,
     description: `${parts || 'A rig'}${data.os ? ` · ${data.os}` : ''}.${best} ${data.resultsCount} ${data.resultsCount === 1 ? 'result' : 'results'}.`,
     path: `/rigs/${data.id}`,
     image: cardImagePath('rig', data.id, data.updatedAt),
