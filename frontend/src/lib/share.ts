@@ -30,8 +30,8 @@ export function shareUrl(target: Pick<ShareTarget, 'kind' | 'id'>, origin = wind
 
 /** The card the link unfurls with; the same PNG the modal previews, downloads, and copies. */
 export function cardImageUrl(target: Pick<ShareTarget, 'kind' | 'id' | 'updatedAt'>, origin = window.location.origin): string {
-  const version = target.updatedAt ? `?v=${encodeURIComponent(target.updatedAt)}` : ''
-  return `${origin}/api/og/${target.kind}s/${target.id}.png${version}`
+  const version = target.updatedAt ? `&v=${encodeURIComponent(target.updatedAt)}` : ''
+  return `${origin}/api/og/${target.kind}?id=${encodeURIComponent(target.id)}${version}`
 }
 
 export function cardFilename(target: Pick<ShareTarget, 'kind' | 'id'>): string {

@@ -1,4 +1,4 @@
-/** The id from `/api/og/results/1042.png`, whether Vercel passes it as a query param or leaves it in the path. */
+/** The card id: `?id=10` on the function's own path, or the last segment of a pretty `/api/og/rigs/10.png` URL. */
 export function cardId(url: URL): string {
   const raw = url.searchParams.get('id') ?? url.pathname.split('/').pop() ?? ''
   return raw.replace(/\.png$/i, '')

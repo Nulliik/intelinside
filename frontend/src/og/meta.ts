@@ -8,7 +8,7 @@ export type PageMeta = { title: string; description: string; path: string; image
 const escape = (text: string) => text.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c)
 
 export function cardImagePath(kind: 'result' | 'rig', id: string, updatedAt?: string): string {
-  return `/api/og/${kind}s/${id}.png${updatedAt ? `?v=${encodeURIComponent(updatedAt)}` : ''}`
+  return `/api/og/${kind}?id=${encodeURIComponent(id)}${updatedAt ? `&v=${encodeURIComponent(updatedAt)}` : ''}`
 }
 
 export function resultMeta(data: ResultCardData): PageMeta {
