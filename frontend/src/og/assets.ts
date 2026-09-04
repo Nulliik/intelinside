@@ -49,18 +49,32 @@ export function httpAssets(origin: string): AssetSource {
   }
 }
 
-/** Reads the files bundled into the edge function; falls back to `fallback` for anything not bundled or unreadable. */
+const isNode = () =>
+  typeof process !== 'undefined' && Boolean(process.versions?.node) && !('EdgeRuntime' in globalThis)
+
+/** A bundled file's bytes: the edge runtime serves them through fetch, Node reads them from disk. */
+async function readBundled(url: URL): Promise<ArrayBuffer> {
+  if (url.protocol === 'file:' && isNode()) {
+    // The specifier is assembled so the edge bundler never sees a Node built-in import.
+    const fs = (await import(/* @vite-ignore */ ['node:fs', 'promises'].join('/'))) as { readFile: (path: URL) => Promise<Uint8Array> }
+    const bytes = await fs.readFile(url)
+    return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer
+  }
+  const response = await fetch(url)
+  if (!response.ok) throw new Error(`Asset ${url.pathname} returned ${response.status}`)
+  return response.arrayBuffer()
+}
+
+/** Reads the files bundled into the function; falls back to `fallback` for anything not bundled or unreadable. */
 export function bundledAssets(bundled: Record<string, URL>, fallback: AssetSource): AssetSource {
-  const get = async (path: string) => {
+  const get = (path: string) => {
     const url = bundled[path]
-    if (!url) throw new Error(`Asset ${path} is not bundled`)
-    const response = await fetch(url)
-    if (!response.ok) throw new Error(`Asset ${path} returned ${response.status}`)
-    return response
+    if (!url) return Promise.reject(new Error(`Asset ${path} is not bundled`))
+    return readBundled(url)
   }
   return {
-    binary: (path) => get(path).then((r) => r.arrayBuffer()).catch(() => fallback.binary(path)),
-    text: (path) => get(path).then((r) => r.text()).catch(() => fallback.text(path)),
+    binary: (path) => get(path).catch(() => fallback.binary(path)),
+    text: (path) => get(path).then((bytes) => new TextDecoder().decode(bytes)).catch(() => fallback.text(path)),
   }
 }
 
