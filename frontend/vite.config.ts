@@ -3,7 +3,7 @@ import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { BRAND_NAME } from './src/lib/brand'
-import { LANDING_TITLE, PAGE_SEO, SITE_DESCRIPTION, pageTitle } from './src/lib/seo'
+import { PAGE_SEO, SITE_DESCRIPTION, pageTitle } from './src/lib/seo'
 
 /**
  * The site's own origin, for absolute URLs in the HTML shell: `VITE_SITE_URL` when set, else the production domain
@@ -26,14 +26,14 @@ function siteMeta(): Plugin {
     name: 'intelinside-site-meta',
     transformIndexHtml(html) {
       const origin = siteOrigin()
-      const title = LANDING_TITLE
+      const title = pageTitle(PAGE_SEO.home.title, PAGE_SEO.home.brandFirst)
       const description = SITE_DESCRIPTION
       const image = `${origin}/og/landing.jpg`
-      // The static title and description are the home page's; the app replaces them per route, and the middleware
-      // serves crawlers their own. No canonical or og:url here: this shell serves every SPA route, so a fixed URL
-      // would mark them all as the home page.
+      // The title, description, and social tags are the home page's. The middleware rewrites them per page for the
+      // routes it covers, and the app sets the title and description as it navigates. No canonical or og:url here:
+      // this shell also serves the routes the middleware leaves alone, so a fixed URL would mark them all as home.
       const withDefaults = html
-        .replace(/<title>[^<]*<\/title>/, `<title>${pageTitle(PAGE_SEO.home.title, PAGE_SEO.home.brandFirst)}</title>`)
+        .replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`)
         .replace(/<meta name="description" content="[^"]*" \/>/, `<meta name="description" content="${description}" />`)
       return { html: withDefaults, tags: [
         { tag: 'meta', attrs: { name: 'theme-color', content: '#5438ff' }, injectTo: 'head' },
