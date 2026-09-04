@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
 import { RigPhoto } from '@/components/RigPhoto'
+import { ShareIconButton } from '@/components/ShareIconButton'
 import { UserAvatar } from '@/components/UserAvatar'
 import { HardwareTypeIcon } from '@/components/HardwareTypeIcon'
 import { ModelLogo } from '@/components/ModelLogo'
@@ -10,6 +11,7 @@ import { RuntimeMark } from '@/components/RuntimeMark'
 import { GhostList } from '@/components/launch'
 import { HARDWARE_TYPE_LABEL, QUANT_BY_ID, quantHint } from '@/mocks/catalog'
 import { fmtInstant, fmtTps, pluralize } from '@/lib/format'
+import { rigShareTarget } from '@/lib/share'
 import { cn } from '@/lib/utils'
 
 // Grid cells, not floating cards: each paints its own background so CellGrid's hairlines show between them.
@@ -24,10 +26,15 @@ function More({ children }: { children: string }) {
   )
 }
 
-/** `sealed` hides the result count and best tok/s, for launch week while results are sealed. */
+/**
+ * `sealed` hides the result count and best tok/s, for launch week while results are sealed.
+ * The share icon sits over the photo as a sibling of the link, not inside it, so its modal never triggers navigation.
+ * It shows on hover and keyboard focus, and always on touch screens.
+ */
 export function RigCard({ rig, sealed = false }: { rig: RigSummary; sealed?: boolean }) {
   return (
-    <Link to={`/rigs/${rig.id}`} className={cell}>
+    <div className="group relative flex min-w-0 bg-background">
+    <Link to={`/rigs/${rig.id}`} className={cn(cell, 'flex-1')}>
       <div className="aspect-[16/10] overflow-hidden rounded-xl">
         <RigPhoto id={rig.id} photoUrl={rig.photoUrl} alt={rig.name} />
       </div>
@@ -50,6 +57,11 @@ export function RigCard({ rig, sealed = false }: { rig: RigSummary; sealed?: boo
         <More>View rig</More>
       </div>
     </Link>
+    <ShareIconButton
+      target={rigShareTarget(rig, !sealed && rig.bestTps != null ? { tps: rig.bestTps } : undefined)}
+      className="absolute top-8 right-8 size-7 rounded-md bg-background/80 opacity-0 backdrop-blur-xs transition-opacity group-hover:opacity-100 focus-visible:opacity-100 aria-expanded:opacity-100 md:top-9 md:right-9 [@media(hover:none)]:opacity-100 [&_svg:not([class*='size-'])]:size-3.5"
+    />
+    </div>
   )
 }
 

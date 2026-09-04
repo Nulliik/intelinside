@@ -82,9 +82,19 @@ Thresholds for `community_verified` and `hidden` are server configuration. Propo
 | GET | `/api/results/top?model=&quant=&limit=` | `{ items: BoardRow[], chart: ChartBar[], total }`. Site-wide ranking: best entry per rig-or-part, model, and quant by decode tok/s, hidden entries excluded. Route this before `/api/results/:resultId` |
 | POST | `/api/uploads` | Multipart image, max 5 MB, returns `{ url }`. Signed in. Used for rig photos |
 
-## OG images
+## OG images and sharing
 
-Served by a Vercel edge function in the front-end deploy, not by this API. It reads the public endpoints above. Nothing for Jack to build.
+Served by the front-end deploy on Vercel, not by this API. Nothing for Jack to build.
+
+| Route | What it does |
+|---|---|
+| `GET /api/og/results/:id.png?v=` | The 1200×630 result card (number-led layout). Edge function, `frontend/api/og/results/[id].tsx`. 404 for hidden or missing results |
+| `GET /api/og/rigs/:id.png?v=` | The rig card (photo and parts; parts-only when there is no photo). `frontend/api/og/rigs/[id].tsx` |
+| `/results/:id`, `/rigs/:id` for crawlers | `frontend/middleware.ts` answers link-unfurling user agents with an HTML shell carrying title, description, and the card; humans get the SPA |
+
+The edge code reads the public Supabase REST endpoints with the publishable key from the same `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` the site is deployed with, mirrors the board ordering in `src/lib/api/supabase.ts` for rank, and composites text over static assets in `frontend/public/og/` (dot-matrix backgrounds, lockup, Red Hat fonts) built by `npm run og:assets`. `?v=updatedAt` busts the day-long edge cache after an edit. `npm run og:preview` renders the layouts with sample data to `.og-preview/` for a local check; the edge functions themselves only run on Vercel (`vercel dev` locally).
+
+The share modal (`src/components/ShareDialog.tsx`) previews, downloads, and copies that same PNG, and opens the share intents for X, Reddit, LinkedIn, Threads, and Facebook; Discord has none, so its button copies the link and opens Discord.
 
 ## Types
 

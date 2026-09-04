@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { PageHeader } from '@/components/PageHeader'
+import { IconAction } from '@/components/IconAction'
+import { ShareIconButton } from '@/components/ShareIconButton'
 import { RigPhoto } from '@/components/RigPhoto'
 import { UserLink } from '@/components/UserLink'
 import { HardwareLink } from '@/components/HardwareLink'
@@ -24,6 +26,7 @@ import { useSession } from '@/hooks/useSession'
 import { api } from '@/lib/api'
 import { ApiError } from '@/lib/api/types'
 import { fmtDate, fmtWeekday, pluralize } from '@/lib/format'
+import { rigShareTarget } from '@/lib/share'
 import { HARDWARE_TYPE_LABEL } from '@/mocks/catalog'
 import { cn } from '@/lib/utils'
 
@@ -51,7 +54,19 @@ export default function RigDetail() {
     )
   const r = rig.data
   const isOwner = user?.id === r.ownerId
-  const visible = r.results.filter((x) => !x.moderation.hidden).length
+  const visibleResults = r.results.filter((x) => !x.moderation.hidden)
+  const visible = visibleResults.length
+  const bestResult = visibleResults.reduce<(typeof visibleResults)[number] | undefined>((best, x) => (!best || x.decodeTps > best.decodeTps ? x : best), undefined)
+  const shareTarget = rigShareTarget(
+    r,
+    bestResult
+      ? {
+          tps: bestResult.decodeTps,
+          model: cat.data.models.find((m) => m.id === bestResult.modelId)?.name,
+          quant: cat.data.quants.find((q) => q.id === bestResult.quant)?.label,
+        }
+      : undefined,
+  )
 
   const remove = async () => {
     setBusy(true)
@@ -72,19 +87,22 @@ export default function RigDetail() {
         title={r.name}
         description={r.summary}
         actions={
-          isOwner ? (
-            <>
-              <Button variant="outline" render={<Link to={`/rigs/${r.id}/edit`} />} nativeButton={false}>
-                <Pencil data-icon="inline-start" /> Edit
-              </Button>
-              <Button variant="ghost" onClick={() => setConfirmDelete(true)}>
-                <Trash2 data-icon="inline-start" /> Delete
-              </Button>
-              <Button render={<Link to={`/submit?rig=${r.id}`} />} nativeButton={false}>
-                <Plus data-icon="inline-start" /> Submit a result
-              </Button>
-            </>
-          ) : undefined
+          <>
+            <ShareIconButton target={shareTarget} />
+            {isOwner ? (
+              <>
+                <IconAction label="Edit" to={`/rigs/${r.id}/edit`}>
+                  <Pencil />
+                </IconAction>
+                <IconAction label="Delete" onClick={() => setConfirmDelete(true)}>
+                  <Trash2 />
+                </IconAction>
+                <Button render={<Link to={`/submit?rig=${r.id}`} />} nativeButton={false}>
+                  <Plus data-icon="inline-start" /> Submit a result
+                </Button>
+              </>
+            ) : null}
+          </>
         }
       >
         <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">

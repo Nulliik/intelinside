@@ -26,6 +26,9 @@
     }
   },
   "include": [
-    "src"
+    "src",
+    "api",
+    "middleware.ts",
+    "scripts/og-preview.entry.tsx"
   ]
 }
