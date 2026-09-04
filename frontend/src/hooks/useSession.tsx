@@ -1,5 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { toast } from 'sonner'
 import { api } from '@/lib/api'
+import { syncMockSession } from '@/lib/api/mock'
+import { getSupabaseUser, signInWithGitHub, signOutSupabase, supabase, toAppUser, usesSupabaseAuth } from '@/lib/auth'
 import type { User } from '@/lib/api/types'
 
 type Session = {
@@ -7,7 +10,7 @@ type Session = {
   loading: boolean
   refresh: () => Promise<void>
   signOut: () => Promise<void>
-  /** Opens the mock picker, or redirects to GitHub in live mode. */
+  /** Opens the offline account picker, or redirects to GitHub when Auth is configured. */
   requestSignIn: (returnTo?: string) => void
   signInOpen: boolean
   setSignInOpen: (open: boolean) => void
@@ -23,7 +26,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const refresh = useCallback(async () => {
     try {
-      setUser(await api.me())
+      const nextUser = usesSupabaseAuth ? await getSupabaseUser() : await api.me()
+      setUser(api.mode === 'mock' && usesSupabaseAuth ? syncMockSession(nextUser) : nextUser)
     } finally {
       setLoading(false)
     }
@@ -31,16 +35,36 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     void refresh()
+
+    if (!supabase) return
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const nextUser = session?.user ? toAppUser(session.user) : null
+      setUser(api.mode === 'mock' ? syncMockSession(nextUser) : nextUser)
+      setLoading(false)
+    })
+    return () => subscription.unsubscribe()
   }, [refresh])
 
   const signOut = useCallback(async () => {
-    await api.signOut()
+    if (usesSupabaseAuth) {
+      await signOutSupabase()
+      if (api.mode === 'mock') syncMockSession(null)
+    } else {
+      await api.signOut()
+    }
     setUser(null)
   }, [])
 
   const requestSignIn = useCallback((returnTo?: string) => {
-    if (api.mode === 'live') window.location.assign(api.signInUrl(returnTo ?? window.location.pathname))
-    else setSignInOpen(true)
+    if (usesSupabaseAuth) {
+      void signInWithGitHub(returnTo ?? window.location.pathname).catch((error: unknown) => {
+        toast.error(error instanceof Error ? error.message : 'Could not start GitHub sign-in.')
+      })
+    } else if (api.mode === 'live') {
+      window.location.assign(api.signInUrl(returnTo ?? window.location.pathname))
+    } else {
+      setSignInOpen(true)
+    }
   }, [])
 
   const mockSignIn = useCallback(async (handle: string) => {

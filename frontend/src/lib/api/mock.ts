@@ -4,7 +4,8 @@ import type {
   Runtime, TopResultsResponse, User, UserStats, Verification,
 } from './types'
 import { ApiError } from './types'
-import { HARDWARE, HARDWARE_BY_ID, MODELS, MODEL_BY_ID, QUANTS, QUANT_BY_ID, RUNTIMES } from '@/mocks/catalog'
+import { isGitHubUrl } from '@/lib/github'
+import { HARDWARE_BY_ID, MODELS, MODEL_BY_ID, QUANTS, QUANT_BY_ID, RUNTIMES, VISIBLE_HARDWARE } from '@/mocks/catalog'
 import { createSeed, rigSummaryLine, type SeedDb } from '@/mocks/seed'
 
 // In-memory implementation of the API contract. Same ranking, thresholds, and
@@ -25,6 +26,25 @@ function seed(): SeedDb {
 let db: SeedDb = seed()
 let sessionUserId: string | null = readSession()
 let idCounter = 1000
+
+/** Make a real OAuth identity usable with the in-memory API during frontend development. */
+export function syncMockSession(user: User | null): User | null {
+  if (!user) {
+    writeSession(null)
+    return null
+  }
+
+  const existing = db.users.find((candidate) => candidate.id === user.id || candidate.handle === user.handle)
+  if (existing) {
+    Object.assign(existing, user, { id: existing.id })
+    writeSession(existing.id)
+    return { ...existing }
+  }
+
+  db.users.push(user)
+  writeSession(user.id)
+  return { ...user }
+}
 
 function readSession(): string | null {
   try {
@@ -219,7 +239,7 @@ function validateResult(input: Partial<ResultInput>, forCreate: boolean): Record
   if (input.modelId && input.quant && MODEL_BY_ID[input.modelId] && !MODEL_BY_ID[input.modelId].quants.includes(input.quant)) errors.quant = 'That quant has no board for this model.'
   if (input.decodeTps != null && !(input.decodeTps > 0)) errors.decodeTps = 'Decode tok/s must be above zero.'
   if (forCreate && input.decodeTps == null) errors.decodeTps = 'Enter decode tok/s.'
-  if (input.repoUrl && !/^https?:\/\/\S+$/.test(input.repoUrl)) errors.repoUrl = 'Enter a full URL.'
+  if (input.repoUrl && !isGitHubUrl(input.repoUrl)) errors.repoUrl = 'Enter a GitHub URL.'
   if (input.runDate && new Date(input.runDate).getTime() > Date.now() + 86400000) errors.runDate = 'Run date cannot be in the future.'
   if (input.rigId) {
     const rig = db.rigs.find((r) => r.id === input.rigId)
@@ -274,7 +294,7 @@ export const mockApi: Api = {
     return delay(QUANTS as Quant[])
   },
   async hardware(params = {}) {
-    let items = HARDWARE.map(withCounts)
+    let items = VISIBLE_HARDWARE.map(withCounts)
     if (params.type) items = items.filter((h) => h.type === params.type)
     if (params.vendor) items = items.filter((h) => h.vendor === params.vendor)
     if (params.q) {
@@ -284,7 +304,7 @@ export const mockApi: Api = {
     return delay(paginate(items, params.limit ?? 100, params.cursor))
   },
   async hardwareItem(id) {
-    const h = HARDWARE_BY_ID[id]
+    const h = VISIBLE_HARDWARE.find((item) => item.id === id)
     if (!h) return fail('not_found', 'No such hardware.', 404)
     const results = visibleResults().filter((r) => r.componentId === id).sort((a, b) => b.decodeTps - a.decodeTps)
     const rigs = db.rigs.filter((rig) => rig.components.some((c) => c.hardwareId === id)).map(rigSummary)
@@ -472,7 +492,7 @@ export const mockApi: Api = {
   async home() {
     const vis = visibleResults()
     const res: HomeResponse = {
-      stats: { results: vis.length, rigs: db.rigs.length, hardware: HARDWARE.length, members: db.users.length },
+      stats: { results: vis.length, rigs: db.rigs.length, hardware: VISIBLE_HARDWARE.length, members: db.users.length },
       topRigs: db.rigs.map(rigSummary).sort((a, b) => (b.bestTps ?? 0) - (a.bestTps ?? 0)).slice(0, 6),
     }
     return delay(res)

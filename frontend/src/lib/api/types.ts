@@ -196,7 +196,7 @@ export class ApiError extends Error {
 }
 
 export interface Api {
-  readonly mode: 'mock' | 'live'
+  readonly mode: 'mock' | 'live' | 'supabase'
   // auth
   me(): Promise<User | null>
   signInUrl(returnTo: string): string

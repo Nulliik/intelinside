@@ -20,6 +20,7 @@ import { useCatalog } from '@/hooks/useCatalog'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { useSession } from '@/hooks/useSession'
 import { api } from '@/lib/api'
+import { isGitHubUrl } from '@/lib/github'
 import { ApiError, type Result, type ResultInput, type ResultRank } from '@/lib/api/types'
 import { fmtTps } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -69,7 +70,7 @@ function validate(f: Form, quantsFor: string[]): Record<string, string> {
     const v = num(f[k])
     if (v != null && (Number.isNaN(v) || v < 0)) e[k] = 'Must be zero or more.'
   }
-  if (!/^https?:\/\/\S+$/.test(f.repoUrl.trim())) e.repoUrl = 'Enter a full link, starting with https://.'
+  if (!isGitHubUrl(f.repoUrl.trim())) e.repoUrl = 'Enter a GitHub URL, starting with https://github.com/.'
   if (!f.runDate) e.runDate = 'Enter the run date.'
   else if (f.runDate > today()) e.runDate = 'Run date cannot be in the future.'
   return e

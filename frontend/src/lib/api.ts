@@ -1,7 +1,13 @@
 import type { Api } from './api/types'
 import { mockApi } from './api/mock'
 import { liveApi } from './api/live'
+import { supabaseApi } from './api/supabase'
 
-// The only module that talks to the network. VITE_API_MODE=live switches to Jack's backend.
-export const api: Api = import.meta.env.VITE_API_MODE === 'live' ? liveApi : mockApi
+// Supabase is the hosted backend. The legacy fetch adapter remains available
+// for deployments that provide the API described in docs/API.md.
+export const api: Api = import.meta.env.VITE_API_MODE === 'supabase'
+  ? supabaseApi
+  : import.meta.env.VITE_API_MODE === 'live'
+    ? liveApi
+    : mockApi
 export * from './api/types'
