@@ -1,5 +1,14 @@
 begin;
 
+do $$
+begin
+  if 'https://example.com/not-github' ~* '^https://(www[.])?github[.]com(/|$)'
+    or not ('https://github.com/labscommunity/intelinside' ~* '^https://(www[.])?github[.]com(/|$)') then
+    raise exception 'GitHub URL constraint pattern is incorrect';
+  end if;
+end;
+$$;
+
 select set_config('test.owner_id', (select id::text from public.profiles order by created_at limit 1), true);
 
 do $$
@@ -53,6 +62,25 @@ select
   'intel-core-ultra-9-285k', 1, 42, 'https://github.com/labscommunity/cascadia', current_date
 from public.rigs
 where owner_id = current_setting('test.owner_id')::uuid and name = '__rls_smoke_rig__';
+
+do $$
+begin
+  begin
+    insert into public.results (
+      submitter_id, model_id, quant_id, runtime_id, runtime_version, rig_id,
+      component_id, component_quantity, decode_tps, repo_url, run_date
+    )
+    select
+      current_setting('test.owner_id')::uuid, 'qwen3-8b', 'int4', 'cascadia', 'invalid-url-smoke', id,
+      'intel-core-ultra-9-285k', 1, 42, 'https://example.com/not-github', current_date
+    from public.rigs
+    where owner_id = current_setting('test.owner_id')::uuid and name = '__rls_smoke_rig__';
+    raise exception 'non-GitHub result URL unexpectedly succeeded';
+  exception
+    when check_violation then null;
+  end;
+end;
+$$;
 
 reset role;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000002', true);

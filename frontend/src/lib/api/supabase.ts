@@ -1,5 +1,5 @@
 import { supabase, signOutSupabase } from '@/lib/auth'
-import { HARDWARE, HARDWARE_BY_ID, MODELS, MODEL_BY_ID, QUANTS, QUANT_BY_ID, RUNTIMES } from '@/mocks/catalog'
+import { HARDWARE_BY_ID, MODELS, MODEL_BY_ID, QUANTS, QUANT_BY_ID, RUNTIMES, VISIBLE_HARDWARE } from '@/mocks/catalog'
 import type {
   Api, BestRank, BoardKind, BoardParams, BoardResponse, BoardRow, BoardUnit, ChartBar, FlagReason,
   HardwareDetail, HardwareItem, HomeResponse, ModelSummary, Moderation, Page, Result,
@@ -370,7 +370,7 @@ export const supabaseApi: Api = {
   async quants() { return QUANTS },
   async hardware(params = {}) {
     const snapshot = await loadSnapshot()
-    let items = HARDWARE.map((hardware): HardwareItem => ({
+    let items = VISIBLE_HARDWARE.map((hardware): HardwareItem => ({
       ...hardware,
       resultsCount: snapshot.results.filter((result) => !result.hidden && result.component_id === hardware.id).length,
       rigsCount: new Set(snapshot.components.filter((part) => part.hardware_id === hardware.id).map((part) => stringId(part.rig_id))).size,
@@ -558,7 +558,7 @@ export const supabaseApi: Api = {
       stats: {
         results: snapshot.results.filter((result) => !result.hidden).length,
         rigs: snapshot.rigs.length,
-        hardware: HARDWARE.length,
+        hardware: VISIBLE_HARDWARE.length,
         members: snapshot.profiles.length,
       },
       topRigs: snapshot.rigs.map(data.rigSummary).sort((a, b) => (b.bestTps ?? 0) - (a.bestTps ?? 0)).slice(0, 6),
