@@ -19,6 +19,7 @@ import { api } from '@/lib/api'
 import type { HardwareItem } from '@/lib/api/types'
 import { CATALOG_REPO_URL } from '@/lib/brand'
 import { fmtInstant, fmtInt } from '@/lib/format'
+import { PAGE_SEO } from '@/lib/seo'
 import { cn } from '@/lib/utils'
 
 function Stat({ label, value }: { label: string; value: number | undefined }) {
@@ -33,7 +34,7 @@ function Stat({ label, value }: { label: string; value: number | undefined }) {
 const quietLink = 'font-normal text-muted-foreground hover:text-foreground'
 
 export default function Home() {
-  usePageTitle()
+  usePageTitle(PAGE_SEO.home.title, PAGE_SEO.home.description)
   // Launch week. Flips to the ordinary page in place at zero.
   const { sealed, revealAt, countdown } = useSealed()
   const home = useAsync(() => api.home(), [])

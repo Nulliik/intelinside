@@ -1,8 +1,11 @@
 import { useEffect } from 'react'
-import { BRAND_NAME } from '@/lib/brand'
+import { SITE_DESCRIPTION, pageTitle } from '@/lib/seo'
 
-export function usePageTitle(title?: string) {
+/** Sets the tab title ("Rigs | intelinside") and, when given, the page's meta description; otherwise the site-wide one. */
+export function usePageTitle(title?: string, description?: string) {
   useEffect(() => {
-    document.title = title ? `${title} · ${BRAND_NAME}` : BRAND_NAME
-  }, [title])
+    document.title = pageTitle(title)
+    const meta = document.querySelector<HTMLMetaElement>('meta[name="description"]')
+    if (meta) meta.content = description ?? SITE_DESCRIPTION
+  }, [title, description])
 }

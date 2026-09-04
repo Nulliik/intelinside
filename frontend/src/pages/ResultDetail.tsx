@@ -32,7 +32,7 @@ export default function ResultDetail() {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [busy, setBusy] = useState(false)
   const model = cat.data?.models.find((m) => m.id === res.data?.modelId)
-  usePageTitle(res.data && model ? `${fmtTps(res.data.decodeTps)} tok/s · ${model.name}` : 'Result')
+  usePageTitle(res.data && model ? `${fmtTps(res.data.decodeTps)} tok/s | ${model.name} ${QUANT_BY_ID[res.data.quant]?.label ?? res.data.quant}` : 'Result')
   if (res.error)
     return (
       <Block>
