@@ -16,6 +16,7 @@ import { useSealed } from '@/hooks/useSealed'
 import { useSession } from '@/hooks/useSession'
 import { api } from '@/lib/api'
 import type { RigSummary, RigsParams } from '@/lib/api/types'
+import { PAGE_SEO } from '@/lib/seo'
 
 const sortItems = [
   { value: 'newest', label: 'Newest' },
@@ -24,7 +25,7 @@ const sortItems = [
 ]
 
 export default function Rigs() {
-  usePageTitle('Rigs')
+  usePageTitle(PAGE_SEO.rigs.title, PAGE_SEO.rigs.description)
   const { user, requestSignIn } = useSession()
   const { sealed, revealAt } = useSealed()
   const [sort, setSort] = useState<NonNullable<RigsParams['sort']>>('newest')

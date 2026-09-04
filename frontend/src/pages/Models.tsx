@@ -16,9 +16,10 @@ import { useSession } from '@/hooks/useSession'
 import { api } from '@/lib/api'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { fmtInstant } from '@/lib/format'
+import { PAGE_SEO } from '@/lib/seo'
 
 export default function Models() {
-  usePageTitle('Models')
+  usePageTitle(PAGE_SEO.models.title, PAGE_SEO.models.description)
   const cat = useCatalog()
   const { sealed, revealAt } = useSealed()
   const { user, requestSignIn } = useSession()

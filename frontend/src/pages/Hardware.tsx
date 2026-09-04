@@ -17,13 +17,14 @@ import { usePageTitle } from '@/hooks/usePageTitle'
 import { api } from '@/lib/api'
 import type { HardwareType } from '@/lib/api/types'
 import { CATALOG_REPO_URL } from '@/lib/brand'
+import { PAGE_SEO } from '@/lib/seo'
 import { HARDWARE_TYPE_LABEL, HARDWARE_TYPES, VENDORS } from '@/mocks/catalog'
 
 const ALL = 'all'
 const vendorItems = [{ value: ALL, label: 'All vendors' }, ...VENDORS.map((v) => ({ value: v, label: v })), { value: 'Generic', label: 'Generic' }]
 
 export default function Hardware() {
-  usePageTitle('Hardware')
+  usePageTitle(PAGE_SEO.hardware.title, PAGE_SEO.hardware.description)
   const { sealed } = useSealed()
   const [type, setType] = useState<string[]>([])
   const [vendor, setVendor] = useState(ALL)
