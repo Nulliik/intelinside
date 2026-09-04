@@ -29,11 +29,13 @@ type Props = {
   eyebrow?: string
   /** Tighter layout for a side column: two field columns and a smaller figure. */
   compact?: boolean
+  /** Buttons for the bottom-right corner of the figure block, under the verification badge. */
+  actions?: ReactNode
   footer?: ReactNode
 }
 
 /** The result as a framed block: figure, rank, fields, notes. Used by the result page and the submit preview. */
-export function ResultCard({ result: r, models, quants, runtimes, rank, eyebrow = 'Decode speed', compact = false, footer }: Props) {
+export function ResultCard({ result: r, models, quants, runtimes, rank, eyebrow = 'Decode speed', compact = false, actions, footer }: Props) {
   const model = models.find((m) => m.id === r.modelId)
   const quant = quants.find((q) => q.id === r.quant)?.label ?? r.quant
   const runtime = runtimes.find((x) => x.id === r.runtimeId)
@@ -52,7 +54,10 @@ export function ResultCard({ result: r, models, quants, runtimes, rank, eyebrow 
             </Link>
           ) : null}
         </div>
-        <VerificationBadge verification={r.verification} moderation={r.moderation} className="h-6 px-2.5" />
+        <div className="flex flex-col items-end justify-between gap-6 self-stretch">
+          <VerificationBadge verification={r.verification} moderation={r.moderation} className="h-6 px-2.5" />
+          {actions ? <div className="flex flex-wrap items-center justify-end gap-2">{actions}</div> : null}
+        </div>
       </div>
       <CellGrid cols={compact ? 2 : 3} className={cn('border-t', !r.notes && !footer && 'border-b')}>
         <Field label="Model">
@@ -98,7 +103,7 @@ export function ResultCard({ result: r, models, quants, runtimes, rank, eyebrow 
         </Field>
       </CellGrid>
       {r.notes ? <p className={cn('border-t py-5 text-sm text-pretty', inset)}>{r.notes}</p> : null}
-      {footer ? <div className={cn('flex flex-wrap items-center justify-between gap-3 border-t py-5', inset)}>{footer}</div> : null}
+      {footer ? <div className={cn('flex flex-wrap items-center gap-3 border-t py-5', inset)}>{footer}</div> : null}
     </Framed>
   )
 }

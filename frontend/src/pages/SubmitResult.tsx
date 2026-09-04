@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { PageHeader } from '@/components/PageHeader'
 import { ResultCard } from '@/components/ResultCard'
 import { RigForm } from '@/components/RigForm'
+import { ShareDialog } from '@/components/ShareDialog'
 import { SignInGate } from '@/components/SignInGate'
 import { ErrorState } from '@/components/ErrorState'
 import { Block, PillTabs, Section, inset } from '@/components/frame'
@@ -23,6 +24,7 @@ import { api } from '@/lib/api'
 import { isGitHubUrl } from '@/lib/github'
 import { ApiError, type Result, type ResultInput, type ResultRank } from '@/lib/api/types'
 import { fmtTps } from '@/lib/format'
+import { resultShareTarget } from '@/lib/share'
 import { cn } from '@/lib/utils'
 
 type Target = 'rig' | 'component'
@@ -139,6 +141,7 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
   const [attempted, setAttempted] = useState(false)
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState<{ result: Result; rank?: ResultRank } | null>(null)
+  const [shareOpen, setShareOpen] = useState(false)
   const set = (patch: Partial<Form>) => setForm((f) => ({ ...f, ...patch }))
 
   usePageTitle(mode === 'edit' ? 'Edit result' : 'Submit a result')
@@ -272,15 +275,6 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
     }
   }
 
-  const share = async (id: string) => {
-    try {
-      await navigator.clipboard.writeText(`${window.location.origin}/results/${id}`)
-      toast.success('Link copied.')
-    } catch {
-      toast.error('Could not copy. Open the result and grab the URL.')
-    }
-  }
-
   if (done) {
     const r = done.result
     const m = models.find((x) => x.id === r.modelId)
@@ -296,12 +290,13 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
           description={done.rank ? `#${done.rank.position} of ${done.rank.boardSize} on the ${m?.name ?? r.modelId} ${quantLabel(r.quant)} ${done.rank.kind} board. It starts as self-reported; the community can confirm it.` : undefined}
           actions={
             <>
-              <Button variant="outline" onClick={() => share(r.id)}>
+              <Button variant="outline" onClick={() => setShareOpen(true)}>
                 <Share2 data-icon="inline-start" /> Share
               </Button>
               <Button render={<Link to={`/results/${r.id}`} />} nativeButton={false}>
                 View result
               </Button>
+              <ShareDialog target={resultShareTarget(r, { models, quants, runtimes }, done.rank)} open={shareOpen} onOpenChange={setShareOpen} />
             </>
           }
         />

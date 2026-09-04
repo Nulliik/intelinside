@@ -15,8 +15,20 @@ export function fmtMs(n: number | undefined | null): string {
   return n >= 1000 ? `${(n / 1000).toFixed(2)} s` : `${Math.round(n)} ms`
 }
 
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/
+
+/**
+ * "Sep 2, 2026". Date-only values such as a run date are calendar days, not instants: they are formatted in UTC so
+ * the day never shifts with the viewer's zone. Full timestamps keep the viewer's zone.
+ */
 export function fmtDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+  const dateOnly = DATE_ONLY.test(iso)
+  return new Date(dateOnly ? `${iso}T00:00:00Z` : iso).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    ...(dateOnly ? { timeZone: 'UTC' } : {}),
+  })
 }
 
 export function relativeTime(iso: string): string {

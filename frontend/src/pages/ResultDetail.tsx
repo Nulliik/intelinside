@@ -1,13 +1,15 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { Pencil, Share2, Trash2 } from 'lucide-react'
+import { Pencil, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ResultCard } from '@/components/ResultCard'
 import { ConfirmFlagActions } from '@/components/ConfirmFlagActions'
+import { IconAction } from '@/components/IconAction'
+import { ShareButton } from '@/components/ShareIconButton'
 import { ErrorState } from '@/components/ErrorState'
 import { Block, Section, inset } from '@/components/frame'
 import { useAsync } from '@/hooks/useAsync'
@@ -17,6 +19,7 @@ import { useSession } from '@/hooks/useSession'
 import { api } from '@/lib/api'
 import { ApiError } from '@/lib/api/types'
 import { fmtTps } from '@/lib/format'
+import { resultShareTarget } from '@/lib/share'
 import { QUANT_BY_ID } from '@/mocks/catalog'
 import { cn } from '@/lib/utils'
 
@@ -45,15 +48,8 @@ export default function ResultDetail() {
   const r = res.data
   const isOwner = user?.id === r.submitterId
   const quant = QUANT_BY_ID[r.quant]?.label ?? r.quant
+  const shareTarget = resultShareTarget(r, cat.data, r.rank)
 
-  const share = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href)
-      toast.success('Link copied.')
-    } catch {
-      toast.error('Could not copy. Grab the URL from the address bar.')
-    }
-  }
   const remove = async () => {
     setBusy(true)
     try {
@@ -92,18 +88,20 @@ export default function ResultDetail() {
           quants={cat.data.quants}
           runtimes={cat.data.runtimes}
           rank={r.rank}
-          footer={
+          actions={
             <>
               <ConfirmFlagActions result={r} onChange={(next) => res.setData((prev) => ({ ...(prev ?? next), ...next }))} />
-              <div className="flex items-center gap-2">
-                <Button variant="outline" onClick={share}><Share2 data-icon="inline-start" /> Share</Button>
-                {isOwner ? (
-                  <>
-                    <Button variant="outline" render={<Link to={`/results/${r.id}/edit`} />} nativeButton={false}><Pencil data-icon="inline-start" /> Edit</Button>
-                    <Button variant="ghost" onClick={() => setConfirmDelete(true)}><Trash2 data-icon="inline-start" /> Delete</Button>
-                  </>
-                ) : null}
-              </div>
+              <ShareButton target={shareTarget} />
+              {isOwner ? (
+                <>
+                  <IconAction label="Edit" to={`/results/${r.id}/edit`}>
+                    <Pencil />
+                  </IconAction>
+                  <IconAction label="Delete" onClick={() => setConfirmDelete(true)}>
+                    <Trash2 />
+                  </IconAction>
+                </>
+              ) : null}
             </>
           }
         />

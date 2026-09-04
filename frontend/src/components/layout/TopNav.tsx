@@ -81,11 +81,11 @@ export function TopNav() {
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-2">
-          <div className="hidden sm:block">{submit}</div>
+          <div className="hidden sm:flex">{submit}</div>
           {loading ? (
             <Skeleton className="size-8 rounded-full" />
           ) : user ? (
-            <div className="relative" ref={accountMenuRef}>
+            <div className="relative flex" ref={accountMenuRef}>
               <Button
                 variant="ghost"
                 size="icon"
