@@ -4,11 +4,13 @@
 // Each path must be a string literal for the bundler to see it.
 export const BUNDLED_OG_ASSETS: Record<string, URL> = {
   'fonts/red-hat-display-latin-600-normal.woff': new URL('../../public/og/fonts/red-hat-display-latin-600-normal.woff', import.meta.url),
+  'fonts/red-hat-display-latin-700-normal.woff': new URL('../../public/og/fonts/red-hat-display-latin-700-normal.woff', import.meta.url),
   'fonts/red-hat-text-latin-400-normal.woff': new URL('../../public/og/fonts/red-hat-text-latin-400-normal.woff', import.meta.url),
   'fonts/red-hat-text-latin-500-normal.woff': new URL('../../public/og/fonts/red-hat-text-latin-500-normal.woff', import.meta.url),
   'fonts/red-hat-mono-latin-500-normal.woff': new URL('../../public/og/fonts/red-hat-mono-latin-500-normal.woff', import.meta.url),
   'fonts/red-hat-mono-latin-600-normal.woff': new URL('../../public/og/fonts/red-hat-mono-latin-600-normal.woff', import.meta.url),
   'dots-result.svg': new URL('../../public/og/dots-result.svg', import.meta.url),
   'dots-side.svg': new URL('../../public/og/dots-side.svg', import.meta.url),
-  'lockup.svg': new URL('../../public/og/lockup.svg', import.meta.url),
+  'mark.svg': new URL('../../public/og/mark.svg', import.meta.url),
+  'runtimes/cascadia.svg': new URL('../../public/og/runtimes/cascadia.svg', import.meta.url),
 }

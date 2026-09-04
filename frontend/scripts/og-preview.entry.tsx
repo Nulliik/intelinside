@@ -1,12 +1,15 @@
 // Renders the card layouts with sample data to PNGs, so they can be checked without a deploy. Bundled and run by
-// scripts/og-preview.mjs (`npm run og:preview [outDir]`). Sample values mirror the design canvas.
+// scripts/og-preview.mjs (`npm run og:preview [outDir]`). Sample values mirror the Figma frames. Besides the two
+// layouts it writes one result card per runtime in the catalog, so every runtime's mark can be checked, and a
+// magnified lockup with guide lines at the wordmark's intended cap height and baseline.
 import fs from 'node:fs'
 import path from 'node:path'
 import satori from 'satori'
 import { Resvg } from '@resvg/resvg-js'
-import { loadCardAssets, loadFonts, type AssetSource } from '../src/og/assets.js'
+import { loadCardAssets, loadFonts, runtimeLogoAsset, type AssetSource } from '../src/og/assets.js'
 import { ResultCardImage, RigCardImage } from '../src/og/cards.js'
 import type { ResultCardData, RigCardData } from '../src/og/data.js'
+import { RUNTIMES } from '../src/mocks/catalog.js'
 
 const root = path.resolve(process.cwd())
 const outDir = path.resolve(process.argv[2] ?? '.og-preview')
@@ -22,12 +25,17 @@ const disk: AssetSource = {
 
 const owner = { handle: 'tatef', initials: 'TB' }
 
+const cascadia = RUNTIMES.find((r) => r.id === 'cascadia')!
+
 const result: ResultCardData = {
   id: '1042',
   decodeTps: 84.6,
   model: 'Qwen3-8B',
   quant: 'INT4',
-  runtime: 'Cascadia',
+  runtime: cascadia.name,
+  runtimeId: cascadia.id,
+  runtimeLogo: cascadia.logoUrl || undefined,
+  runtimeColor: cascadia.color,
   runtimeVersion: '0.9.2',
   hardware: '1× Intel Arc Pro B70',
   inRig: 'Quad B70 workstation',
@@ -60,16 +68,18 @@ function samplePhoto(): string {
   return `data:image/png;base64,${Buffer.from(png).toString('base64')}`
 }
 
-async function write(name: string, element: Parameters<typeof satori>[0], fonts: Awaited<ReturnType<typeof loadFonts>>) {
-  const svg = await satori(element, { width: 1200, height: 630, fonts })
-  const png = new Resvg(svg, { fitTo: { mode: 'width', value: 1200 } }).render().asPng()
+type Fonts = Awaited<ReturnType<typeof loadFonts>>
+
+async function write(name: string, element: Parameters<typeof satori>[0], fonts: Fonts, size = { width: 1200, height: 630 }, scale = 1) {
+  const svg = await satori(element, { ...size, fonts })
+  const png = new Resvg(svg, { fitTo: { mode: 'width', value: size.width * scale } }).render().asPng()
   const file = path.join(outDir, `${name}.png`)
   fs.writeFileSync(file, png)
   console.log(`wrote ${path.relative(root, file)}`)
 }
 
 const fonts = await loadFonts(disk)
-const resultAssets = await loadCardAssets(disk, 'dots-result.svg')
+const resultAssets = await loadCardAssets(disk, 'dots-result.svg', { runtimeLogo: runtimeLogoAsset(result.runtimeLogo) })
 const rigAssets = await loadCardAssets(disk, 'dots-side.svg')
 
 await write('result', <ResultCardImage data={result} assets={resultAssets} />, fonts)
@@ -77,7 +87,31 @@ await write('rig', <RigCardImage data={rig} assets={{ ...rigAssets, photo: sampl
 await write('rig-no-photo', <RigCardImage data={rig} assets={rigAssets} />, fonts)
 await write(
   'result-long',
-  <ResultCardImage data={{ ...result, model: 'Llama 3.1 8B Instruct', quant: 'Q4_K_M', runtime: 'OpenVINO GenAI', runtimeVersion: '2026.1.0', hardware: 'NUC charlie', inRig: undefined, verified: false, rank: { position: 17, size: 41, kind: 'rigs' } }} assets={resultAssets} />,
+  <ResultCardImage data={{ ...result, model: 'Llama 3.1 8B Instruct', quant: 'Q4_K_M', runtime: 'OpenVINO GenAI', runtimeId: 'openvino-genai', runtimeLogo: undefined, runtimeVersion: '2026.1.0', hardware: 'NUC charlie', inRig: undefined, verified: false, rank: { position: 17, size: 41, kind: 'rigs' } }} assets={{ ...resultAssets, runtimeLogo: undefined }} />,
   fonts,
 )
 await write('rig-long', <RigCardImage data={{ ...rig, name: 'The absurdly long name of a workstation that never ends', best: undefined, resultsCount: 0 }} assets={rigAssets} />, fonts)
+
+// One result card per runtime, so every mark can be checked against the leaderboard's.
+for (const runtime of RUNTIMES) {
+  const assets = await loadCardAssets(disk, 'dots-result.svg', { runtimeLogo: runtimeLogoAsset(runtime.logoUrl || undefined) })
+  const data: ResultCardData = { ...result, runtime: runtime.name, runtimeId: runtime.id, runtimeLogo: runtime.logoUrl || undefined, runtimeColor: runtime.color }
+  await write(`result-${runtime.id}`, <ResultCardImage data={data} assets={assets} />, fonts)
+}
+
+// The lockup at 3×, with guides where the template's wordmark had its cap top (y=12.5) and baseline (y=48).
+const guide = (top: number) => <div style={{ position: 'absolute', left: 0, top, width: 520, height: 1, backgroundColor: '#ff3b6b' }} />
+await write(
+  'lockup-check',
+  <div style={{ display: 'flex', position: 'relative', width: 520, height: 60, backgroundColor: '#0a0a0a' }}>
+    <div style={{ display: 'flex', position: 'absolute', left: 0, top: 0, height: 60, alignItems: 'flex-end' }}>
+      <img src={resultAssets.mark} width={71} height={60} />
+      <span style={{ marginLeft: 14, fontFamily: 'Red Hat Display', fontWeight: 700, fontSize: 49, lineHeight: '49px', paddingBottom: 1, color: '#f4f4f5' }}>Intelinside.ai</span>
+    </div>
+    {guide(12.5)}
+    {guide(48)}
+  </div>,
+  fonts,
+  { width: 520, height: 60 },
+  3,
+)

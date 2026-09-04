@@ -21,6 +21,11 @@ export type ResultCardData = {
   model: string
   quant: string
   runtime: string
+  runtimeId: string
+  /** The catalog's logo file for the runtime, when it has one. */
+  runtimeLogo?: string
+  /** The runtime's catalog colour, for the monogram tile when it has neither a logo file nor a generated mark. */
+  runtimeColor?: string
   runtimeVersion: string
   /** "1× Intel Arc Pro B70" for a part, or the rig name for a whole-rig result. */
   hardware: string
@@ -123,12 +128,16 @@ export async function loadResultCard(id: string, env: OgEnv): Promise<ResultCard
   const position = ordered.findIndex((candidate) => unitKey(candidate) === unitKey(row))
   const component = row.component_id ? HARDWARE_BY_ID[row.component_id] : undefined
   const quantity = row.component_quantity ?? 1
+  const runtime = RUNTIME_BY_ID[row.runtime_id]
   return {
     id: String(row.id),
     decodeTps: Number(row.decode_tps),
     model: MODEL_BY_ID[row.model_id]?.name ?? row.model_id,
     quant: QUANT_BY_ID[row.quant_id]?.label ?? row.quant_id,
-    runtime: RUNTIME_BY_ID[row.runtime_id]?.name ?? row.runtime_id,
+    runtime: runtime?.name ?? row.runtime_id,
+    runtimeId: row.runtime_id,
+    runtimeLogo: runtime?.logoUrl || undefined,
+    runtimeColor: runtime?.color,
     runtimeVersion: row.runtime_version,
     hardware: row.component_id ? `${quantity}× ${hardwareName(component, row.component_id)}` : rig?.name ?? 'a rig',
     inRig: row.component_id ? rig?.name : undefined,

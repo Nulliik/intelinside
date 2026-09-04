@@ -1,10 +1,14 @@
-// The two card layouts, R1 for results and G1 for rigs, as chosen on Sep 4. Written for Satori: every box with
+// The two card layouts, R1 for results and G1 for rigs, as chosen on Sep 4 and revised after Tate's review the same
+// evening: the wordmark carries the domain, the runtime shows as its leaderboard badge (mark plus name), there is
+// no verification pill, and the parts list's quantities are set in Red Hat Text. Written for Satori: every box with
 // more than one child is a flex container, text sits alone in its element, sizes are absolute, and long names
-// scale down before they wrap. Positions match the design canvas at 1200×630.
+// scale down before they wrap. Positions match the Figma frames at 1200×630.
 //
 // Built with createElement rather than JSX so this stays a .ts file: Vercel's function tracer resolves a `.js`
 // import to a `.ts` source but not to `.tsx`, and a missing module here took the card route down in production.
 import { createElement as h, type CSSProperties, type ReactElement, type ReactNode } from 'react'
+import { RUNTIME_MARKS } from '../components/runtimeMarks.generated.js'
+import { BRAND_NAME, SITE_DOMAIN } from '../lib/brand.js'
 import { fmtDate, fmtTps } from '../lib/format.js'
 import type { CardAssets } from './assets.js'
 import type { Owner, ResultCardData, RigCardData } from './data.js'
@@ -14,6 +18,12 @@ const MUTED = '#a1a1aa'
 const TEXT = 'Red Hat Text'
 const DISPLAY = 'Red Hat Display'
 const MONO = 'Red Hat Mono'
+
+/** "Intelinside.ai": the brand's casing with the domain's suffix, so a card shared as a bare image still says where it is from. */
+const WORDMARK = SITE_DOMAIN.includes('.') ? `${BRAND_NAME}${SITE_DOMAIN.slice(SITE_DOMAIN.indexOf('.'))}` : BRAND_NAME
+
+// Two-letter tiles for runtimes with neither a logo file nor a generated mark; mirrors RuntimeMark in the app.
+const MONOGRAM: Record<string, string> = { 'ipex-llm': 'IX' }
 
 /** A font size that keeps `text` inside `maxWidth`, between `max` and `min`; 0.56 em per character is Red Hat's average. */
 export function fitSize(text: string, maxWidth: number, max: number, min: number): number {
@@ -26,11 +36,20 @@ const flex = (style: CSSProperties = {}): CSSProperties => ({ display: 'flex', .
 const div = (style: CSSProperties, ...children: ReactNode[]) => h('div', { style }, ...children)
 const span = (style: CSSProperties, text: string) => h('span', { style }, text)
 
+/** The lockup at the top left: the mark from the template, the wordmark as text so the domain can change. */
+function lockup(assets: CardAssets): ReactElement {
+  return div(
+    flex({ position: 'absolute', top: 70, left: 77, height: 60, alignItems: 'flex-end' }),
+    h('img', { src: assets.mark, width: 71, height: 60 }),
+    span({ marginLeft: 14, fontFamily: DISPLAY, fontWeight: 700, fontSize: 49, lineHeight: '49px', paddingBottom: 1, color: FG }, WORDMARK),
+  )
+}
+
 function frame(assets: CardAssets, ...children: ReactNode[]): ReactElement {
   return div(
     flex({ position: 'relative', width: 1200, height: 630, backgroundColor: '#0a0a0a', color: FG, fontFamily: TEXT, overflow: 'hidden' }),
     h('img', { src: assets.background, width: 1200, height: 630, style: { position: 'absolute', top: 0, left: 0 } }),
-    h('img', { src: assets.lockup, width: 340, height: 60, style: { position: 'absolute', top: 70, left: 77 } }),
+    lockup(assets),
     ...children,
   )
 }
@@ -64,17 +83,32 @@ function pill(color: string, border: string, ...children: ReactNode[]): ReactEle
   )
 }
 
-const verifiedIcon = () =>
-  h(
-    'svg',
-    { viewBox: '0 0 24 24', width: 20, height: 20, fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
-    h('path', { d: 'M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z' }),
-    h('path', { d: 'm9 12 2 2 4-4' }),
+/**
+ * The runtime's mark at `size` px, as the leaderboard shows it: the catalog's logo file when there is one, else the
+ * generated mark, else a two-letter tile in the runtime's colour.
+ */
+function runtimeMark(data: ResultCardData, assets: CardAssets, size: number): ReactElement {
+  if (assets.runtimeLogo) return h('img', { src: assets.runtimeLogo, width: size, height: size })
+  const mark = RUNTIME_MARKS[data.runtimeId]
+  if (mark) {
+    return h(
+      'svg',
+      { viewBox: mark.viewBox, width: Math.round(size * mark.ratio), height: size },
+      ...mark.paths.map((path, index) => h('path', { key: index, d: path.d, fill: path.fill === 'currentColor' ? FG : path.fill })),
+    )
+  }
+  const letters = MONOGRAM[data.runtimeId] ?? data.runtime.slice(0, 2).toUpperCase()
+  return div(
+    flex({ alignItems: 'center', justifyContent: 'center', height: size, minWidth: size + 4, paddingLeft: 8, paddingRight: 8, borderRadius: Math.round(size / 4), backgroundColor: '#27272a', fontFamily: DISPLAY, fontWeight: 600, fontSize: Math.round(size * 0.55), lineHeight: `${size}px`, color: data.runtimeColor ?? MUTED }),
+    letters,
   )
+}
 
 export function ResultCardImage({ data, assets }: { data: ResultCardData; assets: CardAssets }): ReactElement {
-  const modelLine = `${data.model} ${data.quant} on ${data.runtime} ${data.runtimeVersion}`
-  const modelSize = fitSize(modelLine, 700, 38, 26)
+  // The mark takes about the width of two characters, so it counts for two when the line is sized to fit.
+  const modelSize = fitSize(`${data.model} ${data.quant} on ${data.runtime} ${data.runtimeVersion}  `, 700, 38, 26)
+  const lineHeight = Math.round(modelSize * 1.2)
+  const versionSize = Math.round(modelSize * 0.68)
   const hardwareLine = `${data.hardware}${data.inRig ? ` in ${data.inRig}` : ''}`
   const hardwareSize = fitSize(hardwareLine, 700, 26, 18)
   return frame(
@@ -87,27 +121,30 @@ export function ResultCardImage({ data, assets }: { data: ResultCardData; assets
         span({ fontSize: 44, lineHeight: '48px', paddingBottom: 14, color: MUTED }, 'tok/s'),
       ),
       div(
-        flex({ marginTop: 18, alignItems: 'flex-end', gap: 10, fontFamily: DISPLAY, fontSize: modelSize, lineHeight: `${Math.round(modelSize * 1.2)}px`, fontWeight: 600, color: FG }),
+        flex({ marginTop: 18, alignItems: 'flex-end', gap: 10, fontFamily: DISPLAY, fontSize: modelSize, lineHeight: `${lineHeight}px`, fontWeight: 600, color: FG }),
         span({}, data.model),
         span({ fontFamily: MONO, fontWeight: 500, color: MUTED }, data.quant),
         span({ fontFamily: TEXT, fontWeight: 400, color: MUTED }, 'on'),
-        span({}, data.runtime),
-        span({ fontFamily: MONO, fontWeight: 500, fontSize: Math.round(modelSize * 0.68), color: MUTED, paddingBottom: 2 }, data.runtimeVersion),
+        div(
+          flex({ alignItems: 'center', gap: 8, height: lineHeight }),
+          runtimeMark(data, assets, Math.round(modelSize * 1.1)),
+          span({ fontFamily: TEXT, fontWeight: 500 }, data.runtime),
+        ),
+        span({ fontFamily: MONO, fontWeight: 500, fontSize: versionSize, lineHeight: `${Math.round(versionSize * 1.3)}px`, color: MUTED, paddingBottom: 2 }, data.runtimeVersion),
       ),
       div(
         flex({ marginTop: 8, gap: 7, fontSize: hardwareSize, lineHeight: `${Math.round(hardwareSize * 1.3)}px`, color: MUTED }),
         span({}, data.hardware),
         ...(data.inRig ? [span({ color: '#71717a' }, 'in'), span({}, data.inRig)] : []),
       ),
-      div(
-        flex({ marginTop: 28, gap: 12 }),
-        data.verified
-          ? pill('#6dc799', 'rgba(109,199,153,0.45)', verifiedIcon(), span({}, 'Verified'))
-          : pill(MUTED, 'rgba(255,255,255,0.16)', span({}, 'Self-reported')),
-        ...(data.rank
-          ? [pill(FG, 'rgba(255,255,255,0.16)', span({ fontFamily: MONO }, `#${data.rank.position}`), span({ color: MUTED, fontWeight: 400 }, `of ${data.rank.size} on the ${data.rank.kind} board`))]
-          : []),
-      ),
+      ...(data.rank
+        ? [
+            div(
+              flex({ marginTop: 28, gap: 12 }),
+              pill(FG, 'rgba(255,255,255,0.16)', span({ fontFamily: MONO }, `#${data.rank.position}`), span({ color: MUTED, fontWeight: 400 }, `of ${data.rank.size} on the ${data.rank.kind} board`)),
+            ),
+          ]
+        : []),
     ),
     ownerRow(data.owner, assets.avatar, `· ${fmtDate(data.runDate)}`),
   )
@@ -130,7 +167,7 @@ export function RigCardImage({ data, assets }: { data: RigCardData; assets: Card
     h(
       'div',
       { key: index, style: flex({ gap: 16 }) },
-      span({ width: 44, fontFamily: MONO, color: MUTED }, `${part.quantity}×`),
+      span({ width: 44, fontWeight: 500, color: '#d4d4d8' }, `${part.quantity}×`),
       span({ maxWidth: columnWidth - 60, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }, part.name),
       ...(part.detail ? [span({ color: MUTED }, part.detail)] : []),
     ),
