@@ -29,9 +29,9 @@ function siteMeta(): Plugin {
       const title = pageTitle(PAGE_SEO.home.title, PAGE_SEO.home.brandFirst)
       const description = SITE_DESCRIPTION
       const image = `${origin}/og/landing.jpg`
-      // The title, description, and social tags are the home page's, the same ones the middleware serves crawlers
-      // for "/"; the app replaces the title and description per route. No canonical or og:url here: this shell
-      // serves every SPA route, so a fixed URL would mark them all as the home page.
+      // The title, description, and social tags are the home page's. The middleware rewrites them per page for the
+      // routes it covers, and the app sets the title and description as it navigates. No canonical or og:url here:
+      // this shell also serves the routes the middleware leaves alone, so a fixed URL would mark them all as home.
       const withDefaults = html
         .replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`)
         .replace(/<meta name="description" content="[^"]*" \/>/, `<meta name="description" content="${description}" />`)
