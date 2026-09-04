@@ -1,6 +1,7 @@
 {
   "rewrites": [
-    { "source": "/api/og/(rigs|results)/(\\d+)\\.png", "destination": "/api/og/$1/$2" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/api/og/rigs/(\\d+)\\.png", "destination": "/api/og/rig?id=$1" },
+    { "source": "/api/og/results/(\\d+)\\.png", "destination": "/api/og/result?id=$1" },
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }

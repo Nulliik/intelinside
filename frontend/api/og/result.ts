@@ -1,13 +1,13 @@
-// GET /api/og/results/:id.png — the 1200×630 card for a result, rendered at the edge from the public data.
+// GET /api/og/result?id=1042 — the 1200×630 card for a result, rendered from the public data.
+// A plain .ts file at a fixed path with a named GET export: the shape Vercel routes on every runtime.
 import { ImageResponse } from '@vercel/og'
-import { bundledAssets, httpAssets, loadCardAssets, loadFonts } from '../../../src/og/assets'
-import { BUNDLED_OG_ASSETS } from '../../../src/og/bundled'
-import { ResultCardImage } from '../../../src/og/cards'
-import { loadResultCard, ogEnv } from '../../../src/og/data'
-import { cardId, CARD_HEADERS } from '../../../src/og/http'
+import { jsx } from 'react/jsx-runtime'
+import { bundledAssets, httpAssets, loadCardAssets, loadFonts } from '../../src/og/assets'
+import { BUNDLED_OG_ASSETS } from '../../src/og/bundled'
+import { ResultCardImage } from '../../src/og/cards'
+import { loadResultCard, ogEnv } from '../../src/og/data'
+import { cardId, CARD_HEADERS } from '../../src/og/http'
 
-// A named GET export is the Web-standard signature on Vercel's Node runtime; a default export would be handed the
-// legacy (req, res) pair instead of a Request.
 export async function GET(request: Request): Promise<Response> {
   const url = new URL(request.url)
   const id = cardId(url)
@@ -25,7 +25,7 @@ export async function GET(request: Request): Promise<Response> {
     }
     const source = bundledAssets(BUNDLED_OG_ASSETS, httpAssets(url.origin))
     const [fonts, assets] = await Promise.all([loadFonts(source), loadCardAssets(source, 'dots-result.svg', { avatar: data.owner.avatarUrl })])
-    const response = new ImageResponse(<ResultCardImage data={data} assets={assets} />, { width: 1200, height: 630, fonts, headers: CARD_HEADERS })
+    const response = new ImageResponse(jsx(ResultCardImage, { data, assets }), { width: 1200, height: 630, fonts, headers: CARD_HEADERS })
     console.log(`og result ${id}: rendered in ${Date.now() - started} ms`)
     return response
   } catch (error) {

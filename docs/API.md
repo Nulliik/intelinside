@@ -88,8 +88,8 @@ Served by the front-end deploy on Vercel, not by this API. Nothing for Jack to b
 
 | Route | What it does |
 |---|---|
-| `GET /api/og/results/:id.png?v=` | The 1200×630 result card (number-led layout). Edge function, `frontend/api/og/results/[id].tsx`. 404 for hidden or missing results |
-| `GET /api/og/rigs/:id.png?v=` | The rig card (photo and parts; parts-only when there is no photo). `frontend/api/og/rigs/[id].tsx` |
+| `GET /api/og/result?id=&v=` | The 1200×630 result card (number-led layout). Vercel Function, `frontend/api/og/result.ts`. 404 for hidden or missing results. `/api/og/results/:id.png` rewrites here |
+| `GET /api/og/rig?id=&v=` | The rig card (photo and parts; parts-only when there is no photo). `frontend/api/og/rig.ts`. `/api/og/rigs/:id.png` rewrites here |
 | `/results/:id`, `/rigs/:id` for crawlers | `frontend/middleware.ts` answers link-unfurling user agents with an HTML shell carrying title, description, and the card; humans get the SPA |
 
 The edge code reads the public Supabase REST endpoints with the publishable key from the same `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` the site is deployed with, mirrors the board ordering in `src/lib/api/supabase.ts` for rank, and composites text over static assets in `frontend/public/og/` (dot-matrix backgrounds, lockup, Red Hat fonts) built by `npm run og:assets`. `?v=updatedAt` busts the day-long edge cache after an edit. `npm run og:preview` renders the layouts with sample data to `.og-preview/` for a local check; the edge functions themselves only run on Vercel (`vercel dev` locally).
