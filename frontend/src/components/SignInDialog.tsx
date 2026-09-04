@@ -6,7 +6,7 @@ import { useAsync } from '@/hooks/useAsync'
 import { useSession } from '@/hooks/useSession'
 import { api } from '@/lib/api'
 
-/** Mock mode: pick a seeded user. Live mode never shows this; requestSignIn redirects to GitHub. */
+/** Offline mock mode only. Configured Supabase Auth redirects to GitHub instead. */
 export function SignInDialog() {
   const { signInOpen, setSignInOpen, mockSignIn } = useSession()
   const users = useAsync(() => (api.mockUsers ? api.mockUsers() : Promise.resolve([])), [signInOpen])

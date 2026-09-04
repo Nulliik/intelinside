@@ -26,6 +26,25 @@ let db: SeedDb = seed()
 let sessionUserId: string | null = readSession()
 let idCounter = 1000
 
+/** Make a real OAuth identity usable with the in-memory API during frontend development. */
+export function syncMockSession(user: User | null): User | null {
+  if (!user) {
+    writeSession(null)
+    return null
+  }
+
+  const existing = db.users.find((candidate) => candidate.id === user.id || candidate.handle === user.handle)
+  if (existing) {
+    Object.assign(existing, user, { id: existing.id })
+    writeSession(existing.id)
+    return { ...existing }
+  }
+
+  db.users.push(user)
+  writeSession(user.id)
+  return { ...user }
+}
+
 function readSession(): string | null {
   try {
     return localStorage.getItem(SESSION_KEY)

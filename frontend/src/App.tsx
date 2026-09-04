@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Route, Routes } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
 import Home from '@/pages/Home'
 import Models from '@/pages/Models'
@@ -11,6 +11,7 @@ import ResultDetail from '@/pages/ResultDetail'
 import Profile from '@/pages/Profile'
 import SubmitResult from '@/pages/SubmitResult'
 import RigEditor from '@/pages/RigEditor'
+import AuthCallback from '@/pages/AuthCallback'
 import { About, Guidelines, NotFound } from '@/pages/Static'
 
 export default function App() {
@@ -33,7 +34,7 @@ export default function App() {
         <Route path="/u/:handle" element={<Profile />} />
         <Route path="/guidelines" element={<Guidelines />} />
         <Route path="/about" element={<About />} />
-        <Route path="/auth/callback" element={<Navigate replace to="/" />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
