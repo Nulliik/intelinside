@@ -45,62 +45,32 @@ select set_config('request.jwt.claim.sub', current_setting('test.owner_id'), tru
 select set_config('request.jwt.claim.role', 'authenticated', true);
 set local role authenticated;
 
-do $$
-begin
-  begin
-    perform public.create_rig(
-      '__unmoderated_write_must_fail__',
-      'test',
-      null,
-      'not checked by the edge function',
-      '[{"hardware_id":"intel-core-ultra-9-285k","quantity":1}]'::jsonb
-    );
-    raise exception 'unmoderated rig creation unexpectedly succeeded';
-  exception
-    when insufficient_privilege then null;
-  end;
-
-  begin
-    insert into public.rigs (owner_id, name, os, moderated_at)
-    values (
-      current_setting('test.owner_id')::uuid,
-      '__spoofed_moderation_must_fail__',
-      'test',
-      now()
-    );
-    raise exception 'spoofed rig moderation timestamp unexpectedly succeeded';
-  exception
-    when insufficient_privilege then null;
-  end;
-end;
-$$;
-
-reset role;
-set local role service_role;
-
-select public.create_moderated_rig(
-  current_setting('test.owner_id')::uuid,
+select public.create_rig(
   '__rls_smoke_rig__',
   'test',
   null,
-  'created through the moderated write path',
-  '[{"hardware_id":"intel-core-ultra-9-285k","quantity":1}]'::jsonb,
-  now()
+  'text moderation runs in the client',
+  '[{"hardware_id":"intel-core-ultra-9-285k","quantity":1}]'::jsonb
 );
 
-reset role;
-set local role authenticated;
+select public.update_rig(
+  (select id from public.rigs where name = '__rls_smoke_rig__'),
+  '__rls_smoke_rig__',
+  'test-updated',
+  null,
+  'updated through the authenticated RPC',
+  '[{"hardware_id":"intel-core-ultra-9-285k","quantity":1}]'::jsonb
+);
 
-do $$
-begin
-  begin
-    update public.rigs set name = '__unmoderated_update__' where name = '__rls_smoke_rig__';
-    raise exception 'unmoderated rig update unexpectedly succeeded';
-  exception
-    when insufficient_privilege then null;
-  end;
-end;
-$$;
+insert into public.results (
+  submitter_id, model_id, quant_id, runtime_id, runtime_version, rig_id,
+  component_id, component_quantity, decode_tps, repo_url, run_date
+)
+select
+  current_setting('test.owner_id')::uuid, 'qwen3-8b', 'int4', 'cascadia', 'smoke', id,
+  'intel-core-ultra-9-285k', 1, 42, 'https://github.com/labscommunity/cascadia', current_date
+from public.rigs
+where owner_id = current_setting('test.owner_id')::uuid and name = '__rls_smoke_rig__';
 
 do $$
 begin
@@ -110,40 +80,8 @@ begin
       component_id, component_quantity, decode_tps, repo_url, run_date
     )
     select
-      current_setting('test.owner_id')::uuid, 'qwen3-8b', 'int4', 'cascadia', 'unmoderated-smoke', id,
-      'intel-core-ultra-9-285k', 1, 42, 'https://github.com/labscommunity/cascadia', current_date
-    from public.rigs
-    where owner_id = current_setting('test.owner_id')::uuid and name = '__rls_smoke_rig__';
-    raise exception 'unmoderated result creation unexpectedly succeeded';
-  exception
-    when insufficient_privilege then null;
-  end;
-end;
-$$;
-
-reset role;
-set local role service_role;
-
-insert into public.results (
-  submitter_id, model_id, quant_id, runtime_id, runtime_version, rig_id,
-  component_id, component_quantity, decode_tps, repo_url, run_date, moderated_at
-)
-select
-  current_setting('test.owner_id')::uuid, 'qwen3-8b', 'int4', 'cascadia', 'smoke', id,
-  'intel-core-ultra-9-285k', 1, 42, 'https://github.com/labscommunity/cascadia', current_date, now()
-from public.rigs
-where owner_id = current_setting('test.owner_id')::uuid and name = '__rls_smoke_rig__';
-
-do $$
-begin
-  begin
-    insert into public.results (
-      submitter_id, model_id, quant_id, runtime_id, runtime_version, rig_id,
-      component_id, component_quantity, decode_tps, repo_url, run_date, moderated_at
-    )
-    select
       current_setting('test.owner_id')::uuid, 'qwen3-8b', 'int4', 'cascadia', 'invalid-url-smoke', id,
-      'intel-core-ultra-9-285k', 1, 42, 'https://example.com/not-github', current_date, now()
+      'intel-core-ultra-9-285k', 1, 42, 'https://example.com/not-github', current_date
     from public.rigs
     where owner_id = current_setting('test.owner_id')::uuid and name = '__rls_smoke_rig__';
     raise exception 'non-GitHub result URL unexpectedly succeeded';

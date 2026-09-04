@@ -24,6 +24,12 @@ Set `VITE_API_MODE=supabase` to read and write the shared hosted database. The
 mock adapter remains available for offline development but is not used by the
 staging configuration.
 
+Rig writes call the authenticated `create_rig` and `update_rig` database
+functions so the rig and its component rows are changed atomically. Result
+writes use the Supabase table API directly. RLS enforces ownership for both.
+Text length and profanity checks currently run in the browser and are therefore
+user-experience checks, not a server-enforced security boundary.
+
 A fresh clone needs a `frontend/.env` based on `.env.example`, populated with
 the staging URL and browser-safe publishable key. The shared staging database
 currently stores profiles, rigs, rig components, results, confirmations, and
