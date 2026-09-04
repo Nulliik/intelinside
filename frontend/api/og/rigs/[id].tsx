@@ -6,9 +6,9 @@ import { RigCardImage } from '../../../src/og/cards'
 import { loadRigCard, ogEnv } from '../../../src/og/data'
 import { cardId, CARD_HEADERS } from '../../../src/og/http'
 
-export const config = { runtime: 'edge' }
-
-export default async function handler(request: Request): Promise<Response> {
+// A named GET export is the Web-standard signature on Vercel's Node runtime; a default export would be handed the
+// legacy (req, res) pair instead of a Request.
+export async function GET(request: Request): Promise<Response> {
   const url = new URL(request.url)
   const id = cardId(url)
   const started = Date.now()
