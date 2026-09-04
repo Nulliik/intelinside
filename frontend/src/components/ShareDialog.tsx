@@ -49,7 +49,8 @@ export function ShareDialog({ target, open, onOpenChange }: Props) {
   }
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      {/* minmax(0, 1fr) keeps the dialog's single grid column from growing to fit a long link in the footer. */}
+      <DialogContent className="grid-cols-[minmax(0,1fr)] sm:max-w-lg">
         <DialogHeader className="pr-8">
           <DialogTitle>{target.title}</DialogTitle>
         </DialogHeader>

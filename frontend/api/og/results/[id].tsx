@@ -10,11 +10,26 @@ export const config = { runtime: 'edge' }
 
 export default async function handler(request: Request): Promise<Response> {
   const url = new URL(request.url)
+  const id = cardId(url)
+  const started = Date.now()
   const env = ogEnv()
-  if (!env) return new Response('Card rendering is not configured.', { status: 500 })
-  const data = await loadResultCard(cardId(url), env)
-  if (!data) return new Response('Not found', { status: 404, headers: { 'cache-control': 'public, max-age=60' } })
-  const source = bundledAssets(BUNDLED_OG_ASSETS, httpAssets(url.origin))
-  const [fonts, assets] = await Promise.all([loadFonts(source), loadCardAssets(source, 'dots-result.svg', { avatar: data.owner.avatarUrl })])
-  return new ImageResponse(<ResultCardImage data={data} assets={assets} />, { width: 1200, height: 630, fonts, headers: CARD_HEADERS })
+  if (!env) {
+    console.error(`og result ${id}: Supabase env missing`)
+    return new Response('Card rendering is not configured.', { status: 500 })
+  }
+  try {
+    const data = await loadResultCard(id, env)
+    if (!data) {
+      console.log(`og result ${id}: not found`)
+      return new Response('Not found', { status: 404, headers: { 'cache-control': 'public, max-age=60' } })
+    }
+    const source = bundledAssets(BUNDLED_OG_ASSETS, httpAssets(url.origin))
+    const [fonts, assets] = await Promise.all([loadFonts(source), loadCardAssets(source, 'dots-result.svg', { avatar: data.owner.avatarUrl })])
+    const response = new ImageResponse(<ResultCardImage data={data} assets={assets} />, { width: 1200, height: 630, fonts, headers: CARD_HEADERS })
+    console.log(`og result ${id}: rendered in ${Date.now() - started} ms`)
+    return response
+  } catch (error) {
+    console.error(`og result ${id}: ${error instanceof Error ? error.stack ?? error.message : String(error)}`)
+    return new Response('Card rendering failed.', { status: 500 })
+  }
 }

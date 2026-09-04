@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/api/og/(rigs|results)/(\\d+)\\.png", "destination": "/api/og/$1/$2" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
