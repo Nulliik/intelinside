@@ -7,12 +7,15 @@ export type AssetSource = {
   text: (path: string) => Promise<string>
 }
 
-export type FontSpec = { name: string; data: ArrayBuffer; weight: 400 | 500 | 600; style: 'normal' }
+export type FontSpec = { name: string; data: ArrayBuffer; weight: 400 | 500 | 600 | 700; style: 'normal' }
 
 export type CardAssets = {
   /** The dot matrix for this layout, as a data URL. */
   background: string
-  lockup: string
+  /** The logo mark; the wordmark beside it is text. */
+  mark: string
+  /** The runtime's logo file, inlined; absent when the runtime has none in the catalog. */
+  runtimeLogo?: string
   /** The rig photo, already fetched and inlined; absent when there is none or it could not be read. */
   photo?: string
   /** The owner's avatar, inlined; absent falls back to initials. */
@@ -21,6 +24,7 @@ export type CardAssets = {
 
 const FONTS: [FontSpec['name'], FontSpec['weight'], string][] = [
   ['Red Hat Display', 600, 'red-hat-display-latin-600-normal.woff'],
+  ['Red Hat Display', 700, 'red-hat-display-latin-700-normal.woff'],
   ['Red Hat Text', 400, 'red-hat-text-latin-400-normal.woff'],
   ['Red Hat Text', 500, 'red-hat-text-latin-500-normal.woff'],
   ['Red Hat Mono', 500, 'red-hat-mono-latin-500-normal.woff'],
@@ -108,16 +112,23 @@ export async function fetchImageDataUrl(url: string | undefined): Promise<string
   }
 }
 
+/** The asset path for a catalog logo URL like `/logos/runtimes/cascadia.svg`, or undefined when there is no file. */
+export function runtimeLogoAsset(logoUrl: string | undefined): string | undefined {
+  const file = logoUrl?.match(/\/([^/]+\.svg)$/)?.[1]
+  return file ? `runtimes/${file}` : undefined
+}
+
 export async function loadCardAssets(
   source: AssetSource,
   background: 'dots-result.svg' | 'dots-side.svg',
-  images: { photo?: string; avatar?: string } = {},
+  images: { photo?: string; avatar?: string; runtimeLogo?: string } = {},
 ): Promise<CardAssets> {
-  const [dots, lockup, photo, avatar] = await Promise.all([
+  const [dots, mark, photo, avatar, runtimeLogo] = await Promise.all([
     source.text(background),
-    source.text('lockup.svg'),
+    source.text('mark.svg'),
     fetchImageDataUrl(images.photo),
     fetchImageDataUrl(images.avatar),
+    images.runtimeLogo ? source.text(images.runtimeLogo).then(svgDataUrl, () => undefined) : undefined,
   ])
-  return { background: svgDataUrl(dots), lockup: svgDataUrl(lockup), photo, avatar }
+  return { background: svgDataUrl(dots), mark: svgDataUrl(mark), runtimeLogo, photo, avatar }
 }
