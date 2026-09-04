@@ -34,7 +34,7 @@ function Stat({ label, value }: { label: string; value: number | undefined }) {
 const quietLink = 'font-normal text-muted-foreground hover:text-foreground'
 
 export default function Home() {
-  usePageTitle(PAGE_SEO.home.title, PAGE_SEO.home.description)
+  usePageTitle(PAGE_SEO.home.title, PAGE_SEO.home.description, PAGE_SEO.home.brandFirst)
   // Launch week. Flips to the ordinary page in place at zero.
   const { sealed, revealAt, countdown } = useSealed()
   const home = useAsync(() => api.home(), [])

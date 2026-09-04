@@ -2,6 +2,7 @@ import { fileURLToPath, URL } from 'node:url'
 import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import { BRAND_NAME } from './src/lib/brand'
 import { LANDING_TITLE, PAGE_SEO, SITE_DESCRIPTION, pageTitle } from './src/lib/seo'
 
 /**
@@ -32,12 +33,12 @@ function siteMeta(): Plugin {
       // serves crawlers their own. No canonical or og:url here: this shell serves every SPA route, so a fixed URL
       // would mark them all as the home page.
       const withDefaults = html
-        .replace(/<title>[^<]*<\/title>/, `<title>${pageTitle(PAGE_SEO.home.title)}</title>`)
+        .replace(/<title>[^<]*<\/title>/, `<title>${pageTitle(PAGE_SEO.home.title, PAGE_SEO.home.brandFirst)}</title>`)
         .replace(/<meta name="description" content="[^"]*" \/>/, `<meta name="description" content="${description}" />`)
       return { html: withDefaults, tags: [
         { tag: 'meta', attrs: { name: 'theme-color', content: '#5438ff' }, injectTo: 'head' },
         { tag: 'meta', attrs: { property: 'og:type', content: 'website' }, injectTo: 'head' },
-        { tag: 'meta', attrs: { property: 'og:site_name', content: 'intelinside' }, injectTo: 'head' },
+        { tag: 'meta', attrs: { property: 'og:site_name', content: BRAND_NAME }, injectTo: 'head' },
         { tag: 'meta', attrs: { property: 'og:title', content: title }, injectTo: 'head' },
         { tag: 'meta', attrs: { property: 'og:description', content: description }, injectTo: 'head' },
         { tag: 'meta', attrs: { property: 'og:image', content: image }, injectTo: 'head' },

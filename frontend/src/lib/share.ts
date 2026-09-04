@@ -35,7 +35,7 @@ export function cardImageUrl(target: Pick<ShareTarget, 'kind' | 'id' | 'updatedA
 }
 
 export function cardFilename(target: Pick<ShareTarget, 'kind' | 'id'>): string {
-  return `${BRAND_NAME}-${target.kind}-${target.id}.png`
+  return `${BRAND_NAME.toLowerCase()}-${target.kind}-${target.id}.png`
 }
 
 function hardwarePhrase(result: Result): string {
