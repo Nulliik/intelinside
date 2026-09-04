@@ -1,10 +1,10 @@
 import { supabase, signOutSupabase } from '@/lib/auth'
-import { FunctionsHttpError } from '@supabase/supabase-js'
+import { RegExpMatcher, englishDataset, englishRecommendedTransformers } from 'obscenity'
 import { HARDWARE_BY_ID, MODELS, MODEL_BY_ID, QUANTS, QUANT_BY_ID, RUNTIMES, VISIBLE_HARDWARE } from '@/mocks/catalog'
 import type {
   Api, BestRank, BoardKind, BoardParams, BoardResponse, BoardRow, BoardUnit, ChartBar, FlagReason,
   HardwareDetail, HardwareItem, HomeResponse, ModelSummary, Moderation, Page, Result,
-  ResultDetail, Rig, RigDetail, RigSummary, TopResultsResponse, User, UserStats,
+  ResultDetail, ResultInput, Rig, RigDetail, RigSummary, TopResultsResponse, User, UserStats,
 } from './types'
 import { ApiError } from './types'
 
@@ -64,6 +64,11 @@ type Snapshot = {
   flags: FlagRow[]
 }
 
+const textMatcher = new RegExpMatcher({
+  ...englishDataset.build(),
+  ...englishRecommendedTransformers,
+})
+
 const requiredClient = () => {
   if (!supabase) throw new ApiError('not_configured', 'Supabase is not configured.', 500)
   return supabase
@@ -81,19 +86,31 @@ async function rows<T>(request: PromiseLike<{ data: unknown; error: { code?: str
   return data as T
 }
 
-async function moderatedWrite(action: string, input: unknown, id?: string): Promise<{ id: string }> {
-  const { data, error } = await requiredClient().functions.invoke('moderated-write', { body: { action, input, id } })
-  if (!error) return data as { id: string }
-
-  if (error instanceof FunctionsHttpError) {
-    const payload = await error.context.json().catch(() => null) as {
-      error?: { code?: string; message?: string; fields?: Record<string, string> }
-    } | null
-    if (payload?.error) {
-      throw new ApiError(payload.error.code ?? 'moderation_error', payload.error.message ?? error.message, error.context.status, payload.error.fields)
-    }
+function moderateText(entries: Array<[field: string, value: string | null | undefined, maxLength: number]>) {
+  const fields: Record<string, string> = {}
+  for (const [field, value, maxLength] of entries) {
+    if (!value) continue
+    if (value.length > maxLength) fields[field] = `Use ${maxLength} characters or fewer.`
+    else if (textMatcher.hasMatch(value)) fields[field] = 'Please remove offensive or profane language.'
   }
-  throw new ApiError('function_error', error.message, 500)
+  if (Object.keys(fields).length) {
+    throw new ApiError('moderation_rejected', 'Please revise the highlighted text.', 400, fields)
+  }
+}
+
+function resultPayload(input: Partial<ResultInput>, create = false): Record<string, unknown> {
+  const map: [keyof ResultInput, string][] = [
+    ['modelId', 'model_id'], ['quant', 'quant_id'], ['runtimeId', 'runtime_id'], ['runtimeVersion', 'runtime_version'],
+    ['rigId', 'rig_id'], ['componentId', 'component_id'], ['componentQuantity', 'component_quantity'],
+    ['decodeTps', 'decode_tps'], ['promptTps', 'prompt_tps'], ['ttftMs', 'ttft_ms'], ['contextLength', 'context_length'],
+    ['batchSize', 'batch_size'], ['notes', 'notes'], ['repoUrl', 'repo_url'], ['runDate', 'run_date'],
+  ]
+  const payload: Record<string, unknown> = {}
+  for (const [source, target] of map) {
+    if (create || source in input) payload[target] = input[source] ?? null
+  }
+  if (payload.component_id == null) payload.component_quantity = null
+  return payload
 }
 
 async function loadSnapshot(): Promise<Snapshot> {
@@ -442,8 +459,15 @@ export const supabaseApi: Api = {
   async createRig(input) {
     await requireUserId()
     if (!input.name.trim() || !input.components.length) throw new ApiError('validation', 'Add a name and at least one component.', 400)
-    const { id } = await moderatedWrite('createRig', input)
-    return supabaseApi.rig(id)
+    moderateText([['name', input.name, 120], ['os', input.os, 120], ['notes', input.notes, 5000]])
+    const id = await rows<number | string>(requiredClient().rpc('create_rig', {
+      p_name: input.name.trim(),
+      p_os: input.os.trim(),
+      p_photo_url: input.photoUrl ?? null,
+      p_notes: input.notes ?? null,
+      p_components: input.components.map((part) => ({ hardware_id: part.hardwareId, quantity: part.quantity })),
+    }))
+    return supabaseApi.rig(stringId(id))
   },
   async updateRig(id, input) {
     await requireUserId()
@@ -456,7 +480,15 @@ export const supabaseApi: Api = {
       components: input.components ?? current.components.map((part) => ({ hardwareId: part.hardwareId, quantity: part.quantity })),
     }
     if (!merged.name.trim() || !merged.components.length) throw new ApiError('validation', 'Add a name and at least one component.', 400)
-    await moderatedWrite('updateRig', merged, id)
+    moderateText([['name', merged.name, 120], ['os', merged.os, 120], ['notes', merged.notes, 5000]])
+    await rows<number | string>(requiredClient().rpc('update_rig', {
+      p_rig_id: id,
+      p_name: merged.name.trim(),
+      p_os: merged.os.trim(),
+      p_photo_url: merged.photoUrl ?? null,
+      p_notes: merged.notes ?? null,
+      p_components: merged.components.map((part) => ({ hardware_id: part.hardwareId, quantity: part.quantity })),
+    }))
     return supabaseApi.rig(id)
   },
   async deleteRig(id) {
@@ -490,13 +522,19 @@ export const supabaseApi: Api = {
     return detail
   },
   async createResult(input) {
-    await requireUserId()
-    const { id } = await moderatedWrite('createResult', input)
-    return supabaseApi.result(id)
+    const submitterId = await requireUserId()
+    moderateText([['runtimeVersion', input.runtimeVersion, 80], ['notes', input.notes, 5000]])
+    const created = await rows<ResultRow[]>(requiredClient().from('results').insert({
+      ...resultPayload(input, true),
+      submitter_id: submitterId,
+    }).select('*'))
+    return supabaseApi.result(stringId(created[0].id))
   },
   async updateResult(id, input) {
     await requireUserId()
-    await moderatedWrite('updateResult', input, id)
+    moderateText([['runtimeVersion', input.runtimeVersion, 80], ['notes', input.notes, 5000]])
+    const updated = await rows<ResultRow[]>(requiredClient().from('results').update(resultPayload(input)).eq('id', id).select('*'))
+    if (!updated.length) throw new ApiError('not_found', 'No such result.', 404)
     return supabaseApi.result(id)
   },
   async deleteResult(id) {
