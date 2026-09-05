@@ -67,7 +67,7 @@ export default function Home() {
             Post your tok/s.
           </h1>
           <p className="mt-5 max-w-xl text-lg text-muted-foreground text-pretty">
-            Real inference numbers from real machines. Register the hardware you run, submit what a model does on it, and see where it lands against everyone else.
+            Real inference numbers from real Intel machines. Register the hardware you run, submit what a model does on it, and see where it lands against everyone else.
           </p>
           <div className="mt-8 flex flex-wrap gap-2">
             {user ? (
@@ -196,7 +196,7 @@ export default function Home() {
           </CellGrid>
           <div className={cn('flex flex-col gap-4 border-t py-5 sm:flex-row sm:items-center sm:justify-between', inset)}>
             <p className="text-sm text-muted-foreground text-pretty">
-              {home.data ? `${fmtInt(home.data.stats.hardware)} parts` : 'Parts'} across CPUs, GPUs, integrated graphics, NPUs, and memory. Intel is seeded; any vendor is welcome. Missing something?{' '}
+              {home.data ? `${fmtInt(home.data.stats.hardware)} parts` : 'Parts'} across CPUs, GPUs, integrated graphics, NPUs, and memory. Intel is seeded and leads the boards; other vendors' parts are welcome for comparison. Missing something?{' '}
               <a href={CATALOG_REPO_URL} target="_blank" rel="noreferrer" className="text-foreground underline underline-offset-4">
                 Add it by pull request
               </a>

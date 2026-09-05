@@ -39,10 +39,10 @@ export default function Hardware() {
         eyebrow="Hardware"
         title={
           <>
-            <span className="text-muted-foreground">The open hardware database,</span> any vendor welcome.
+            The open database of Intel hardware for local AI.
           </>
         }
-        description="Intel parts are seeded. Missing something? Add it by pull request and it shows up after the next sync."
+        description="Arc, Core Ultra, Xeon, and Gaudi are seeded. Other vendors' parts are welcome by pull request for comparison, and show up after the next sync."
         actions={
           <Button variant="outline" render={<a href={CATALOG_REPO_URL} target="_blank" rel="noreferrer" />} nativeButton={false}>
             Add hardware by PR <ExternalLink data-icon="inline-end" />

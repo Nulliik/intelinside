@@ -4,6 +4,7 @@ import { RuntimeBadge } from '@/components/RuntimeBadge'
 import { VerificationBadge } from '@/components/VerificationBadge'
 import { UserLink } from '@/components/UserLink'
 import { HardwareLink } from '@/components/HardwareLink'
+import { UnitLabel } from '@/components/UnitLabel'
 import { td, th } from '@/components/table-styles'
 import type { Model, Quant, Result, Runtime } from '@/lib/api/types'
 import { fmtDate, fmtMs, fmtTps } from '@/lib/format'
@@ -53,7 +54,9 @@ export function ResultsTable({ results, runtimes, models, quants, showHardware =
                   {r.component ? (
                     <div className="min-w-0">
                       <HardwareLink hardware={r.component} quantity={r.componentQuantity} />
-                      <div className="truncate text-xs text-muted-foreground">in {r.rig?.name}</div>
+                      <div className="truncate text-xs text-muted-foreground">
+                        <UnitLabel hardware={r.component} host={r.componentHost} /> · in {r.rig?.name}
+                      </div>
                     </div>
                   ) : (
                     <div className="min-w-0">

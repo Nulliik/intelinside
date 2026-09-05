@@ -1,0 +1,48 @@
+# Results by pull request
+
+Every result on the site can also live here as a file, and a file here can become a result on the site. Two directions, one format.
+
+## Add a result from a file
+
+1. Sign in on the site once so your GitHub handle has a profile, and register the rig you ran on. The rig's URL ends in a number; that number (or the rig's exact name) goes in the file.
+2. Add `results/<your-github-handle>/<name>.json`:
+
+   ```json
+   {
+     "$schema": "https://raw.githubusercontent.com/labscommunity/intelinside/main/results/schema.json",
+     "rig": "12",
+     "component": "intel-arc-b580",
+     "componentQuantity": 1,
+     "model": "qwen3-8b",
+     "quant": "q4_k_m",
+     "runtime": "llamacpp",
+     "runtimeVersion": "b6512",
+     "decodeTps": 34.2,
+     "promptTps": 410,
+     "ttftMs": 120,
+     "contextLength": 4096,
+     "batchSize": 1,
+     "runDate": "2026-09-04",
+     "notes": "Fresh driver, no thermal throttling."
+   }
+   ```
+
+   Leave `component` out for a whole-rig result. Ids come from the catalog in [`frontend/src/mocks/catalog.ts`](../frontend/src/mocks/catalog.ts); the site's hardware pages show each part's id in the URL.
+
+3. Open a pull request. A check validates the file against the catalog and comments with a link like `/submit?pr=123`.
+4. Open that link. The submit form fills itself from your file, with the pull request as the evidence link. Check the numbers and submit. The result ranks the moment it is in.
+
+The pull request stays as the public record of the run. Merging it is up to the maintainers and changes nothing on the site.
+
+The form also accepts a pull request link or number by hand, at the top of the submit page.
+
+## Write the file from a result
+
+Every freshly submitted result offers **Add to the results repo**, which opens GitHub's new-file page with the JSON filled in, path and all. GitHub forks the repo for you if you cannot push to it. The file then carries a `result` link back to the live entry.
+
+## Rules
+
+- Files live at `results/<your-github-handle>/<name>.json`. The check fails if the folder does not match the pull request author.
+- Results are your own runs on your own rig. The site enforces rig ownership when the result is submitted.
+- One result per file. Several files in one pull request are fine; the form lets you pick which one to fill from.
+- [`schema.json`](schema.json) describes the shape for editors. Run the same check locally with `npm --prefix frontend run results:validate -- results/<handle>/<name>.json`.

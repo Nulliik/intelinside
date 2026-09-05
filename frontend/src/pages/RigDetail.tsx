@@ -27,6 +27,7 @@ import { api } from '@/lib/api'
 import { ApiError } from '@/lib/api/types'
 import { fmtDate, fmtWeekday, pluralize } from '@/lib/format'
 import { rigShareTarget } from '@/lib/share'
+import { UNIT_LABEL, nestParts } from '@/lib/hardware'
 import { HARDWARE_TYPE_LABEL } from '@/mocks/catalog'
 import { cn } from '@/lib/utils'
 
@@ -117,11 +118,15 @@ export default function RigDetail() {
           <Cell className="p-0 md:p-0">
             {r.notes ? <p className={cn('border-b py-5 text-sm text-pretty', inset)}>{r.notes}</p> : null}
             <ul className="divide-y">
-              {r.components.map((c) => (
-                <li key={c.hardwareId} className={cn('flex items-center justify-between gap-4 py-3.5 text-sm', inset)}>
+              {nestParts(r.components).map(({ part: c, host }) => (
+                <li key={c.hardwareId} className={cn('flex items-center justify-between gap-4 py-3.5 text-sm', inset, host && 'pl-10 md:pl-14')}>
                   <div className="min-w-0">
                     {c.hardware ? <HardwareLink hardware={c.hardware} quantity={c.quantity} className="font-medium" /> : c.hardwareId}
-                    {c.hardware ? <div className="text-xs text-muted-foreground">{HARDWARE_TYPE_LABEL[c.hardware.type]} · {keySpec(c.hardware)}</div> : null}
+                    {c.hardware ? (
+                      <div className="text-xs text-muted-foreground">
+                        {host ? `${UNIT_LABEL[c.hardware.type]} on the ${host.name} package` : HARDWARE_TYPE_LABEL[c.hardware.type]} · {keySpec(c.hardware)}
+                      </div>
+                    ) : null}
                   </div>
                 </li>
               ))}

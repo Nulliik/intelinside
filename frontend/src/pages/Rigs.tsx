@@ -44,7 +44,7 @@ export default function Rigs() {
         eyebrow="Rigs"
         title={
           <>
-            <span className="text-muted-foreground">Machines people actually run models on,</span> parts and all.
+            Machines people actually run models on, parts and all.
           </>
         }
         actions={

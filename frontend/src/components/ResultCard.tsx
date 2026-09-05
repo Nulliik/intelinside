@@ -6,6 +6,7 @@ import { RuntimeBadge } from '@/components/RuntimeBadge'
 import { VerificationBadge } from '@/components/VerificationBadge'
 import { UserLink } from '@/components/UserLink'
 import { HardwareLink } from '@/components/HardwareLink'
+import { UnitLabel } from '@/components/UnitLabel'
 import type { Model, Quant, Result, ResultRank, Runtime } from '@/lib/api/types'
 import { fmtDate, fmtInt, fmtMs, fmtTps } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -72,7 +73,12 @@ export function ResultCard({ result: r, models, quants, runtimes, rank, eyebrow 
         </Field>
         <Field label={r.component ? 'Part' : 'Rig'}>
           {r.component ? (
-            <HardwareLink hardware={r.component} quantity={r.componentQuantity} />
+            <>
+              <HardwareLink hardware={r.component} quantity={r.componentQuantity} />
+              <div className="mt-0.5 text-xs text-muted-foreground">
+                <UnitLabel hardware={r.component} host={r.componentHost} />
+              </div>
+            </>
           ) : r.rig ? (
             <Link to={`/rigs/${r.rigId}`} className="hover:underline underline-offset-4">{r.rig.name}</Link>
           ) : (

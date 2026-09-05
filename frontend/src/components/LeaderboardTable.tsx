@@ -4,6 +4,7 @@ import { RuntimeBadge } from '@/components/RuntimeBadge'
 import { VerificationBadge } from '@/components/VerificationBadge'
 import { UserLink } from '@/components/UserLink'
 import { HardwareLink } from '@/components/HardwareLink'
+import { UnitLabel } from '@/components/UnitLabel'
 import { td, th } from '@/components/table-styles'
 import type { BoardRow, Model, Quant, Runtime } from '@/lib/api/types'
 import { fmtDate, fmtMs, fmtTps } from '@/lib/format'
@@ -50,7 +51,8 @@ export function LeaderboardTable({ rows, runtimes, models, quants }: Props) {
                   <div className="min-w-0">
                     <HardwareLink hardware={unit.hardware} quantity={unit.quantity} className="font-medium" />
                     <div className="truncate text-xs text-muted-foreground">
-                      {unit.hardware.vendor} · in {result.rig?.name}
+                      <UnitLabel hardware={unit.hardware} host={result.componentHost} prefix={unit.hardware.vendor === 'Generic' ? undefined : unit.hardware.vendor} /> · in{' '}
+                      {result.rig?.name}
                     </div>
                   </div>
                 )}

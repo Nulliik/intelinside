@@ -2,13 +2,24 @@ import { createServer } from 'vite'
 
 const quote = (value) => value == null ? 'null' : `'${String(value).replaceAll("'", "''")}'`
 const json = (value) => `${quote(JSON.stringify(value))}::jsonb`
+const textArray = (values) => (values?.length ? `array[${values.map(quote).join(', ')}]::text[]` : `'{}'::text[]`)
 const row = (values) => `  (${values.join(', ')})`
+// `--only hardware` prints just the hardware upsert, for a migration that changes only that table.
+const only = process.argv.includes('--only') ? process.argv[process.argv.indexOf('--only') + 1] : null
 
 const server = await createServer({ server: { middlewareMode: true }, appType: 'custom' })
 
 try {
   const { HARDWARE, MODELS, QUANTS, RUNTIMES } = await server.ssrLoadModule('/src/mocks/catalog.ts')
-  const statements = [
+  const hardwareStatements = [
+    'insert into public.hardware (id, type, vendor, name, series, specs, release_date, image_url, source, integrated) values',
+    HARDWARE.map((item) => row([
+      quote(item.id), quote(item.type), quote(item.vendor), quote(item.name), quote(item.series), json(item.specs),
+      item.releaseDate ? `${quote(item.releaseDate)}::date` : 'null', quote(item.imageUrl), quote(item.source), textArray(item.integrated),
+    ])).join(',\n'),
+    'on conflict (id) do update set type = excluded.type, vendor = excluded.vendor, name = excluded.name, series = excluded.series, specs = excluded.specs, release_date = excluded.release_date, image_url = excluded.image_url, source = excluded.source, integrated = excluded.integrated;',
+  ]
+  const statements = only === 'hardware' ? [...hardwareStatements, ''] : [
     'begin;',
     '',
     'insert into public.quants (id, label, bits, format) values',
@@ -30,12 +41,7 @@ try {
     RUNTIMES.map((item) => row([quote(item.id), quote(item.name), quote(item.logoUrl), quote(item.repoUrl), quote(item.color)])).join(',\n'),
     'on conflict (id) do update set name = excluded.name, logo_url = excluded.logo_url, repo_url = excluded.repo_url, color = excluded.color;',
     '',
-    'insert into public.hardware (id, type, vendor, name, series, specs, release_date, image_url, source) values',
-    HARDWARE.map((item) => row([
-      quote(item.id), quote(item.type), quote(item.vendor), quote(item.name), quote(item.series), json(item.specs),
-      item.releaseDate ? `${quote(item.releaseDate)}::date` : 'null', quote(item.imageUrl), quote(item.source),
-    ])).join(',\n'),
-    'on conflict (id) do update set type = excluded.type, vendor = excluded.vendor, name = excluded.name, series = excluded.series, specs = excluded.specs, release_date = excluded.release_date, image_url = excluded.image_url, source = excluded.source;',
+    ...hardwareStatements,
     '',
     'commit;',
     '',

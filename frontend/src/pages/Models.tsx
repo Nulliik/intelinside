@@ -33,7 +33,7 @@ export default function Models() {
         eyebrow="Models"
         title={
           <>
-            <span className="text-muted-foreground">Every board is one model</span> at one quantization.
+            Every board is one model at one quantization.
           </>
         }
         description={

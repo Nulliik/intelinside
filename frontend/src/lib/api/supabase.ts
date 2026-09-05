@@ -1,5 +1,6 @@
 import { supabase, signOutSupabase } from '@/lib/auth'
 import { RegExpMatcher, englishDataset, englishRecommendedTransformers } from 'obscenity'
+import { hostIn } from '@/lib/hardware'
 import { HARDWARE_BY_ID, MODELS, MODEL_BY_ID, QUANTS, QUANT_BY_ID, RUNTIMES, VISIBLE_HARDWARE } from '@/mocks/catalog'
 import type {
   Api, BestRank, BoardKind, BoardParams, BoardResponse, BoardRow, BoardUnit, ChartBar, FlagReason,
@@ -227,6 +228,9 @@ function view(snapshot: Snapshot) {
       componentId: optional(row.component_id),
       componentQuantity: optional(row.component_quantity),
       component: row.component_id ? HARDWARE_BY_ID[row.component_id] : undefined,
+      componentHost: row.component_id
+        ? hostIn((componentsByRig.get(stringId(row.rig_id)) ?? []).map((part) => ({ hardwareId: part.hardware_id })), row.component_id)
+        : undefined,
       decodeTps: numberValue(row.decode_tps),
       promptTps: row.prompt_tps == null ? undefined : numberValue(row.prompt_tps),
       ttftMs: row.ttft_ms == null ? undefined : numberValue(row.ttft_ms),

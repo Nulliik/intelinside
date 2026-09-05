@@ -119,7 +119,7 @@ export default function Board() {
           <span className="inline-flex flex-wrap items-center gap-x-3">
             {model ? <ModelLogo model={model} size="lg" /> : null}
             {model?.name ?? modelId}
-            <span className="font-mono text-xl text-muted-foreground">{quantLabel}</span>
+            <span className="font-mono text-xl">{quantLabel}</span>
           </span>
         }
         actions={

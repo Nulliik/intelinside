@@ -34,6 +34,8 @@ Companion to [SPEC.md](SPEC.md). The front end talks to the network only through
 
 Catalog data comes from the open catalog repo. The backend re-syncs on merge; the front end never writes catalog data.
 
+A CPU's `integrated` list is catalog data too. Results only ever name one part, so `GET /api/hardware/:hardwareId` for an iGPU or NPU returns the runs on that unit alone; the front end fetches a CPU's integrated parts separately to show the cores, iGPU, and NPU side by side. `componentHost` on a result is the rig's CPU whose `integrated` list contains `componentId`, or absent.
+
 ## Boards
 
 | Method | Path | Returns |
@@ -113,10 +115,12 @@ export type Runtime = { id: string; name: string; logoUrl: string; repoUrl: stri
 export type HardwareType = "cpu" | "gpu" | "igpu" | "npu" | "ram";
 
 // `color` is the runtime's categorical chart color, set in the catalog.
+// `integrated`, on CPUs only, lists the ids of the iGPU and NPU on the same package. It is catalog data. Those parts
+// stay hardware items of their own, with their own pages and board rows; the front end derives the reverse link.
 export type HardwareItem = {
   id: string; type: HardwareType; vendor: string; name: string; series?: string;
   specs: Record<string, string | number>; releaseDate?: string; imageUrl?: string;
-  source: "seeded" | "community"; resultsCount?: number; rigsCount?: number;
+  source: "seeded" | "community"; integrated?: string[]; resultsCount?: number; rigsCount?: number;
 };
 
 export type User = {
@@ -146,6 +150,7 @@ export type Result = {
   id: string; submitterId: string; submitter?: User;
   modelId: string; quant: string; runtimeId: string; runtimeVersion: string;
   rigId: string; rig?: RigSummary; componentId?: string; componentQuantity?: number; component?: HardwareItem;
+  componentHost?: HardwareItem; // when the part is an iGPU or NPU: the CPU in the rig whose package carries it
   decodeTps: number; promptTps?: number; ttftMs?: number; contextLength?: number; batchSize?: number;
   notes?: string; repoUrl: string; runDate: string;
   verification: Verification; moderation: Moderation; createdAt: string; updatedAt: string;

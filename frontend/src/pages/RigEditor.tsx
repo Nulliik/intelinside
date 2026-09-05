@@ -41,7 +41,7 @@ export default function RigEditor() {
     <div>
       <PageHeader
         eyebrow={rigId ? 'Edit rig' : 'New rig'}
-        title={rigId ? existing.data?.name ?? 'Edit rig' : <><span className="text-muted-foreground">What is in the machine,</span> part by part.</>}
+        title={rigId ? existing.data?.name ?? 'Edit rig' : 'What is in the machine, part by part.'}
         description="Results are submitted against a rig, or against one part inside it. Quantities matter: four cards and one card rank separately."
       />
       <Section>
