@@ -18,7 +18,7 @@ export function SignInDialog() {
             <GitHubMark className="size-5" /> Sign in with GitHub
           </DialogTitle>
           <DialogDescription>
-            Sign in to register rigs, submit results, confirm or flag entries, and build collections. Only your public profile is read, never your repos.
+            Sign in to register rigs, submit results, and confirm or flag entries. Only your public profile is read, never your repos.
           </DialogDescription>
         </DialogHeader>
         <div className="rounded-lg border border-dashed p-3 text-xs text-muted-foreground">

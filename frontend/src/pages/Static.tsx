@@ -43,16 +43,19 @@ export function About() {
   usePageTitle('About')
   return (
     <div>
-      <PageHeader eyebrow="About" title="A community leaderboard of AI inference on real hardware." />
+      <PageHeader eyebrow="About" title="A community leaderboard of AI inference on Intel hardware." />
       <Section>
         <Block className={prose}>
-          <p>People sign in with GitHub, register the machines they run models on, and post the tokens per second they get for a model at a given quantization on a given runtime. Rigs decompose into parts, so a result can describe the whole machine or a single card inside it.</p>
+          <p>{BRAND_NAME} tracks how fast local models run on Intel silicon: Core Ultra chips with the iGPU and NPU on their package, Arc and Arc Pro cards, Xeon, and Gaudi. People sign in with GitHub, register the machines they run models on, and post the tokens per second they get for a model at a given quantization on a given runtime.</p>
+          <p>Rigs decompose into parts, so a result can describe the whole machine or one unit inside it: a single card, the CPU cores, the iGPU, or the NPU. The same chip can hold three numbers, and the boards keep them apart.</p>
           <p>Results are self-reported and checked by the community. Nothing here is a lab benchmark, and that is the point: it is what people actually see on hardware they actually own.</p>
-          <p>The hardware database is open source and grows by pull request. Any vendor is welcome.</p>
-          <p>{BRAND_NAME} is powered by <a href={CASCADIA_URL} target="_blank" rel="noreferrer">Cascadia</a>.</p>
-          <div className="pt-2">
-            <Button render={<Link to="/models" />} nativeButton={false}>Browse the boards</Button>
-          </div>
+          <p>The hardware database is open source and grows by pull request. Intel parts are seeded and lead the boards; parts from other vendors are welcome alongside them, so the comparisons stay honest.</p>
+          <p className="flex flex-wrap items-center gap-x-2">
+            <span>{BRAND_NAME} is powered by</span>
+            <a href={CASCADIA_URL} target="_blank" rel="noreferrer" className="inline-flex items-center no-underline!">
+              <img src="/logos/cascadia-wordmark.svg" alt="Cascadia" className="h-4 w-auto" />
+            </a>
+          </p>
         </Block>
       </Section>
     </div>
