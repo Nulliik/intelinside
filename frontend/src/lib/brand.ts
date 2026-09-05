@@ -4,4 +4,7 @@ export const BRAND_NAME = 'Intelinside'
 export const SITE_DOMAIN = 'intelinside.ai'
 export const BRAND_TAGLINE = 'Real hardware. Real tok/s.'
 export const CATALOG_REPO_URL = 'https://github.com/labscommunity/intelinside-catalog'
+/** The site's own repo, public from launch. Result files under `results/<handle>/` can be added by pull request. */
+export const RESULTS_REPO = 'labscommunity/intelinside'
+export const RESULTS_REPO_URL = `https://github.com/${RESULTS_REPO}`
 export const CASCADIA_URL = 'https://cascadia.to/'

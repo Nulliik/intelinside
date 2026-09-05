@@ -60,6 +60,7 @@ Secondary: developers comparing runtimes on given hardware, and Intel or partner
 | Accessibility (Sep 2) | WCAG 2.2 AA: text 4.5:1 (large 3:1), focus indicators 3:1, every row action reachable by keyboard, skip link and landmarks. Palette moved to a muted OKLCH-derived set. One accepted deviation: control borders stay at the 12% hairline |
 | Logo colours (Sep 2) | Every mark keeps its original brand colours; marks drawn black in the original render white on the dark ground |
 | Launch week (Sep 3) | The home page runs a sealed state behind `VITE_REVEAL_AT` until the board goes live, Fri Sep 11, 9:00 AM PT. See §8, Home |
+| Submit by PR (Sep 4) | The "submit via PR" path from Sep 2, settled now that results live in Supabase. The site's repo (public from launch) holds `results/<handle>/<name>.json` files in one format (`results/schema.json`). A GitHub Action validates a PR's files with the same parser the front end uses and comments with `/submit?pr=N`; the submit form reads the PR through GitHub's public API, fills itself in, and uses the PR as the evidence link. The PR is the record, the site is the ranking: merging changes nothing on the site. The reverse: a fresh result's "Add to the results repo" opens GitHub's new-file page with the JSON prefilled. No backend work; a merged-PR-to-Supabase sync stays optional |
 | Integrated parts (Sep 4) | A chip like the Core Ultra 7 265K carries CPU cores, an iGPU, and an NPU, and a model runs at a different speed on each. The CPU catalog entry lists the iGPU and NPU on its package (`integrated`); they stay separate parts with their own pages and board rows, so one chip can hold three component results. The rig editor adds them with the CPU, the submit form names the unit each part stands for, and the chip page shows the three units side by side. No "device" field on results: the part already says which unit ran the model, and whole rig covers runs that spanned more than one |
 
 ---
@@ -222,7 +223,8 @@ Single scrolling form with a live preview card on the right (stacked on phone).
 4. **Runtime.** Select with logos, then version as free text.
 5. **Numbers.** Decode tok/s (required, > 0). Optional prompt tok/s, time to first token in ms, context length, batch size.
 6. **Evidence.** Repo link (required, must be a URL). Run date (required, not in the future). Notes.
-7. Submit. Success state shows the new rank on the relevant board and share actions.
+7. Submit. Success state shows the new rank on the relevant board and share actions, plus "Add to the results repo", which opens GitHub's new-file page with this result's JSON filled in (Sep 4).
+8. **Prefill from a pull request** (Sep 4). A "Prefill from a PR" button in the page header opens a dialog (a bottom sheet on phones, like the share dialog) that takes a PR link or number on the site's repo (also `?pr=N` in the URL, which the repo's check comments on each PR; that case skips the dialog on success and opens it on the error). Once a PR is applied, a slim strip above step 1 names the PR and file with Change and Clear. The form reads the PR's `results/*/*.json` files through GitHub's public API, fills every field it can, sets the PR as the evidence link, and lists what it could not use (an unknown id, a rig that is not yours). Several files in one PR show as pills to pick from. A PR opened by someone else still fills the form but says so.
 Validation is inline. The preview card is the same component used on result pages.
 
 ### Result page `/results/:resultId`

@@ -15,7 +15,8 @@
     "supabase:db:push:prod:dry-run": "supabase --workdir .. db push --project-ref xnzhdnudmgquuwdpuisy --dry-run",
     "supabase:db:reset:staging": "bash scripts/reset-staging.sh",
     "og:assets": "node scripts/generate-og-assets.mjs",
-    "og:preview": "node scripts/og-preview.mjs"
+    "og:preview": "node scripts/og-preview.mjs",
+    "results:validate": "node scripts/validate-results.mjs"
   },
   "keywords": [],
   "author": "",
