@@ -39,7 +39,7 @@ export default function Hardware() {
         eyebrow="Hardware"
         title={
           <>
-            <span className="text-muted-foreground">The open hardware database,</span> any vendor welcome.
+            The open hardware database, any vendor welcome.
           </>
         }
         description="Intel parts are seeded. Missing something? Add it by pull request and it shows up after the next sync."

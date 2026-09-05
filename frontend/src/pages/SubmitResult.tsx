@@ -361,7 +361,7 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
             'Edit result'
           ) : (
             <>
-              <span className="text-muted-foreground">One model, one runtime,</span> one machine.
+              One model, one runtime, one machine.
             </>
           )
         }

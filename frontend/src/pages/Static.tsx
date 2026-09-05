@@ -11,7 +11,7 @@ export function Guidelines() {
   usePageTitle('Guidelines')
   return (
     <div>
-      <PageHeader eyebrow="Guidelines" title={<><span className="text-muted-foreground">What to submit,</span> how it ranks, what gets flagged.</>} />
+      <PageHeader eyebrow="Guidelines" title="What to submit, how it ranks, what gets flagged." />
       <Section>
         <Block className={prose}>
           <h2>What a result is</h2>
@@ -41,7 +41,7 @@ export function About() {
   usePageTitle('About')
   return (
     <div>
-      <PageHeader eyebrow="About" title={<><span className="text-muted-foreground">A community leaderboard of AI inference</span> on real hardware.</>} />
+      <PageHeader eyebrow="About" title="A community leaderboard of AI inference on real hardware." />
       <Section>
         <Block className={prose}>
           <p>People sign in with GitHub, register the machines they run models on, and post the tokens per second they get for a model at a given quantization on a given runtime. Rigs decompose into parts, so a result can describe the whole machine or a single card inside it.</p>

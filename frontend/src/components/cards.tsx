@@ -188,15 +188,15 @@ export function ModelBoardCard({ summary, runtimes, sealedUntil }: { summary: Mo
       </div>
       <div className="mt-auto flex items-center justify-between gap-3 pt-1">
         {sealed ? (
-          <Link to={`/submit?model=${model.id}&quant=${board.quant}`} className="group inline-flex items-center gap-1 text-sm font-medium text-foreground hover:underline underline-offset-4">
-            Submit a result <ChevronRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+          <Link to={`/submit?model=${model.id}&quant=${board.quant}`} className="group/link inline-flex items-center gap-1 text-sm font-medium text-foreground hover:underline underline-offset-4">
+            Submit a result <ChevronRight className="size-3.5 transition-transform group-hover/link:translate-x-0.5" />
           </Link>
         ) : null}
         <Link
           to={boardHref}
-          className={cn('group inline-flex items-center gap-1 text-sm font-medium hover:underline underline-offset-4', sealed ? 'text-muted-foreground hover:text-foreground' : 'text-foreground')}
+          className={cn('group/link inline-flex items-center gap-1 text-sm font-medium hover:underline underline-offset-4', sealed ? 'text-muted-foreground hover:text-foreground' : 'text-foreground')}
         >
-          Full board <ChevronRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+          Full board <ChevronRight className="size-3.5 transition-transform group-hover/link:translate-x-0.5" />
         </Link>
       </div>
     </div>
