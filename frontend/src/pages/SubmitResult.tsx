@@ -22,6 +22,7 @@ import { usePageTitle } from '@/hooks/usePageTitle'
 import { useSession } from '@/hooks/useSession'
 import { api } from '@/lib/api'
 import { isGitHubUrl } from '@/lib/github'
+import { UNIT_LABEL, hasDiscreteGpu, hostIn, integratedParts, nestParts, unitLabel } from '@/lib/hardware'
 import { ApiError, type Result, type ResultInput, type ResultRank } from '@/lib/api/types'
 import { fmtTps } from '@/lib/format'
 import { resultShareTarget } from '@/lib/share'
@@ -216,6 +217,18 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
   const selectedRig = rigs.find((r) => r.id === form.rigId)
   const components = rigDetail.data?.components ?? []
   const selectedComponent = components.find((c) => c.hardwareId === form.componentId)
+  const selectedHost = form.componentId ? hostIn(components, form.componentId) : undefined
+  // A chip that carries an iGPU or NPU: without a discrete GPU, "whole rig" is ambiguous about which unit ran the model.
+  const chip = components.map((c) => c.hardware).find((h) => h && integratedParts(h).length > 0)
+  const chipUnits = integratedParts(chip)
+  const askForUnit = form.target === 'rig' && !!chip && !hasDiscreteGpu(components)
+  const partHint = !selectedComponent?.hardware
+    ? undefined
+    : selectedComponent.hardware.type === 'cpu' && integratedParts(selectedComponent.hardware).length
+      ? `CPU cores only. The ${integratedParts(selectedComponent.hardware).map((p) => UNIT_LABEL[p.type]).join(' and ')} on this chip ${integratedParts(selectedComponent.hardware).length > 1 ? 'are their own parts' : 'is its own part'}.`
+      : selectedHost
+        ? `The ${unitLabel(selectedComponent.hardware, selectedHost)}. It ranks apart from the CPU cores.`
+        : undefined
   const quantLabel = (id: string) => quants.find((q) => q.id === id)?.label ?? id
 
   const preview: Result = {
@@ -231,6 +244,7 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
     componentId: form.target === 'component' ? form.componentId || undefined : undefined,
     componentQuantity: form.target === 'component' ? Number(form.componentQuantity) || 1 : undefined,
     component: form.target === 'component' ? selectedComponent?.hardware : undefined,
+    componentHost: form.target === 'component' ? selectedHost : undefined,
     decodeTps: num(form.decodeTps) ?? 0,
     promptTps: num(form.promptTps),
     ttftMs: num(form.ttftMs),
@@ -400,15 +414,21 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
 
             <Step n={2} title="Target" hint="Whole rig, or one part inside it. Each ranks on its own board.">
               <PillTabs<Target> className="-ml-3" value={form.target} onChange={(v) => set({ target: v })} items={[{ value: 'rig', label: 'Whole rig' }, { value: 'component', label: 'One part' }]} />
+              {askForUnit && chip ? (
+                <p className="max-w-prose text-xs text-muted-foreground">
+                  No discrete GPU here, and the {chip.name} carries {chipUnits.map((p) => `an ${UNIT_LABEL[p.type]}`).join(' and ')} beside its cores. If the run used one unit, submit it as a part so each ranks on its own.
+                </p>
+              ) : null}
               {form.target === 'component' ? (
                 <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_160px]">
-                  <Field id="componentId" label="Part" error={errors.componentId}>
+                  <Field id="componentId" label="Part" error={errors.componentId} hint={partHint}>
                     <NativeSelect className="w-full" id="componentId" value={form.componentId} disabled={!form.rigId} aria-invalid={!!errors.componentId} onChange={(e) => set({ componentId: e.target.value, componentQuantity: '1' })}>
                       <NativeSelectOption value="">{form.rigId ? 'Pick a part' : 'Pick a rig first'}</NativeSelectOption>
-                      {components.map((c) => (
+                      {nestParts(components).map(({ part: c, host }) => (
                         <NativeSelectOption key={c.hardwareId} value={c.hardwareId}>
                           {c.quantity > 1 ? `${c.quantity}× ` : ''}
                           {c.hardware?.name ?? c.hardwareId}
+                          {c.hardware ? ` · ${unitLabel(c.hardware, host)}` : ''}
                         </NativeSelectOption>
                       ))}
                     </NativeSelect>

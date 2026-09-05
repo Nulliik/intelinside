@@ -31,6 +31,8 @@ export type HardwareItem = {
   releaseDate?: string
   imageUrl?: string
   source: 'seeded' | 'community'
+  /** CPUs only: ids of the iGPU and NPU on the same package. They stay separate parts with their own boards. */
+  integrated?: string[]
   resultsCount?: number
   rigsCount?: number
 }
@@ -98,6 +100,8 @@ export type Result = {
   componentId?: string
   componentQuantity?: number
   component?: HardwareItem
+  /** When the part is an iGPU or NPU, the CPU in the rig whose package carries it. */
+  componentHost?: HardwareItem
   decodeTps: number
   promptTps?: number
   ttftMs?: number

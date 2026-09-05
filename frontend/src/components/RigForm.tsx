@@ -12,6 +12,8 @@ import { keySpec } from '@/components/cards'
 import { useAsync } from '@/hooks/useAsync'
 import { api } from '@/lib/api'
 import { ApiError, type HardwareItem, type HardwareType, type Rig, type RigInput } from '@/lib/api/types'
+import { UNIT_LABEL, integratedParts, nestParts } from '@/lib/hardware'
+import { cn } from '@/lib/utils'
 import { HARDWARE_TYPE_LABEL, HARDWARE_TYPES } from '@/mocks/catalog'
 
 type Picked = { hardware: HardwareItem; quantity: number }
@@ -67,9 +69,30 @@ export function RigForm({ initial, submitLabel = 'Save rig', onSaved, onCancel, 
   const pickedIds = new Set(picked.map((p) => p.hardware.id))
   const Root = inline ? 'div' : 'form'
 
-  const add = (h: HardwareItem) => setPicked((p) => (p.some((x) => x.hardware.id === h.id) ? p : [...p, { hardware: h, quantity: 1 }]))
+  /** Adding a CPU brings the iGPU and NPU on its package along, so a run on any of the three can be recorded as its own part. */
+  const add = (h: HardwareItem) => {
+    const carried = integratedParts(h).filter((part) => !pickedIds.has(part.id))
+    setPicked((p) => {
+      if (p.some((x) => x.hardware.id === h.id)) return p
+      const next = [...p, { hardware: h, quantity: 1 }]
+      for (const part of carried) if (!next.some((x) => x.hardware.id === part.id)) next.push({ hardware: part, quantity: 1 })
+      return next
+    })
+    if (carried.length) {
+      const names = carried.map((part) => part.name).join(' and ')
+      toast(carried.length > 1 ? `${names} come on the ${h.name} package, so they were added too.` : `${names} comes on the ${h.name} package, so it was added too.`)
+    }
+  }
   const setQty = (id: string, qty: number) => setPicked((p) => p.map((x) => (x.hardware.id === id ? { ...x, quantity: Math.max(1, Math.min(64, qty)) } : x)))
-  const remove = (id: string) => setPicked((p) => p.filter((x) => x.hardware.id !== id))
+  /** Removing a CPU also removes the integrated parts it brought, unless another picked CPU carries them. */
+  const remove = (id: string) =>
+    setPicked((p) => {
+      const rest = p.filter((x) => x.hardware.id !== id)
+      const orphaned = new Set(integratedParts(p.find((x) => x.hardware.id === id)?.hardware).map((part) => part.id))
+      for (const x of rest) for (const part of integratedParts(x.hardware)) orphaned.delete(part.id)
+      return rest.filter((x) => !orphaned.has(x.hardware.id))
+    })
+  const nested = nestParts(picked.map((p) => ({ ...p, hardwareId: p.hardware.id })))
 
   const validate = () => {
     const e: Record<string, string> = {}
@@ -90,7 +113,11 @@ export function RigForm({ initial, submitLabel = 'Save rig', onSaved, onCancel, 
         os: os.trim(),
         notes: notes.trim() || undefined,
         photoUrl,
-        components: picked.map((p) => ({ hardwareId: p.hardware.id, quantity: p.quantity })),
+        components: nested.map(({ part, host }) => ({
+          hardwareId: part.hardware.id,
+          // An integrated part has as many units as the CPU that carries it.
+          quantity: host ? picked.find((p) => p.hardware.id === host.id)?.quantity ?? part.quantity : part.quantity,
+        })),
       }
       const rig = initial ? await api.updateRig(initial.id, input) : await api.createRig(input)
       toast.success(initial ? 'Rig updated.' : 'Rig created.')
@@ -152,26 +179,28 @@ export function RigForm({ initial, submitLabel = 'Save rig', onSaved, onCancel, 
         <div className="text-xs font-medium uppercase tracking-label text-muted-foreground">Components</div>
         {picked.length ? (
           <ul className="divide-y rounded-lg border">
-            {picked.map((p) => (
-              <li key={p.hardware.id} className="flex items-center gap-3 px-3 py-2 text-sm">
+            {nested.map(({ part: p, host }) => (
+              <li key={p.hardware.id} className={cn('flex items-center gap-3 px-3 py-2 text-sm', host && 'pl-9')}>
                 <HardwareTypeIcon type={p.hardware.type} className="size-3.5 shrink-0 text-muted-foreground" />
                 <div className="min-w-0 flex-1">
                   <div className="truncate font-medium">{p.hardware.name}</div>
                   <div className="truncate text-xs text-muted-foreground">
-                    {HARDWARE_TYPE_LABEL[p.hardware.type]} · {keySpec(p.hardware)}
+                    {host ? `${UNIT_LABEL[p.hardware.type]} on the ${host.name} package` : HARDWARE_TYPE_LABEL[p.hardware.type]} · {keySpec(p.hardware)}
                   </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Button type="button" variant="outline" size="icon-sm" aria-label={`Fewer ${p.hardware.name}`} onClick={() => setQty(p.hardware.id, p.quantity - 1)}>
-                    <Minus />
-                  </Button>
-                  <span className="w-8 text-center font-mono text-sm tnum" aria-live="polite">
-                    {p.quantity}
-                  </span>
-                  <Button type="button" variant="outline" size="icon-sm" aria-label={`More ${p.hardware.name}`} onClick={() => setQty(p.hardware.id, p.quantity + 1)}>
-                    <Plus />
-                  </Button>
-                </div>
+                {host ? null : (
+                  <div className="flex items-center gap-1">
+                    <Button type="button" variant="outline" size="icon-sm" aria-label={`Fewer ${p.hardware.name}`} onClick={() => setQty(p.hardware.id, p.quantity - 1)}>
+                      <Minus />
+                    </Button>
+                    <span className="w-8 text-center font-mono text-sm tnum" aria-live="polite">
+                      {p.quantity}
+                    </span>
+                    <Button type="button" variant="outline" size="icon-sm" aria-label={`More ${p.hardware.name}`} onClick={() => setQty(p.hardware.id, p.quantity + 1)}>
+                      <Plus />
+                    </Button>
+                  </div>
+                )}
                 <Button type="button" variant="ghost" size="icon-sm" aria-label={`Remove ${p.hardware.name}`} onClick={() => remove(p.hardware.id)}>
                   <X />
                 </Button>

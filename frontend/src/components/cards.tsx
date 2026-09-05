@@ -10,6 +10,7 @@ import type { HardwareItem, ModelSummary, RigSummary, Runtime } from '@/lib/api/
 import { RuntimeMark } from '@/components/RuntimeMark'
 import { GhostList } from '@/components/launch'
 import { HARDWARE_TYPE_LABEL, QUANT_BY_ID, quantHint } from '@/mocks/catalog'
+import { UNIT_LABEL, integratedParts } from '@/lib/hardware'
 import { fmtInstant, fmtTps, pluralize } from '@/lib/format'
 import { rigShareTarget } from '@/lib/share'
 import { cn } from '@/lib/utils'
@@ -83,6 +84,7 @@ export function keySpec(h: HardwareItem): string {
 
 /** `counts={false}` shows the series instead of result and rig counts, for launch week. */
 export function HardwareCard({ hardware, counts = true }: { hardware: HardwareItem; counts?: boolean }) {
+  const integrated = integratedParts(hardware)
   return (
     <Link to={`/hardware/${hardware.id}`} className={cell}>
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -93,6 +95,16 @@ export function HardwareCard({ hardware, counts = true }: { hardware: HardwareIt
       <div>
         <h3 className="text-lg font-semibold">{hardware.name}</h3>
         <p className="mt-1 text-sm text-muted-foreground">{keySpec(hardware)}</p>
+        {integrated.length ? (
+          <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+            {integrated.map((part) => (
+              <span key={part.id} className="inline-flex items-center gap-1">
+                <HardwareTypeIcon type={part.type} className="size-3" /> {UNIT_LABEL[part.type]}
+              </span>
+            ))}
+            <span>on the package</span>
+          </p>
+        ) : null}
       </div>
       <div className="mt-auto flex items-center justify-between pt-2 text-sm text-muted-foreground">
         <span>

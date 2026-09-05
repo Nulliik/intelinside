@@ -21,6 +21,7 @@ export function Guidelines() {
             <li>Generate at least 256 tokens from a short prompt and average over a few runs.</li>
             <li>Report the runtime version you used and link the repo you ran in, yours or the runtime's.</li>
             <li>If you ran on one card out of several, submit it as a component result and set the quantity you used.</li>
+            <li>A Core Ultra chip carries CPU cores, an iGPU, and an NPU, and each is its own part. Submit the unit the model ran on; a result on the CPU part means its cores. Use whole rig when the run spanned more than one unit.</li>
           </ul>
           <h2>Ranking</h2>
           <p>Each rig, or each part at a given quantity, appears once on a board at its best decode tok/s. The earliest run wins a tie. Boards mix runtimes; filter by runtime to compare like with like.</p>

@@ -5,6 +5,7 @@ import type {
 } from './types'
 import { ApiError } from './types'
 import { isGitHubUrl } from '@/lib/github'
+import { hostIn } from '@/lib/hardware'
 import { HARDWARE_BY_ID, MODELS, MODEL_BY_ID, QUANTS, QUANT_BY_ID, RUNTIMES, VISIBLE_HARDWARE } from '@/mocks/catalog'
 import { createSeed, rigSummaryLine, type SeedDb } from '@/mocks/seed'
 
@@ -107,6 +108,7 @@ function hydrateResult(r: Result): Result {
     submitter: publicUser(userById(r.submitterId)!),
     rig: rigSummary(rigOf(r)),
     component: r.componentId ? HARDWARE_BY_ID[r.componentId] : undefined,
+    componentHost: r.componentId ? hostIn(rigOf(r).components, r.componentId) : undefined,
     verification: { ...r.verification, confirmedByMe: !!sessionUserId && !!confs?.has(sessionUserId) },
     moderation: { ...r.moderation, flaggedByMe: !!sessionUserId && !!fl?.has(sessionUserId) },
   }

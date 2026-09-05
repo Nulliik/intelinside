@@ -38,21 +38,21 @@ const USER_SEED: { handle: string; name: string; bio: string }[] = [
 type RigSeed = { id: string; owner: string; name: string; os: string; notes?: string; components: [string, number][] }
 
 const RIG_SEED: RigSeed[] = [
-  { id: 'rig-quad-b70', owner: 'tatef', name: 'Quad B70 workstation', os: 'Ubuntu 24.04', notes: 'Four Arc Pro B70s on a 285K. Most runs use one card unless noted.', components: [['intel-core-ultra-9-285k', 1], ['intel-arc-pro-b70', 4], ['ddr5-6000-32gb', 4]] },
+  { id: 'rig-quad-b70', owner: 'tatef', name: 'Quad B70 workstation', os: 'Ubuntu 24.04', notes: 'Four Arc Pro B70s on a 285K. Most runs use one card unless noted.', components: [['intel-core-ultra-9-285k', 1], ['intel-graphics-arrow-lake-s', 1], ['intel-ai-boost-arrow-lake', 1], ['intel-arc-pro-b70', 4], ['ddr5-6000-32gb', 4]] },
   { id: 'rig-nuc-charlie', owner: 'jacksmith', name: 'NUC charlie', os: 'Windows 11', notes: 'Panther Lake NUC. iGPU runs via OpenVINO unless noted.', components: [['intel-core-ultra-x7-358h', 1], ['intel-arc-b390', 1], ['intel-ai-boost-npu-5', 1], ['ddr5-5600-16gb-sodimm', 2]] },
   { id: 'rig-lunar-ultrabook', owner: 'lunarlaker', name: 'Lunar Lake ultrabook', os: 'Windows 11', notes: 'Plugged in, performance mode.', components: [['intel-core-ultra-9-288v', 1], ['intel-arc-140v', 1], ['intel-ai-boost-npu-4', 1], ['lpddr5x-8533-16gb', 2]] },
   { id: 'rig-b580-gaming', owner: 'arcpilot', name: 'B580 gaming box', os: 'Windows 11', components: [['intel-core-i7-14700k', 1], ['intel-uhd-770', 1], ['intel-arc-b580', 1], ['ddr5-6000-32gb', 2]] },
-  { id: 'rig-a770-budget', owner: 'nucwrangler', name: 'A770 budget node', os: 'Ubuntu 24.04', notes: 'Second-hand A770, resizable BAR on.', components: [['intel-core-ultra-5-245k', 1], ['intel-arc-a770-16gb', 1], ['ddr5-5600-32gb', 2]] },
+  { id: 'rig-a770-budget', owner: 'nucwrangler', name: 'A770 budget node', os: 'Ubuntu 24.04', notes: 'Second-hand A770, resizable BAR on.', components: [['intel-core-ultra-5-245k', 1], ['intel-graphics-arrow-lake-s', 1], ['intel-ai-boost-arrow-lake', 1], ['intel-arc-a770-16gb', 1], ['ddr5-5600-32gb', 2]] },
   { id: 'rig-xeon-w7-lab', owner: 'xeonbench', name: 'Xeon w7 lab', os: 'Ubuntu 22.04', components: [['intel-xeon-w7-3465x', 1], ['intel-arc-pro-b60', 2], ['ddr5-4800-64gb-ecc', 8]] },
   { id: 'rig-granite-cpu', owner: 'xeonbench', name: 'Granite Rapids CPU-only', os: 'Ubuntu 24.04', notes: 'No accelerator. AMX on.', components: [['intel-xeon-6-6960p', 1], ['ddr5-4800-64gb-ecc', 8]] },
   { id: 'rig-meteor-laptop', owner: 'quantqueen', name: 'Meteor Lake laptop', os: 'Fedora 42', components: [['intel-core-ultra-7-155h', 1], ['intel-arc-graphics-meteor-lake', 1], ['intel-ai-boost-npu-3', 1], ['ddr5-5600-16gb-sodimm', 2]] },
-  { id: 'rig-4090-285k', owner: 'bgpu', name: 'RTX 4090 + 285K', os: 'Windows 11', components: [['intel-core-ultra-9-285k', 1], ['nvidia-geforce-rtx-4090', 1], ['ddr5-6000-32gb', 2]] },
+  { id: 'rig-4090-285k', owner: 'bgpu', name: 'RTX 4090 + 285K', os: 'Windows 11', components: [['intel-core-ultra-9-285k', 1], ['intel-graphics-arrow-lake-s', 1], ['intel-ai-boost-arrow-lake', 1], ['nvidia-geforce-rtx-4090', 1], ['ddr5-6000-32gb', 2]] },
   { id: 'rig-5090', owner: 'bgpu', name: '5090 rig', os: 'Ubuntu 24.04', components: [['amd-ryzen-9-9950x', 1], ['nvidia-geforce-rtx-5090', 1], ['ddr5-6000-32gb', 2]] },
   { id: 'rig-mac-studio', owner: 'quantqueen', name: 'Mac Studio M4 Max', os: 'macOS 15', components: [['apple-m4-max', 1], ['apple-m4-max-gpu-40c', 1], ['lpddr5x-8533-128gb-unified', 1]] },
   { id: 'rig-panther-devkit', owner: 'pantherlake', name: 'Panther Lake dev kit', os: 'Ubuntu 24.04', components: [['intel-core-ultra-x7-358h', 1], ['intel-arc-b390', 1], ['intel-ai-boost-npu-5', 1], ['ddr5-5600-32gb', 2]] },
-  { id: 'rig-dual-b580', owner: 'arcpilot', name: 'Dual B580', os: 'Ubuntu 24.04', notes: 'Two B580s for pipeline-parallel tests.', components: [['intel-core-ultra-7-265k', 1], ['intel-arc-b580', 2], ['ddr5-6000-32gb', 2]] },
+  { id: 'rig-dual-b580', owner: 'arcpilot', name: 'Dual B580', os: 'Ubuntu 24.04', notes: 'Two B580s for pipeline-parallel tests. The 265K itself gets tested too: cores, iGPU, and NPU each as their own part.', components: [['intel-core-ultra-7-265k', 1], ['intel-graphics-arrow-lake-s', 1], ['intel-ai-boost-arrow-lake', 1], ['intel-arc-b580', 2], ['ddr5-6000-32gb', 2]] },
   { id: 'rig-gaudi3', owner: 'tatef', name: 'Gaudi 3 node', os: 'Ubuntu 24.04', components: [['intel-xeon-6-6960p', 1], ['intel-gaudi-3', 1], ['ddr5-4800-64gb-ecc', 8]] },
-  { id: 'rig-horace-desk', owner: 'horacechoi', name: "Horace's desk", os: 'Windows 11', components: [['intel-core-i9-14900k', 1], ['nvidia-geforce-rtx-3090', 1], ['ddr5-5600-32gb', 2]] },
+  { id: 'rig-horace-desk', owner: 'horacechoi', name: "Horace's desk", os: 'Windows 11', components: [['intel-core-i9-14900k', 1], ['intel-uhd-770', 1], ['nvidia-geforce-rtx-3090', 1], ['ddr5-5600-32gb', 2]] },
 ]
 
 // Decode tok/s for an 8B model at 4-bit on one unit of the part. Everything else scales from here.
@@ -61,7 +61,7 @@ const BASE_TPS: Record<string, number> = {
   'intel-arc-a770-16gb': 26, 'intel-arc-a750': 22, 'intel-gaudi-3': 95,
   'nvidia-geforce-rtx-5090': 165, 'nvidia-geforce-rtx-4090': 120, 'nvidia-geforce-rtx-3090': 85, 'nvidia-rtx-pro-6000-blackwell': 175,
   'amd-radeon-rx-7900-xtx': 90,
-  'intel-arc-140v': 15, 'intel-arc-140t': 13, 'intel-arc-graphics-meteor-lake': 10, 'intel-uhd-770': 5, 'intel-arc-b390': 22, 'apple-m4-max-gpu-40c': 62,
+  'intel-arc-140v': 15, 'intel-arc-140t': 13, 'intel-arc-graphics-meteor-lake': 10, 'intel-uhd-770': 5, 'intel-graphics-arrow-lake-s': 4.5, 'intel-arc-b390': 22, 'apple-m4-max-gpu-40c': 62,
   'intel-core-ultra-9-285k': 11, 'intel-core-ultra-7-265k': 10, 'intel-core-ultra-5-245k': 8.5, 'intel-core-ultra-9-288v': 7.5, 'intel-core-ultra-7-258v': 7,
   'intel-core-ultra-7-155h': 6.5, 'intel-core-ultra-x7-358h': 9, 'intel-core-i9-14900k': 9.5, 'intel-core-i7-14700k': 8.8, 'intel-xeon-w7-3465x': 14,
   'intel-xeon-6-6960p': 24, 'amd-ryzen-9-9950x': 12, 'amd-ryzen-7-9800x3d': 9, 'apple-m4-max': 18,

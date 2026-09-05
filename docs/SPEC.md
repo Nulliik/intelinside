@@ -60,6 +60,7 @@ Secondary: developers comparing runtimes on given hardware, and Intel or partner
 | Accessibility (Sep 2) | WCAG 2.2 AA: text 4.5:1 (large 3:1), focus indicators 3:1, every row action reachable by keyboard, skip link and landmarks. Palette moved to a muted OKLCH-derived set. One accepted deviation: control borders stay at the 12% hairline |
 | Logo colours (Sep 2) | Every mark keeps its original brand colours; marks drawn black in the original render white on the dark ground |
 | Launch week (Sep 3) | The home page runs a sealed state behind `VITE_REVEAL_AT` until the board goes live, Fri Sep 11, 9:00 AM PT. See §8, Home |
+| Integrated parts (Sep 4) | A chip like the Core Ultra 7 265K carries CPU cores, an iGPU, and an NPU, and a model runs at a different speed on each. The CPU catalog entry lists the iGPU and NPU on its package (`integrated`); they stay separate parts with their own pages and board rows, so one chip can hold three component results. The rig editor adds them with the CPU, the submit form names the unit each part stands for, and the chip page shows the three units side by side. No "device" field on results: the part already says which unit ran the model, and whole rig covers runs that spanned more than one |
 
 ---
 
@@ -89,6 +90,8 @@ GitHub identity. Fields: `id`, `handle`, `name`, `avatarUrl`, `bio` (pulled from
 One entry in the open hardware database. Fields: `id` (slug such as `intel-arc-pro-b70`), `type` (`cpu` | `gpu` | `igpu` | `npu` | `ram`), `vendor`, `name`, `series`, type-specific `specs`, optional `releaseDate`, optional `imageUrl`, `source` (`seeded` | `community`).
 
 RAM is modeled as a module spec (type, speed, capacity per module); the rig's quantity gives total capacity.
+
+A CPU may carry an `integrated` list: the ids of the iGPU and NPU on its package (Sep 4). Those are ordinary `igpu` and `npu` items with their own pages, so a run on the CPU cores, on the iGPU, and on the NPU of the same chip are three component results. A result that names the CPU item means its cores. The reverse link (which chips carry a part) is derived from the catalog, not stored.
 
 ### Rig
 A user's machine. Fields: `id`, `ownerId`, `name`, `os`, optional `photoUrl`, optional `notes`, `components: [{ hardwareId, quantity }]`, timestamps. A derived one-line summary is shown everywhere the rig appears, for example "Core Ultra 9 285K · 4× Arc Pro B70 · 128 GB DDR5".
@@ -123,7 +126,7 @@ One per user per result, toggleable. A user cannot confirm or flag their own res
 4. **Components leaderboard.** Results with a `componentId`. Group by (`hardwareId`, `componentQuantity`) so "1× Arc Pro B70" and "2× Arc Pro B70" are separate rows. Each group appears once at its highest `decodeTps`. Same ordering and tie rule.
 5. Runtime is a column, not a board dimension. Boards mix runtimes. Filtering by runtime recomputes best-per-unit within the filter.
 6. Filters available on every board: runtime, vendor, component type (components board only), verification state.
-7. Row contents: rank, hardware (rig name and summary, or component name with quantity), runtime logo linking to the runtime repo, runtime version, decode tok/s, optional prompt tok/s and TTFT, submitter avatar and handle, verification badge, run date, link to the result page.
+7. Row contents: rank, hardware (rig name and summary, or component name with quantity and the unit it stands for: CPU cores, GPU, or iGPU or NPU on its host chip), runtime logo linking to the runtime repo, runtime version, decode tok/s, optional prompt tok/s and TTFT, submitter avatar and handle, verification badge, run date, link to the result page.
 8. Ranking is computed server-side so pagination stays correct. The mock layer implements the same rule client-side.
 
 ---
@@ -193,6 +196,7 @@ Table or card toggle. Filters: type, vendor, search. Each item: name, vendor, ty
 
 ### Component page `/hardware/:hardwareId`
 - Header: name, vendor, type, spec sheet, release date, source badge (seeded or community).
+- On a CPU with integrated parts, an "On the package" strip (Sep 4): one cell per unit, CPU cores first, then the iGPU and NPU, each with its key spec, result count, and best decode tok/s, linking to the part's page. The chart and results below it are the CPU cores alone, and say so. On an iGPU or NPU, a "Found in" row of the chips that carry it.
 - Chart: horizontal bars of best decode tok/s per (model, quant), colored by runtime.
 - Results table: every visible result that names this component, with quantity, model, quant, runtime, tok/s, submitter, verification, date. Filters: model, runtime, quantity.
 - Rigs containing this component: card row.
@@ -208,12 +212,12 @@ Card grid in the PC Part Picker completed-builds spirit: photo (placeholder patt
 - "Submit a result for this rig" CTA for the owner.
 
 ### Rig editor `/rigs/new`, `/rigs/:rigId/edit`
-Single page. Name, OS (free text with suggestions), photo upload, notes. Component picker: search the catalog by name with type and vendor filters, add with quantity, reorder. Live summary line preview. Validation: at least one component, name required. Cannot delete a rig that has results without confirming that its results will be deleted too.
+Single page. Name, OS (free text with suggestions), photo upload, notes. Component picker: search the catalog by name with type and vendor filters, add with quantity, reorder. Adding a CPU also adds the iGPU and NPU on its package (Sep 4), nested under it with no quantity control (they follow the CPU) and removable one by one; removing the CPU removes them. Live summary line preview. Validation: at least one component, name required. Cannot delete a rig that has results without confirming that its results will be deleted too.
 
 ### Submit `/submit`
 Single scrolling form with a live preview card on the right (stacked on phone).
 1. **Rig.** Pick one of my rigs. If none, an inline "create a rig first" panel opens the rig editor fields.
-2. **Target.** Whole rig, or one component from that rig with quantity used (default 1).
+2. **Target.** Whole rig, or one component from that rig with quantity used (default 1). Parts are listed with the unit they stand for ("Core Ultra 7 265K · CPU cores", "Intel Graphics (Arrow Lake-S) · iGPU on the Core Ultra 7 265K"), with a hint under a CPU that its iGPU and NPU are separate parts. Choosing whole rig on a machine with no discrete GPU shows a nudge to submit as a part when the run used one unit (Sep 4).
 3. **Model and quant.** Model select, then quant select limited to that model's quants.
 4. **Runtime.** Select with logos, then version as free text.
 5. **Numbers.** Decode tok/s (required, > 0). Optional prompt tok/s, time to first token in ms, context length, batch size.

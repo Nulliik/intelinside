@@ -61,26 +61,29 @@ export const HARDWARE_TYPES: HardwareType[] = ['cpu', 'gpu', 'igpu', 'npu', 'ram
 
 const hw = (
   id: string, type: HardwareType, vendor: string, name: string, specs: Record<string, string | number>,
-  releaseDate?: string, series?: string,
-): HardwareItem => ({ id, type, vendor, name, series, specs, releaseDate, source: 'seeded' })
+  releaseDate?: string, series?: string, integrated?: string[],
+): HardwareItem => ({ id, type, vendor, name, series, specs, releaseDate, source: 'seeded', ...(integrated ? { integrated } : {}) })
+
+// A CPU's `integrated` list names the iGPU and NPU on its package. They are catalog items in their own right, with
+// their own pages and board rows, so a run on the CPU cores, the iGPU, and the NPU of one chip ranks as three parts.
 
 export const HARDWARE: HardwareItem[] = [
   // Intel CPUs
-  hw('intel-core-ultra-9-285k', 'cpu', 'Intel', 'Core Ultra 9 285K', { cores: 24, threads: 24, boostGhz: 5.7, tdpW: 125, platform: 'Arrow Lake-S' }, '2024-10-24', 'Core Ultra 200S'),
-  hw('intel-core-ultra-7-265k', 'cpu', 'Intel', 'Core Ultra 7 265K', { cores: 20, threads: 20, boostGhz: 5.5, tdpW: 125, platform: 'Arrow Lake-S' }, '2024-10-24', 'Core Ultra 200S'),
-  hw('intel-core-ultra-5-245k', 'cpu', 'Intel', 'Core Ultra 5 245K', { cores: 14, threads: 14, boostGhz: 5.2, tdpW: 125, platform: 'Arrow Lake-S' }, '2024-10-24', 'Core Ultra 200S'),
-  hw('intel-core-ultra-9-288v', 'cpu', 'Intel', 'Core Ultra 9 288V', { cores: 8, threads: 8, boostGhz: 5.1, tdpW: 30, platform: 'Lunar Lake' }, '2024-09-24', 'Core Ultra 200V'),
-  hw('intel-core-ultra-7-258v', 'cpu', 'Intel', 'Core Ultra 7 258V', { cores: 8, threads: 8, boostGhz: 4.8, tdpW: 17, platform: 'Lunar Lake' }, '2024-09-24', 'Core Ultra 200V'),
-  hw('intel-core-ultra-7-155h', 'cpu', 'Intel', 'Core Ultra 7 155H', { cores: 16, threads: 22, boostGhz: 4.8, tdpW: 28, platform: 'Meteor Lake' }, '2023-12-14', 'Core Ultra 100H'),
-  hw('intel-core-ultra-x7-358h', 'cpu', 'Intel', 'Core Ultra X7 358H', { cores: 16, threads: 16, boostGhz: 4.8, tdpW: 25, platform: 'Panther Lake' }, '2026-01-05', 'Core Ultra 300'),
-  hw('intel-core-i9-14900k', 'cpu', 'Intel', 'Core i9-14900K', { cores: 24, threads: 32, boostGhz: 6.0, tdpW: 125, platform: 'Raptor Lake Refresh' }, '2023-10-17', 'Core 14th Gen'),
-  hw('intel-core-i7-14700k', 'cpu', 'Intel', 'Core i7-14700K', { cores: 20, threads: 28, boostGhz: 5.6, tdpW: 125, platform: 'Raptor Lake Refresh' }, '2023-10-17', 'Core 14th Gen'),
+  hw('intel-core-ultra-9-285k', 'cpu', 'Intel', 'Core Ultra 9 285K', { cores: 24, threads: 24, boostGhz: 5.7, tdpW: 125, platform: 'Arrow Lake-S' }, '2024-10-24', 'Core Ultra 200S', ['intel-graphics-arrow-lake-s', 'intel-ai-boost-arrow-lake']),
+  hw('intel-core-ultra-7-265k', 'cpu', 'Intel', 'Core Ultra 7 265K', { cores: 20, threads: 20, boostGhz: 5.5, tdpW: 125, platform: 'Arrow Lake-S' }, '2024-10-24', 'Core Ultra 200S', ['intel-graphics-arrow-lake-s', 'intel-ai-boost-arrow-lake']),
+  hw('intel-core-ultra-5-245k', 'cpu', 'Intel', 'Core Ultra 5 245K', { cores: 14, threads: 14, boostGhz: 5.2, tdpW: 125, platform: 'Arrow Lake-S' }, '2024-10-24', 'Core Ultra 200S', ['intel-graphics-arrow-lake-s', 'intel-ai-boost-arrow-lake']),
+  hw('intel-core-ultra-9-288v', 'cpu', 'Intel', 'Core Ultra 9 288V', { cores: 8, threads: 8, boostGhz: 5.1, tdpW: 30, platform: 'Lunar Lake' }, '2024-09-24', 'Core Ultra 200V', ['intel-arc-140v', 'intel-ai-boost-npu-4']),
+  hw('intel-core-ultra-7-258v', 'cpu', 'Intel', 'Core Ultra 7 258V', { cores: 8, threads: 8, boostGhz: 4.8, tdpW: 17, platform: 'Lunar Lake' }, '2024-09-24', 'Core Ultra 200V', ['intel-arc-140v', 'intel-ai-boost-npu-4']),
+  hw('intel-core-ultra-7-155h', 'cpu', 'Intel', 'Core Ultra 7 155H', { cores: 16, threads: 22, boostGhz: 4.8, tdpW: 28, platform: 'Meteor Lake' }, '2023-12-14', 'Core Ultra 100H', ['intel-arc-graphics-meteor-lake', 'intel-ai-boost-npu-3']),
+  hw('intel-core-ultra-x7-358h', 'cpu', 'Intel', 'Core Ultra X7 358H', { cores: 16, threads: 16, boostGhz: 4.8, tdpW: 25, platform: 'Panther Lake' }, '2026-01-05', 'Core Ultra 300', ['intel-arc-b390', 'intel-ai-boost-npu-5']),
+  hw('intel-core-i9-14900k', 'cpu', 'Intel', 'Core i9-14900K', { cores: 24, threads: 32, boostGhz: 6.0, tdpW: 125, platform: 'Raptor Lake Refresh' }, '2023-10-17', 'Core 14th Gen', ['intel-uhd-770']),
+  hw('intel-core-i7-14700k', 'cpu', 'Intel', 'Core i7-14700K', { cores: 20, threads: 28, boostGhz: 5.6, tdpW: 125, platform: 'Raptor Lake Refresh' }, '2023-10-17', 'Core 14th Gen', ['intel-uhd-770']),
   hw('intel-xeon-w7-3465x', 'cpu', 'Intel', 'Xeon w7-3465X', { cores: 28, threads: 56, boostGhz: 4.8, tdpW: 300, platform: 'Sapphire Rapids' }, '2023-02-15', 'Xeon W-3400'),
   hw('intel-xeon-6-6960p', 'cpu', 'Intel', 'Xeon 6 6960P', { cores: 72, threads: 144, boostGhz: 3.9, tdpW: 500, platform: 'Granite Rapids' }, '2024-09-24', 'Xeon 6'),
   // Other CPUs
   hw('amd-ryzen-9-9950x', 'cpu', 'AMD', 'Ryzen 9 9950X', { cores: 16, threads: 32, boostGhz: 5.7, tdpW: 170, platform: 'Zen 5' }, '2024-08-15', 'Ryzen 9000'),
   hw('amd-ryzen-7-9800x3d', 'cpu', 'AMD', 'Ryzen 7 9800X3D', { cores: 8, threads: 16, boostGhz: 5.2, tdpW: 120, platform: 'Zen 5' }, '2024-11-07', 'Ryzen 9000'),
-  hw('apple-m4-max', 'cpu', 'Apple', 'M4 Max (16-core)', { cores: 16, threads: 16, boostGhz: 4.5, tdpW: 90, platform: 'Apple silicon' }, '2024-10-30', 'M4'),
+  hw('apple-m4-max', 'cpu', 'Apple', 'M4 Max (16-core)', { cores: 16, threads: 16, boostGhz: 4.5, tdpW: 90, platform: 'Apple silicon' }, '2024-10-30', 'M4', ['apple-m4-max-gpu-40c']),
   // Intel discrete GPUs
   hw('intel-arc-pro-b70', 'gpu', 'Intel', 'Arc Pro B70', { vramGb: 32, memoryType: 'GDDR6', xeCores: 32, tdpW: 240 }, '2026-03-10', 'Arc Pro B'),
   hw('intel-arc-pro-b60', 'gpu', 'Intel', 'Arc Pro B60', { vramGb: 24, memoryType: 'GDDR6', xeCores: 20, tdpW: 200 }, '2025-05-19', 'Arc Pro B'),
@@ -97,6 +100,7 @@ export const HARDWARE: HardwareItem[] = [
   hw('nvidia-rtx-pro-6000-blackwell', 'gpu', 'NVIDIA', 'RTX PRO 6000 Blackwell', { vramGb: 96, memoryType: 'GDDR7', tdpW: 600 }, '2025-03-18', 'RTX PRO'),
   hw('amd-radeon-rx-7900-xtx', 'gpu', 'AMD', 'Radeon RX 7900 XTX', { vramGb: 24, memoryType: 'GDDR6', tdpW: 355 }, '2022-12-13', 'Radeon 7000'),
   // Integrated GPUs
+  hw('intel-graphics-arrow-lake-s', 'igpu', 'Intel', 'Intel Graphics (Arrow Lake-S)', { xeCores: 4, platform: 'Arrow Lake-S', architecture: 'Xe-LPG' }, '2024-10-24', 'Intel Graphics'),
   hw('intel-arc-140v', 'igpu', 'Intel', 'Arc 140V', { xeCores: 8, platform: 'Lunar Lake', architecture: 'Xe2' }, '2024-09-24', 'Arc'),
   hw('intel-arc-140t', 'igpu', 'Intel', 'Arc 140T', { xeCores: 8, platform: 'Arrow Lake-H', architecture: 'Xe' }, '2025-01-06', 'Arc'),
   hw('intel-arc-graphics-meteor-lake', 'igpu', 'Intel', 'Arc Graphics (Meteor Lake)', { xeCores: 8, platform: 'Meteor Lake', architecture: 'Xe-LPG' }, '2023-12-14', 'Arc'),
