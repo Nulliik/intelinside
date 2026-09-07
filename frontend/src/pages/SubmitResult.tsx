@@ -881,18 +881,27 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
                     onChange={(e) => set({ customId: e.target.value, ...(e.target.value ? {} : { revision: '' }) })}
                   >
                     <NativeSelectOption value="">Stock{runtimeName ? ` ${runtimeName}` : ''}</NativeSelectOption>
+                    {/* Grouped only when there is something to contrast: with none of your own, a lone "yours vs
+                        theirs" heading names a distinction the reader cannot see. Every other entry carries its
+                        owner's handle anyway, so the flat list loses nothing. */}
                     {myCustomRuntimes.length ? (
-                      <optgroup label="Yours">
-                        {myCustomRuntimes.map((b) => <NativeSelectOption key={b.id} value={b.id}>{b.name}</NativeSelectOption>)}
-                      </optgroup>
-                    ) : null}
-                    {otherCustomRuntimes.length ? (
-                      <optgroup label="Everyone else's">
-                        {otherCustomRuntimes.map((b) => (
-                          <NativeSelectOption key={b.id} value={b.id}>{b.name} — {b.owner?.handle ?? 'unknown'}</NativeSelectOption>
-                        ))}
-                      </optgroup>
-                    ) : null}
+                      <>
+                        <optgroup label="Yours">
+                          {myCustomRuntimes.map((b) => <NativeSelectOption key={b.id} value={b.id}>{b.name}</NativeSelectOption>)}
+                        </optgroup>
+                        {otherCustomRuntimes.length ? (
+                          <optgroup label="Registered by other people">
+                            {otherCustomRuntimes.map((b) => (
+                              <NativeSelectOption key={b.id} value={b.id}>{b.name} — {b.owner?.handle ?? 'unknown'}</NativeSelectOption>
+                            ))}
+                          </optgroup>
+                        ) : null}
+                      </>
+                    ) : (
+                      otherCustomRuntimes.map((b) => (
+                        <NativeSelectOption key={b.id} value={b.id}>{b.name} — {b.owner?.handle ?? 'unknown'}</NativeSelectOption>
+                      ))
+                    )}
                   </NativeSelect>
                   {form.runtimeId ? (
                     <Button type="button" variant="outline" size="sm" onClick={() => setCreatingCustomRuntime(true)}>
