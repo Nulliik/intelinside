@@ -1,7 +1,7 @@
 import { supabase, signOutSupabase } from '@/lib/auth'
 import { RegExpMatcher, englishDataset, englishRecommendedTransformers } from 'obscenity'
 import { hostIn } from '@/lib/hardware'
-import { HARDWARE_BY_ID, MODELS, MODEL_BY_ID, QUANTS, QUANT_BY_ID, RUNTIMES, VISIBLE_HARDWARE } from '@/mocks/catalog'
+import { HARDWARE_BY_ID, MODELS, MODEL_BY_ID, QUANTS, QUANT_BY_ID, RUNTIMES, VISIBLE_HARDWARE } from '@/catalog'
 import type {
   Api, BestRank, BoardKind, BoardParams, BoardResponse, BoardRow, BoardUnit, ChartBar, FlagReason,
   HardwareDetail, HardwareItem, HomeResponse, ModelSummary, Moderation, Page, Result,

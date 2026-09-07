@@ -1,6 +1,6 @@
 // Everything a card needs, read straight from the public Supabase endpoints with the publishable key.
 // Runs in the Vercel edge runtime and in node (the preview script), so no `@/` aliases and no browser client.
-import { HARDWARE_BY_ID, MODEL_BY_ID, QUANT_BY_ID, RUNTIME_BY_ID } from '../mocks/catalog.js'
+import { HARDWARE_BY_ID, MODEL_BY_ID, QUANT_BY_ID, RUNTIME_BY_ID } from '../catalog/index.js'
 import type { HardwareItem } from '../lib/api/types.js'
 
 export type OgEnv = { supabaseUrl: string; supabaseKey: string }

@@ -1,6 +1,6 @@
 import type { Result, ResultInput } from '@/lib/api/types'
-import { RESULTS_REPO } from '@/lib/brand'
-import { HARDWARE_BY_ID, MODEL_BY_ID, QUANT_BY_ID, RUNTIME_BY_ID } from '@/mocks/catalog'
+import { REPO } from '@/lib/brand'
+import { HARDWARE_BY_ID, MODEL_BY_ID, QUANT_BY_ID, RUNTIME_BY_ID } from '@/catalog'
 
 // Submitting by pull request. A contributor adds `results/<handle>/<name>.json` to the site's repo and opens a PR;
 // the repo's check validates the file with `parseResultFile` (the same code, run by frontend/scripts/validate-results.mjs)
@@ -34,7 +34,7 @@ export type ResultFile = {
 }
 
 export type PrRef = { number: number; url: string }
-export const prUrl = (number: number) => `https://github.com/${RESULTS_REPO}/pull/${number}`
+export const prUrl = (number: number) => `https://github.com/${REPO}/pull/${number}`
 
 /** Accepts a PR number, "#12", or a PR URL on the site's repo. */
 export function parsePrRef(input: string): PrRef | null {
@@ -44,7 +44,7 @@ export function parsePrRef(input: string): PrRef | null {
   try {
     const url = new URL(text)
     const match = url.pathname.match(/^\/([^/]+\/[^/]+)\/pull\/(\d+)/)
-    if ((url.hostname === 'github.com' || url.hostname === 'www.github.com') && match && match[1].toLowerCase() === RESULTS_REPO.toLowerCase())
+    if ((url.hostname === 'github.com' || url.hostname === 'www.github.com') && match && match[1].toLowerCase() === REPO.toLowerCase())
       return { number: Number(match[2]), url: prUrl(Number(match[2])) }
   } catch {
     /* not a URL */
@@ -122,7 +122,7 @@ export class PrError extends Error {}
 
 async function github<T>(path: string, accept = 'application/vnd.github+json'): Promise<T> {
   const response = await fetch(`${API}${path}`, { headers: { Accept: accept, 'X-GitHub-Api-Version': '2022-11-28' } })
-  if (response.status === 404) throw new PrError(`No such pull request on ${RESULTS_REPO}. The repo has to be public and the number right.`)
+  if (response.status === 404) throw new PrError(`No such pull request on ${REPO}. The repo has to be public and the number right.`)
   if (response.status === 403 || response.status === 429) {
     if (response.headers.get('x-ratelimit-remaining') === '0') throw new PrError("GitHub's API limit for your network is used up. Try again in a few minutes.")
     throw new PrError('GitHub refused the request.')
@@ -137,8 +137,8 @@ type PrFilePayload = { filename: string; status: string; contents_url: string }
 /** The result files a pull request adds or changes, read through GitHub's public API. */
 export async function fetchPrResults(ref: PrRef): Promise<PrResults> {
   const [pr, changed] = await Promise.all([
-    github<PrPayload>(`/repos/${RESULTS_REPO}/pulls/${ref.number}`),
-    github<PrFilePayload[]>(`/repos/${RESULTS_REPO}/pulls/${ref.number}/files?per_page=100`),
+    github<PrPayload>(`/repos/${REPO}/pulls/${ref.number}`),
+    github<PrFilePayload[]>(`/repos/${REPO}/pulls/${ref.number}/files?per_page=100`),
   ])
   const candidates = changed.filter((f) => f.status !== 'removed' && /^results\/[^/]+\/[^/]+\.json$/.test(f.filename))
   if (!candidates.length) throw new PrError(`That pull request adds no result file. Files live at ${RESULTS_DIR}/<your-handle>/<name>.json.`)
@@ -184,5 +184,5 @@ export function resultFileFor(r: Result | ResultInput, resultUrl?: string): Resu
 export function newResultFileUrl(handle: string, file: ResultFile): string {
   const name = `${file.runDate}-${file.model}-${file.quant}-${file.runtime}`.replace(/[^a-z0-9-]+/gi, '-').toLowerCase()
   const params = new URLSearchParams({ filename: `${RESULTS_DIR}/${handle}/${name}.json`, value: `${JSON.stringify(file, null, 2)}\n` })
-  return `https://github.com/${RESULTS_REPO}/new/main?${params}`
+  return `https://github.com/${REPO}/new/main?${params}`
 }

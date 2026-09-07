@@ -1,5 +1,5 @@
 import type { FlagReason, HardwareType, Result, Rig, User } from '@/lib/api/types'
-import { HARDWARE_BY_ID, MODEL_BY_ID, RUNTIMES } from './catalog'
+import { HARDWARE_BY_ID, MODEL_BY_ID, RUNTIMES } from '@/catalog'
 
 // Deterministic seed so the same rigs and numbers show up on every reload.
 

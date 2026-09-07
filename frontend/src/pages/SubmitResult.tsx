@@ -24,7 +24,7 @@ import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { useSession } from '@/hooks/useSession'
 import { api } from '@/lib/api'
-import { RESULTS_REPO, RESULTS_REPO_URL } from '@/lib/brand'
+import { REPO, REPO_URL } from '@/lib/brand'
 import { isGitHubUrl } from '@/lib/github'
 import { PrError, fetchPrResults, newResultFileUrl, parsePrRef, resultFileFor, type PrResultFile, type PrResults, type ResultFile } from '@/lib/pr'
 import { UNIT_LABEL, hasDiscreteGpu, hostIn, integratedParts, nestParts, unitLabel } from '@/lib/hardware'
@@ -32,7 +32,7 @@ import { ApiError, type Result, type ResultInput, type ResultRank, type RigSumma
 import { fmtTps, pluralize } from '@/lib/format'
 import { resultShareTarget } from '@/lib/share'
 import { cn } from '@/lib/utils'
-import { HARDWARE_BY_ID, MODEL_BY_ID, QUANT_BY_ID, RUNTIME_BY_ID } from '@/mocks/catalog'
+import { HARDWARE_BY_ID, MODEL_BY_ID, QUANT_BY_ID, RUNTIME_BY_ID } from '@/catalog'
 
 type Target = 'rig' | 'component'
 type Form = {
@@ -242,7 +242,7 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
   const prefill = async (input: string, auto = false) => {
     const ref = parsePrRef(input)
     if (!ref) {
-      setPrError(`Enter a pull request number or link on ${RESULTS_REPO}.`)
+      setPrError(`Enter a pull request number or link on ${REPO}.`)
       if (auto) setPrOpen(true)
       return
     }
@@ -471,8 +471,8 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
   const prefillDescription = (
     <>
       Opened a pull request to{' '}
-      <a href={RESULTS_REPO_URL} target="_blank" rel="noreferrer" className="text-foreground underline underline-offset-4">
-        {RESULTS_REPO}
+      <a href={REPO_URL} target="_blank" rel="noreferrer" className="text-foreground underline underline-offset-4">
+        {REPO}
       </a>{' '}
       with a result file?{' '}
       <br className="hidden sm:block" />
@@ -491,7 +491,7 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
               void prefill(prInput)
             }
           }}
-          placeholder={`${RESULTS_REPO_URL}/pull/12`}
+          placeholder={`${REPO_URL}/pull/12`}
           aria-label="Pull request link or number"
           aria-invalid={!!prError}
           className="min-w-0 flex-1"
@@ -576,14 +576,14 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
             <div className={cn('grid gap-2 border-t px-3 py-2.5 text-muted-foreground transition-opacity duration-200', howOpen ? 'opacity-100' : 'opacity-0')}>
               <p>
             Add a JSON file under <code className="font-mono text-xs text-foreground">results/your-handle/</code> in{' '}
-            <a href={RESULTS_REPO_URL} target="_blank" rel="noreferrer" className="text-foreground underline underline-offset-4">
-              {RESULTS_REPO}
+            <a href={REPO_URL} target="_blank" rel="noreferrer" className="text-foreground underline underline-offset-4">
+              {REPO}
             </a>{' '}
             and open a pull request. A check validates it against the catalog and comments with a link that opens this form filled in from your file, with the pull request as the evidence link.
           </p>
           <p>
             The format is in the repo's{' '}
-            <a href={`${RESULTS_REPO_URL}/tree/main/results`} target="_blank" rel="noreferrer" className="text-foreground underline underline-offset-4">
+            <a href={`${REPO_URL}/tree/main/results`} target="_blank" rel="noreferrer" className="text-foreground underline underline-offset-4">
               results folder
             </a>
             . Going the other way, every freshly submitted result offers "Add to the results repo", which writes the file for you.

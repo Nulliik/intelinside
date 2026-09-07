@@ -6,7 +6,7 @@ import type {
 import { ApiError } from './types'
 import { isGitHubUrl } from '@/lib/github'
 import { hostIn } from '@/lib/hardware'
-import { HARDWARE_BY_ID, MODELS, MODEL_BY_ID, QUANTS, QUANT_BY_ID, RUNTIMES, VISIBLE_HARDWARE } from '@/mocks/catalog'
+import { HARDWARE_BY_ID, MODELS, MODEL_BY_ID, QUANTS, QUANT_BY_ID, RUNTIMES, VISIBLE_HARDWARE } from '@/catalog'
 import { createSeed, rigSummaryLine, type SeedDb } from '@/mocks/seed'
 
 // In-memory implementation of the API contract. Same ranking, thresholds, and

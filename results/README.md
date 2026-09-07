@@ -27,7 +27,7 @@ Every result on the site can also live here as a file, and a file here can becom
    }
    ```
 
-   Leave `component` out for a whole-rig result. Ids come from the catalog in [`frontend/src/mocks/catalog.ts`](../frontend/src/mocks/catalog.ts); the site's hardware pages show each part's id in the URL.
+   Leave `component` out for a whole-rig result. Ids come from [the catalog](../frontend/src/catalog/); the site's hardware pages show each part's id in the URL. Missing a part? [Add it](../frontend/src/catalog/README.md) in the same pull request.
 
 3. Open a pull request. A check validates the file against the catalog and comments with a link like `/submit?pr=123`.
 4. Open that link. The submit form fills itself from your file, with the pull request as the evidence link. Check the numbers and submit. The result ranks the moment it is in.

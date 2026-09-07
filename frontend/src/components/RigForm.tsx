@@ -14,7 +14,7 @@ import { api } from '@/lib/api'
 import { ApiError, type HardwareItem, type HardwareType, type Rig, type RigInput } from '@/lib/api/types'
 import { UNIT_LABEL, integratedParts, nestParts } from '@/lib/hardware'
 import { cn } from '@/lib/utils'
-import { HARDWARE_TYPE_LABEL, HARDWARE_TYPES } from '@/mocks/catalog'
+import { HARDWARE_TYPE_LABEL, HARDWARE_TYPES } from '@/catalog'
 
 type Picked = { hardware: HardwareItem; quantity: number }
 type TypeFilter = 'all' | HardwareType

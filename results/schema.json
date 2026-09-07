@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://raw.githubusercontent.com/labscommunity/intelinside/main/results/schema.json",
   "title": "Intelinside result",
-  "description": "One benchmark result, committed as results/<your-github-handle>/<name>.json. Ids come from the hardware, model, quant, and runtime catalog in frontend/src/mocks/catalog.ts. The pull request check validates the ids; this schema covers the shape.",
+  "description": "One benchmark result, committed as results/<your-github-handle>/<name>.json. Ids come from the hardware, model, quant, and runtime catalog in frontend/src/catalog/. The pull request check validates the ids; this schema covers the shape.",
   "type": "object",
   "additionalProperties": false,
   "required": ["rig", "model", "quant", "runtime", "runtimeVersion", "decodeTps", "runDate"],

@@ -24,7 +24,7 @@ import { useSession } from '@/hooks/useSession'
 import { api } from '@/lib/api'
 import type { BoardKind, BoardRow, HardwareType, VerificationStatus } from '@/lib/api/types'
 import { fmtWeekday } from '@/lib/format'
-import { HARDWARE_TYPE_LABEL, HARDWARE_TYPES, QUANT_BY_ID, VENDORS, quantHint } from '@/mocks/catalog'
+import { HARDWARE_TYPE_LABEL, HARDWARE_TYPES, QUANT_BY_ID, VENDORS, quantHint } from '@/catalog'
 import { cn } from '@/lib/utils'
 
 const ALL = 'all'
