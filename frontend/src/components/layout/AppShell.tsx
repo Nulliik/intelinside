@@ -5,14 +5,18 @@ import { Toaster } from '@/components/ui/sonner'
 import { TopNav } from './TopNav'
 import { Footer } from './Footer'
 import { SignInDialog } from '@/components/SignInDialog'
+import { ConsentBanner } from '@/components/ConsentBanner'
 import { frame, gutter } from '@/components/frame'
 import { cn } from '@/lib/utils'
 
+/** Every navigation starts at the top, unless the link named an anchor on the page. */
 function ScrollToTop() {
-  const { pathname } = useLocation()
+  const { pathname, hash } = useLocation()
   useEffect(() => {
-    window.scrollTo({ top: 0 })
-  }, [pathname])
+    const target = hash ? document.getElementById(hash.slice(1)) : null
+    if (target) target.scrollIntoView()
+    else window.scrollTo({ top: 0 })
+  }, [pathname, hash])
   return null
 }
 
@@ -38,6 +42,7 @@ export function AppShell() {
         <Footer />
       </div>
       <SignInDialog />
+      <ConsentBanner />
       <Toaster theme="dark" position="bottom-right" />
     </TooltipProvider>
   )

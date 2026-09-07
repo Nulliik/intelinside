@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Crosses, frame, gutter, inset } from '@/components/frame'
 import { CASCADIA_URL, REPO_URL } from '@/lib/brand'
+import { openConsentSettings } from '@/lib/consent'
 import { cn } from '@/lib/utils'
 
 /** The footer rule sits inside the frame, so the page's bottom corners get registration marks too. */
@@ -16,6 +17,9 @@ export function Footer() {
                 <Link to="/about" className="hover:text-foreground">About</Link>
                 <Link to="/guidelines" className="hover:text-foreground">Guidelines</Link>
                 <a href={REPO_URL} target="_blank" rel="noreferrer" className="hover:text-foreground">GitHub</a>
+                <Link to="/terms" className="hover:text-foreground">Terms</Link>
+                <Link to="/privacy" className="hover:text-foreground">Privacy</Link>
+                <button type="button" onClick={openConsentSettings} className="hover:text-foreground">Cookies</button>
               </div>
               <div className="flex items-center gap-2">
                 <span>Powered by</span>
