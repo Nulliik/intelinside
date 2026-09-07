@@ -142,13 +142,15 @@ export function RigForm({ initial, submitLabel = 'Save rig', onSaved, onCancel, 
 
   return (
     <Root {...(inline ? {} : { onSubmit: submit, noValidate: true })} className="space-y-6">
+      {/* content-start on both: an error under Name makes the row taller, and stretched rows would stop the two
+          inputs lining up. */}
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="grid gap-1.5">
+        <div className="grid content-start gap-1.5">
           <Label htmlFor="rig-name">Name</Label>
           <Input id="rig-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Quad B70 workstation" aria-invalid={!!errors.name} />
           <FieldError message={errors.name} />
         </div>
-        <div className="grid gap-1.5">
+        <div className="grid content-start gap-1.5">
           <Label htmlFor="rig-os">Operating system</Label>
           <Input id="rig-os" list="rig-os-suggestions" value={os} onChange={(e) => setOs(e.target.value)} placeholder="Ubuntu 24.04" />
           <datalist id="rig-os-suggestions">

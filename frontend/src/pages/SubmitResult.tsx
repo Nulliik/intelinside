@@ -200,7 +200,9 @@ function Step({ n, title, hint, children }: { n: number; title: string; hint?: s
 
 function Field({ id, label, error, hint, className, children }: { id: string; label: string; error?: string; hint?: string; className?: string; children: ReactNode }) {
   return (
-    <div className={cn('grid gap-1.5', className)}>
+    // content-start keeps the rows packed at the top. Side by side in a grid, a field with a hint makes the row
+    // taller, and without this the neighbour's label and input stretch apart to fill it and stop lining up.
+    <div className={cn('grid content-start gap-1.5', className)}>
       <Label htmlFor={id}>{label}</Label>
       {children}
       {hint && !error ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
