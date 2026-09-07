@@ -31,6 +31,11 @@ request is up to the maintainers and changes nothing on the site — the PR is t
 ### What makes a good result
 
 - Generate at least 256 tokens from a short prompt and average over a few runs.
+- Measure one request at a time. A throughput configuration — OpenVINO's
+  `PERFORMANCE_HINT=THROUGHPUT`, vLLM serving many sequences at once, llama.cpp with parallel slots —
+  reports the total across concurrent requests, which is a larger and different number from what one
+  person sees waiting for one answer. If that is what you measured, say so in the flags and set the
+  batch size.
 - Report the runtime version, and link the repo you ran in — yours or the runtime's.
 - Note the flags and settings that moved the number — backend, flash attention, KV cache precision. The same
   card on the same runtime can differ twofold on these.
