@@ -105,6 +105,21 @@ async function rows<T>(request: PromiseLike<{ data: unknown; error: { code?: str
   return data as T
 }
 
+/**
+ * A table the page can be drawn without. A feature's table being unavailable — most likely a migration that has
+ * not reached this project yet — should cost that feature, not every page: the boards do not need to know about
+ * custom runtimes in order to rank results. Core tables are deliberately not routed through this, because without
+ * profiles, rigs, components or results there is no page to draw and failing loudly is the honest outcome.
+ */
+async function optionalRows<T>(what: string, request: PromiseLike<{ data: unknown; error: { code?: string; message: string; details?: string } | null }>): Promise<T[]> {
+  try {
+    return await rows<T[]>(request)
+  } catch (error) {
+    console.error(`Could not load ${what}; continuing without it.`, error)
+    return []
+  }
+}
+
 function moderateText(entries: Array<[field: string, value: string | null | undefined, maxLength: number]>) {
   const fields: Record<string, string> = {}
   for (const [field, value, maxLength] of entries) {
@@ -167,9 +182,9 @@ async function loadSnapshot(): Promise<Snapshot> {
     rows<RigRow[]>(client.from('rigs').select('*')),
     rows<ComponentRow[]>(client.from('rig_components').select('*')),
     rows<ResultRow[]>(client.from('results').select('*')),
-    rows<CustomRuntimeRow[]>(client.from('custom_runtimes').select('*')),
-    userId ? rows<ConfirmationRow[]>(client.from('result_confirmations').select('result_id,user_id')) : Promise.resolve([]),
-    userId ? rows<FlagRow[]>(client.from('result_flags').select('result_id,user_id,reason')) : Promise.resolve([]),
+    optionalRows<CustomRuntimeRow>('custom runtimes', client.from('custom_runtimes').select('*')),
+    userId ? optionalRows<ConfirmationRow>('confirmations', client.from('result_confirmations').select('result_id,user_id')) : Promise.resolve([]),
+    userId ? optionalRows<FlagRow>('flags', client.from('result_flags').select('result_id,user_id,reason')) : Promise.resolve([]),
   ])
   return { userId, profiles, rigs, components, results, customRuntimes, confirmations, flags }
 }
