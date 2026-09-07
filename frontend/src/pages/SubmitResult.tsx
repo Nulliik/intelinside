@@ -8,7 +8,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { BuildForm } from '@/components/BuildForm'
+import { CustomRuntimeForm } from '@/components/CustomRuntimeForm'
 import { Textarea } from '@/components/ui/textarea'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -47,7 +47,7 @@ type Form = {
   runtimeVersion: string
   runtimeFlags: string
   /** Empty means stock. */
-  buildId: string
+  customId: string
   revision: string
   decodeTps: string
   promptTps: string
@@ -62,7 +62,7 @@ type Form = {
 const today = () => new Date().toISOString().slice(0, 10)
 const EMPTY: Form = {
   rigId: '', target: 'rig', componentId: '', componentQuantity: '1', modelId: '', quant: '', runtimeId: '', runtimeVersion: '',
-  runtimeFlags: '', buildId: '', revision: '',
+  runtimeFlags: '', customId: '', revision: '',
   decodeTps: '', promptTps: '', ttftMs: '', contextLength: '', batchSize: '', repoUrl: '', runDate: today(), notes: '',
 }
 const num = (s: string) => (s.trim() === '' ? undefined : Number(s))
@@ -115,8 +115,8 @@ function toInput(f: Form): ResultInput {
     runtimeId: f.runtimeId,
     runtimeVersion: f.runtimeVersion.trim(),
     runtimeFlags: f.runtimeFlags.trim() || undefined,
-    customRuntimeId: f.buildId || undefined,
-    revision: f.buildId ? f.revision.trim() || undefined : undefined,
+    customRuntimeId: f.customId || undefined,
+    revision: f.customId ? f.revision.trim() || undefined : undefined,
     rigId: f.rigId,
     componentId: component ? f.componentId : undefined,
     componentQuantity: component ? Number(f.componentQuantity) || 1 : undefined,
@@ -132,7 +132,7 @@ function toInput(f: Form): ResultInput {
 }
 
 /** Fills the form from a result file. Ids the catalog does not know stay blank and are reported, so the rest still lands. */
-function formFromFile(file: Partial<ResultFile>, rigs: RigSummary[], builds: CustomRuntime[], evidenceUrl: string, prev: Form): { form: Form; problems: string[] } {
+function formFromFile(file: Partial<ResultFile>, rigs: RigSummary[], customRuntimes: CustomRuntime[], evidenceUrl: string, prev: Form): { form: Form; problems: string[] } {
   const problems: string[] = []
   const wanted = file.rig?.toLowerCase()
   const rig = wanted ? rigs.find((r) => r.id.toLowerCase() === wanted) ?? rigs.find((r) => r.name.toLowerCase() === wanted) : undefined
@@ -151,7 +151,7 @@ function formFromFile(file: Partial<ResultFile>, rigs: RigSummary[], builds: Cus
       runtimeId: file.runtime && RUNTIME_BY_ID[file.runtime] ? file.runtime : '',
       runtimeVersion: file.runtimeVersion ?? '',
       runtimeFlags: file.runtimeFlags ?? '',
-      buildId: file.build && builds.some((b) => b.id === file.build) ? file.build : '',
+      customId: file.customRuntime && customRuntimes.some((b) => b.id === file.customRuntime) ? file.customRuntime : '',
       revision: file.revision ?? '',
       decodeTps: text(file.decodeTps),
       promptTps: text(file.promptTps),
@@ -213,22 +213,22 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
   const [rigsTick, setRigsTick] = useState(0)
   const myRigs = useAsync(() => (user ? api.rigs({ owner: user.handle, limit: 100 }) : Promise.resolve(null)), [user?.handle, rigsTick])
   const existing = useAsync(() => (mode === 'edit' && resultId ? api.result(resultId) : Promise.resolve(null)), [mode, resultId])
-  const [form, setForm] = useState<Form>(() => ({ ...EMPTY, rigId: sp.get('rig') ?? '', modelId: sp.get('model') ?? '', quant: sp.get('quant') ?? '', runtimeId: sp.get('runtime') ?? '', buildId: sp.get('build') ?? '' }))
+  const [form, setForm] = useState<Form>(() => ({ ...EMPTY, rigId: sp.get('rig') ?? '', modelId: sp.get('model') ?? '', quant: sp.get('quant') ?? '', runtimeId: sp.get('runtime') ?? '', customId: sp.get('custom') ?? '' }))
   const [initialized, setInitialized] = useState(mode === 'create')
   const [creatingRig, setCreatingRig] = useState(false)
   const [flagsOpen, setFlagsOpen] = useState(false)
-  const [buildsTick, setBuildsTick] = useState(0)
-  const [creatingBuild, setCreatingBuild] = useState(false)
+  const [customRuntimesTick, setCustomRuntimesTick] = useState(0)
+  const [creatingCustomRuntime, setCreatingCustomRuntime] = useState(false)
   // Every build for the chosen runtime, not just the submitter's: a public fork is a real thing anyone can run,
   // and one object per fork is what keeps those runs comparable. Refetched when a new one is registered.
-  const buildList = useAsync(
+  const customRuntimeList = useAsync(
     () => (form.runtimeId ? api.customRuntimes({ runtime: form.runtimeId }) : Promise.resolve(null)),
-    [form.runtimeId, buildsTick],
+    [form.runtimeId, customRuntimesTick],
   )
-  const builds = buildList.data?.items ?? []
-  const mineBuilds = builds.filter((b) => b.ownerId === user?.id)
-  const otherBuilds = builds.filter((b) => b.ownerId !== user?.id)
-  const selectedBuild = builds.find((b) => b.id === form.buildId)
+  const customRuntimes = customRuntimeList.data?.items ?? []
+  const myCustomRuntimes = customRuntimes.filter((b) => b.ownerId === user?.id)
+  const otherCustomRuntimes = customRuntimes.filter((b) => b.ownerId !== user?.id)
+  const selectedCustomRuntime = customRuntimes.find((b) => b.id === form.customId)
   const runtimeName = cat.data?.runtimes.find((r) => r.id === form.runtimeId)?.name ?? ''
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [attempted, setAttempted] = useState(false)
@@ -257,7 +257,7 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
     setForm({
       rigId: r.rigId, target: r.componentId ? 'component' : 'rig', componentId: r.componentId ?? '', componentQuantity: String(r.componentQuantity ?? 1),
       modelId: r.modelId, quant: r.quant, runtimeId: r.runtimeId, runtimeVersion: r.runtimeVersion,
-      runtimeFlags: r.runtimeFlags ?? '', buildId: r.customRuntimeId ?? '', revision: r.revision ?? '',
+      runtimeFlags: r.runtimeFlags ?? '', customId: r.customRuntimeId ?? '', revision: r.revision ?? '',
       decodeTps: String(r.decodeTps), promptTps: r.promptTps?.toString() ?? '', ttftMs: r.ttftMs?.toString() ?? '',
       contextLength: r.contextLength?.toString() ?? '', batchSize: r.batchSize?.toString() ?? '',
       repoUrl: r.repoUrl, runDate: r.runDate.slice(0, 10), notes: r.notes ?? '',
@@ -276,7 +276,7 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
   // Prefill from a pull request on the site's repo: read its result files, fill what the catalog knows, keep the PR as evidence.
   const applyPrFile = (results: PrResults, index: number) => {
     const chosen = results.files[index]
-    const filled = formFromFile(chosen.file, rigItems ?? [], builds, results.pr.url, form)
+    const filled = formFromFile(chosen.file, rigItems ?? [], customRuntimes, results.pr.url, form)
     setForm(filled.form)
     setPrFile(index)
     setPrProblems([...chosen.problems, ...filled.problems])
@@ -394,10 +394,10 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
     runtimeId: form.runtimeId,
     runtimeVersion: form.runtimeVersion,
     runtimeFlags: form.runtimeFlags.trim() || undefined,
-    customRuntimeId: form.buildId || undefined,
-    customRuntime: builds.find((b) => b.id === form.buildId),
-    revision: form.buildId ? form.revision.trim() || undefined : undefined,
-    execution: form.buildId ? 'modified' : 'stock',
+    customRuntimeId: form.customId || undefined,
+    customRuntime: customRuntimes.find((b) => b.id === form.customId),
+    revision: form.customId ? form.revision.trim() || undefined : undefined,
+    execution: form.customId ? 'modified' : 'stock',
     rigId: form.rigId,
     rig: selectedRig,
     componentId: form.target === 'component' ? form.componentId || undefined : undefined,
@@ -498,7 +498,7 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
                     setDone(null)
                     setAttempted(false)
                     setErrors({})
-                    setForm({ ...EMPTY, rigId: form.rigId, runtimeId: form.runtimeId, runtimeVersion: form.runtimeVersion, runtimeFlags: form.runtimeFlags, buildId: form.buildId, revision: form.revision })
+                    setForm({ ...EMPTY, rigId: form.rigId, runtimeId: form.runtimeId, runtimeVersion: form.runtimeVersion, runtimeFlags: form.runtimeFlags, customId: form.customId, revision: form.revision })
                   }}
                 >
                   Submit another
@@ -864,60 +864,60 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
               {/* Picking a build is what says "modified" — there is no separate toggle. Every build for this runtime
                   is listed, not only the submitter's, because a public fork is a real thing anyone can run. */}
               <Field
-                id="buildId"
-                label="Build"
-                error={errors.buildId}
-                hint={form.buildId
-                  ? 'Boards keep builds out until a reader turns on "Include modified", so a changed stack is never mistaken for faster hardware.'
+                id="customId"
+                label="Custom runtime"
+                error={errors.customId}
+                hint={form.customId
+                  ? 'Boards keep customRuntimes out until a reader turns on "Include modified", so a changed stack is never mistaken for faster hardware.'
                   : 'Stock is the released runtime, however you configured or built it.'}
               >
                 <div className="flex flex-wrap items-center gap-2">
                   <NativeSelect
                     className="w-full sm:w-auto sm:min-w-72"
-                    id="buildId"
-                    value={form.buildId}
+                    id="customId"
+                    value={form.customId}
                     disabled={!form.runtimeId}
-                    aria-invalid={!!errors.buildId}
-                    onChange={(e) => set({ buildId: e.target.value, ...(e.target.value ? {} : { revision: '' }) })}
+                    aria-invalid={!!errors.customId}
+                    onChange={(e) => set({ customId: e.target.value, ...(e.target.value ? {} : { revision: '' }) })}
                   >
                     <NativeSelectOption value="">Stock{runtimeName ? ` ${runtimeName}` : ''}</NativeSelectOption>
-                    {mineBuilds.length ? (
+                    {myCustomRuntimes.length ? (
                       <optgroup label="Yours">
-                        {mineBuilds.map((b) => <NativeSelectOption key={b.id} value={b.id}>{b.name}</NativeSelectOption>)}
+                        {myCustomRuntimes.map((b) => <NativeSelectOption key={b.id} value={b.id}>{b.name}</NativeSelectOption>)}
                       </optgroup>
                     ) : null}
-                    {otherBuilds.length ? (
+                    {otherCustomRuntimes.length ? (
                       <optgroup label="Everyone else's">
-                        {otherBuilds.map((b) => (
+                        {otherCustomRuntimes.map((b) => (
                           <NativeSelectOption key={b.id} value={b.id}>{b.name} — {b.owner?.handle ?? 'unknown'}</NativeSelectOption>
                         ))}
                       </optgroup>
                     ) : null}
                   </NativeSelect>
                   {form.runtimeId ? (
-                    <Button type="button" variant="outline" size="sm" onClick={() => setCreatingBuild(true)}>
-                      <Plus data-icon="inline-start" /> New build
+                    <Button type="button" variant="outline" size="sm" onClick={() => setCreatingCustomRuntime(true)}>
+                      <Plus data-icon="inline-start" /> New
                     </Button>
                   ) : null}
                 </div>
-                {selectedBuild ? (
-                  <p className="mt-0.5 text-xs text-muted-foreground text-pretty">{selectedBuild.summary}</p>
+                {selectedCustomRuntime ? (
+                  <p className="mt-0.5 text-xs text-muted-foreground text-pretty">{selectedCustomRuntime.summary}</p>
                 ) : null}
               </Field>
-              {creatingBuild ? (
+              {creatingCustomRuntime ? (
                 <div className="border-l-2 border-warning/40 pl-4">
-                  <BuildForm
+                  <CustomRuntimeForm
                     runtimeId={form.runtimeId}
-                    onCancel={() => setCreatingBuild(false)}
+                    onCancel={() => setCreatingCustomRuntime(false)}
                     onCreated={(build) => {
-                      setBuildsTick((n) => n + 1)
-                      setCreatingBuild(false)
-                      set({ buildId: build.id })
+                      setCustomRuntimesTick((n) => n + 1)
+                      setCreatingCustomRuntime(false)
+                      set({ customId: build.id })
                     }}
                   />
                 </div>
               ) : null}
-              {form.buildId ? (
+              {form.customId ? (
                 <Field
                   id="revision"
                   label="Revision"

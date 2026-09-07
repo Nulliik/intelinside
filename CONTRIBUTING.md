@@ -34,10 +34,10 @@ request is up to the maintainers and changes nothing on the site — the PR is t
 - Report the runtime version, and link the repo you ran in — yours or the runtime's.
 - Note the flags and settings that moved the number — backend, flash attention, KV cache precision. The same
   card on the same runtime can differ twofold on these.
-- Say whether it ran on a stock runtime or a build. Stock means the released runtime, however you configured
+- Say whether it ran on a stock runtime or a custom runtime. Stock means the released runtime, however you configured
   or built it. If you changed the runtime itself — custom kernel or op, patch, fork — register it once as a
-  build and name it, along with the exact revision, so someone else can reproduce the number. You can post on
-  anyone's build, not only your own. Boards rank stock alone by default, so a changed stack is never mistaken
+  custom runtime and name it, along with the exact revision, so someone else can reproduce the number. You can post on
+  anyone's, not only your own. Boards rank stock alone by default, so a changed stack is never mistaken
   for faster hardware.
 - Ran on one card out of several? Submit it as a component result and set the quantity you used.
 - A Core Ultra chip carries CPU cores, an iGPU, and an NPU, and each is its own part. Submit the unit the

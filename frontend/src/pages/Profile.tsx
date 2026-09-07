@@ -5,7 +5,7 @@ import { UserAvatar } from '@/components/UserAvatar'
 import { GitHubMark } from '@/components/GitHubMark'
 import { RigCard } from '@/components/cards'
 import { ResultsTable } from '@/components/ResultsTable'
-import { buildHref } from '@/components/BuildLink'
+import { customRuntimeHref } from '@/components/CustomRuntimeLink'
 import { EmptyState } from '@/components/EmptyState'
 import { ErrorState } from '@/components/ErrorState'
 import { Block, Cell, CellGrid, PillTabs, Section, Toolbar, inset } from '@/components/frame'
@@ -17,7 +17,7 @@ import { fmtDate, fmtInt } from '@/lib/format'
 import { QUANT_BY_ID } from '@/catalog'
 import { cn } from '@/lib/utils'
 
-type Tab = 'rigs' | 'results' | 'builds'
+type Tab = 'rigs' | 'results' | 'custom'
 
 function Stat({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -50,7 +50,7 @@ export default function Profile() {
         <Skeleton className="h-96" />
       </Block>
     )
-  const [user, rigs, results, builds] = data.data
+  const [user, rigs, results, customRuntimes] = data.data
   const s = user.stats
   const model = s?.bestRank ? cat.data.models.find((m) => m.id === s.bestRank!.modelId) : undefined
   return (
@@ -88,7 +88,7 @@ export default function Profile() {
             items={[
               { value: 'rigs', label: 'Rigs', count: rigs.items.length },
               { value: 'results', label: 'Results', count: results.items.length },
-              { value: 'builds', label: 'Builds', count: builds.items.length },
+              { value: 'custom', label: 'Custom runtimes', count: customRuntimes.items.length },
             ]}
           />
         </Toolbar>
@@ -102,12 +102,12 @@ export default function Profile() {
           ) : (
             <EmptyState title="No rigs yet" />
           )
-        ) : tab === 'builds' ? (
-          builds.items.length ? (
+        ) : tab === 'custom' ? (
+          customRuntimes.items.length ? (
             <CellGrid cols={3}>
-              {builds.items.map((b) => (
+              {customRuntimes.items.map((b) => (
                 <Cell key={b.id}>
-                  <Link to={buildHref(b)} className="inline-flex items-center gap-2 font-heading text-base font-semibold text-warning hover:underline underline-offset-4">
+                  <Link to={customRuntimeHref(b)} className="inline-flex items-center gap-2 font-heading text-base font-semibold text-warning hover:underline underline-offset-4">
                     <GitFork className="size-3.5 shrink-0" /> {b.name}
                   </Link>
                   <p className="mt-2 text-sm text-muted-foreground text-pretty">{b.summary}</p>
@@ -119,7 +119,7 @@ export default function Profile() {
               ))}
             </CellGrid>
           ) : (
-            <EmptyState title="No builds yet" description="A build is a runtime this person changed — a custom kernel or op, a patch, a fork." />
+            <EmptyState title="No custom runtimes yet" description="A custom runtime is one this person changed — a custom kernel or op, a patch, a fork." />
           )
         ) : results.items.length ? (
           <ResultsTable results={results.items} runtimes={cat.data.runtimes} models={cat.data.models} quants={cat.data.quants} showSubmitter={false} />

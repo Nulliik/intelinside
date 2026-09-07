@@ -10,10 +10,10 @@ import { ApiError, BUILD_SUMMARY_MAX, type CustomRuntime } from '@/lib/api/types
 import { cn } from '@/lib/utils'
 
 /**
- * Registering a build, inline wherever it is needed — the same shape RigForm takes inside the submit page, so
- * nobody leaves a half-filled result to go and create one somewhere else.
+ * Registering a custom runtime, inline wherever it is needed — the same shape RigForm takes inside the submit
+ * page, so nobody leaves a half-filled result to go and create one somewhere else.
  */
-export function BuildForm({
+export function CustomRuntimeForm({
   build,
   runtimeId,
   onCreated,
@@ -38,7 +38,7 @@ export function BuildForm({
   const save = async () => {
     const next: Record<string, string> = {}
     if (!runtime) next.runtimeId = 'Pick the runtime it is based on.'
-    if (!name.trim()) next.name = 'Name the build.'
+    if (!name.trim()) next.name = 'Name it.'
     if (!/^https?:\/\/\S+$/.test(repoUrl.trim())) next.repoUrl = 'Enter a full URL, starting with https://.'
     if (!summary.trim()) next.summary = 'Say in one line what changed.'
     else if (summary.trim().length > BUILD_SUMMARY_MAX) next.summary = `Use ${BUILD_SUMMARY_MAX} characters or fewer.`
@@ -49,7 +49,7 @@ export function BuildForm({
     try {
       onCreated(build ? await api.updateCustomRuntime(build.id, input) : await api.createCustomRuntime(input))
     } catch (error) {
-      setErrors(error instanceof ApiError && error.fields ? error.fields : { name: 'Could not save the build. Try again.' })
+      setErrors(error instanceof ApiError && error.fields ? error.fields : { name: 'Could not save it. Try again.' })
     } finally {
       setBusy(false)
     }
@@ -58,11 +58,11 @@ export function BuildForm({
   return (
     <div className="grid gap-4">
       <div className="grid gap-4 sm:grid-cols-2">
-        <FormField id="build-name" label="Name" error={errors.name} hint="Short, yours, and stable. It titles the build's page.">
-          <Input id="build-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="fused-attn-b60" aria-invalid={!!errors.name} />
+        <FormField id="cr-name" label="Name" error={errors.name} hint="Short, yours, and stable. It titles its page.">
+          <Input id="cr-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="fused-attn-b60" aria-invalid={!!errors.name} />
         </FormField>
-        <FormField id="build-runtime" label="Based on" error={errors.runtimeId}>
-          <NativeSelect className="w-full" id="build-runtime" value={runtime} aria-invalid={!!errors.runtimeId} onChange={(e) => setRuntime(e.target.value)}>
+        <FormField id="cr-runtime" label="Based on" error={errors.runtimeId}>
+          <NativeSelect className="w-full" id="cr-runtime" value={runtime} aria-invalid={!!errors.runtimeId} onChange={(e) => setRuntime(e.target.value)}>
             <NativeSelectOption value="">Pick a runtime</NativeSelectOption>
             {runtimes.map((r) => (
               <NativeSelectOption key={r.id} value={r.id}>{r.name}</NativeSelectOption>
@@ -70,22 +70,22 @@ export function BuildForm({
           </NativeSelect>
         </FormField>
       </div>
-      <FormField id="build-repo" label="Fork or source" error={errors.repoUrl}>
-        <Input id="build-repo" type="url" value={repoUrl} onChange={(e) => setRepoUrl(e.target.value)} placeholder="https://github.com/you/vllm" aria-invalid={!!errors.repoUrl} />
+      <FormField id="cr-repo" label="Fork or source" error={errors.repoUrl}>
+        <Input id="cr-repo" type="url" value={repoUrl} onChange={(e) => setRepoUrl(e.target.value)} placeholder="https://github.com/you/vllm" aria-invalid={!!errors.repoUrl} />
       </FormField>
       <FormField
-        id="build-summary"
+        id="cr-summary"
         label="What changed"
         error={errors.summary}
         hint="One line. It is what the picker and the board row show, so it cannot be blank."
       >
-        <Input id="build-summary" value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="Fused RMSNorm + QKV, tuned for Arc Pro B60 at batch 1" aria-invalid={!!errors.summary} />
+        <Input id="cr-summary" value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="Fused RMSNorm + QKV, tuned for Arc Pro B60 at batch 1" aria-invalid={!!errors.summary} />
       </FormField>
-      <FormField id="build-notes" label="Notes" error={errors.notes} hint="Optional. What you tried, what did not help, how to build it.">
-        <Textarea id="build-notes" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Optional" />
+      <FormField id="cr-notes" label="Notes" error={errors.notes} hint="Optional. What you tried, what did not help, how to compile it.">
+        <Textarea id="cr-notes" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Optional" />
       </FormField>
       <div className="flex flex-wrap items-center gap-2">
-        <Button type="button" onClick={save} disabled={busy}>{busy ? 'Saving…' : build ? 'Save changes' : 'Save build'}</Button>
+        <Button type="button" onClick={save} disabled={busy}>{busy ? 'Saving…' : build ? 'Save changes' : 'Save custom runtime'}</Button>
         {onCancel ? <Button type="button" variant="outline" onClick={onCancel} disabled={busy}>Cancel</Button> : null}
       </div>
     </div>

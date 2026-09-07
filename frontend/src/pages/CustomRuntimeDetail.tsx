@@ -22,16 +22,16 @@ import { fmtDate, fmtInt, fmtTps, fmtWeekday } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
 /**
- * A build's own page. This is the point of the whole feature: kernel work stops being a string on somebody's
+ * A custom runtime's own page. This is the point of the whole feature: kernel work stops being a string on somebody's
  * result and becomes a thing with a name, an author, and a record of what it did.
  */
-export default function BuildDetail() {
-  const { buildId } = useParams()
+export default function CustomRuntimeDetail() {
+  const { customId } = useParams()
   const { user, requestSignIn } = useSession()
   const { sealed, revealAt } = useSealed()
   const cat = useCatalog()
-  const build = useAsync(() => (buildId ? api.customRuntime(buildId) : Promise.reject(new Error('no build'))), [buildId])
-  usePageTitle(build.data?.name ?? 'Build')
+  const build = useAsync(() => (customId ? api.customRuntime(customId) : Promise.reject(new Error('no custom runtime'))), [customId])
+  usePageTitle(build.data?.name ?? 'Custom runtime')
 
   if (build.error) return <ErrorState error={build.error} />
   const b = build.data
@@ -40,11 +40,11 @@ export default function BuildDetail() {
   const submit = b
     ? user
       ? (
-          <Button render={<Link to={`/submit?runtime=${b.runtimeId}&build=${b.id}`} />} nativeButton={false}>
-            Submit a result on this build
+          <Button render={<Link to={`/submit?runtime=${b.runtimeId}&custom=${b.id}`} />} nativeButton={false}>
+            Submit a result on this one
           </Button>
         )
-      : <Button onClick={() => requestSignIn('/submit')}>Submit a result on this build</Button>
+      : <Button onClick={() => requestSignIn('/submit')}>Submit a result on this one</Button>
     : undefined
 
   return (
@@ -62,7 +62,7 @@ export default function BuildDetail() {
             {b ? b.name : <Skeleton className="h-9 w-72" />}
             {b ? (
               <span className="inline-flex items-center gap-1.5 rounded-4xl border border-warning/40 px-2 py-0.5 text-xs font-medium text-warning">
-                <GitFork className="size-3" /> Build
+                <GitFork className="size-3" /> Custom
               </span>
             ) : null}
           </span>
@@ -71,7 +71,7 @@ export default function BuildDetail() {
         actions={
           <>
             {b && user?.id === b.ownerId ? (
-              <IconAction label="Edit" to={`/runtimes/${b.runtimeId}/builds/${b.id}/edit`}>
+              <IconAction label="Edit" to={`/runtimes/${b.runtimeId}/custom/${b.id}/edit`}>
                 <Pencil />
               </IconAction>
             ) : null}
@@ -111,13 +111,13 @@ export default function BuildDetail() {
       )}
 
       {sealed && revealAt ? (
-        <Section label="Results on this build" action={sealedLabel(revealAt)}>
+        <Section label="Results on this custom runtime" action={sealedLabel(revealAt)}>
           <SealedBoard
             revealAt={revealAt}
             variant="chart"
-            lead={`Results on this build are sealed until ${fmtWeekday(revealAt)}.`}
+            lead={`Results here are sealed until ${fmtWeekday(revealAt)}.`}
             ask="Post what it does for you and it is on the board the moment it goes live."
-            submitTo={b ? `/submit?runtime=${b.runtimeId}&build=${b.id}` : '/submit'}
+            submitTo={b ? `/submit?runtime=${b.runtimeId}&custom=${b.id}` : '/submit'}
           />
         </Section>
       ) : b && b.results.length ? (
@@ -127,15 +127,15 @@ export default function BuildDetail() {
               <TpsBarChart bars={b.chart} runtimes={cat.data?.runtimes ?? []} />
             </Block>
           </Section>
-          <Section label="Results on this build">
+          <Section label="Results on this custom runtime">
             <ResultsTable results={b.results} runtimes={cat.data?.runtimes ?? []} models={cat.data?.models ?? []} quants={cat.data?.quants ?? []} />
           </Section>
         </>
       ) : b ? (
-        <Section label="Results on this build">
+        <Section label="Results on this custom runtime">
           <EmptyState
             title="Nothing posted on it yet."
-            description="Registering a build and posting a result are two steps. Run something on it and submit the number."
+            description="Registering a custom runtime and posting a result are two steps. Run something on it and submit the number."
             action={submit}
           />
         </Section>

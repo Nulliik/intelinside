@@ -59,16 +59,16 @@
       "maxLength": 200,
       "description": "Flags and settings behind the run: backend, attention kernel, KV cache precision. Optional, for example \"-fa 1 -ngl 99, SYCL backend\"."
     },
-    "build": {
+    "customRuntime": {
       "type": "string",
       "minLength": 1,
-      "description": "The build this ran on: the number at the end of its URL on the site, or its exact name. Omit for a stock run on the released runtime."
+      "description": "The custom runtime this ran on: the number at the end of its URL on the site, or its exact name. Omit for a stock run on the released runtime."
     },
     "revision": {
       "type": "string",
       "minLength": 1,
       "maxLength": 80,
-      "description": "Builds only: the exact revision behind this number \u2014 a commit hash, a tag, or a build id. A fork moves week to week, so this is what makes the run reproducible."
+      "description": "Custom runtimes only: the exact revision behind this number \u2014 a commit hash, a tag, or a build id. A fork moves week to week, so this is what makes the run reproducible."
     },
     "decodeTps": {
       "type": "number",

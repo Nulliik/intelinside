@@ -9,7 +9,7 @@ import { EmptyState } from '@/components/EmptyState'
 import { ErrorState } from '@/components/ErrorState'
 import { SealedBoard } from '@/components/launch'
 import { Cell, CellGrid, Section } from '@/components/frame'
-import { buildHref } from '@/components/BuildLink'
+import { customRuntimeHref } from '@/components/CustomRuntimeLink'
 import { useAsync } from '@/hooks/useAsync'
 import { useCatalog } from '@/hooks/useCatalog'
 import { usePageTitle } from '@/hooks/usePageTitle'
@@ -18,13 +18,13 @@ import { useSession } from '@/hooks/useSession'
 import { api } from '@/lib/api'
 import { fmtInt } from '@/lib/format'
 
-/** One runtime: what it is, the builds people have made of it, and the fastest stock runs on it. */
+/** One runtime: what it is, the customRuntimes people have made of it, and the fastest stock runs on it. */
 export default function RuntimeDetail() {
   const { runtimeId } = useParams()
   const { sealed, revealAt } = useSealed()
   const { user, requestSignIn } = useSession()
   const cat = useCatalog()
-  const builds = useAsync(() => (runtimeId ? api.customRuntimes({ runtime: runtimeId }) : Promise.resolve(null)), [runtimeId])
+  const customRuntimes = useAsync(() => (runtimeId ? api.customRuntimes({ runtime: runtimeId }) : Promise.resolve(null)), [runtimeId])
   const results = useAsync(
     () => (runtimeId && !sealed ? api.results({ runtime: runtimeId, limit: 10 }) : Promise.resolve(null)),
     [runtimeId, sealed],
@@ -32,20 +32,20 @@ export default function RuntimeDetail() {
   const runtime = cat.data?.runtimes.find((r) => r.id === runtimeId)
   usePageTitle(runtime?.name ?? 'Runtime')
 
-  if (builds.error) return <ErrorState error={builds.error} />
+  if (customRuntimes.error) return <ErrorState error={customRuntimes.error} />
   if (cat.data && !runtime) return <ErrorState error={new Error('No such runtime.')} />
 
   const register = user ? (
-    <Button variant="outline" render={<Link to={`/runtimes/${runtimeId}/builds/new`} />} nativeButton={false}>
-      <Plus data-icon="inline-start" /> Register a build
+    <Button variant="outline" render={<Link to={`/runtimes/${runtimeId}/custom/new`} />} nativeButton={false}>
+      <Plus data-icon="inline-start" /> Register a custom runtime
     </Button>
   ) : (
-    <Button variant="outline" onClick={() => requestSignIn(`/runtimes/${runtimeId}/builds/new`)}>
-      <Plus data-icon="inline-start" /> Register a build
+    <Button variant="outline" onClick={() => requestSignIn(`/runtimes/${runtimeId}/custom/new`)}>
+      <Plus data-icon="inline-start" /> Register a custom runtime
     </Button>
   )
 
-  const items = builds.data?.items ?? []
+  const items = customRuntimes.data?.items ?? []
 
   return (
     <div>
@@ -57,7 +57,7 @@ export default function RuntimeDetail() {
             {runtime ? runtime.name : <Skeleton className="h-9 w-56" />}
           </span>
         }
-        description="Results on the released runtime rank on the ordinary boards. Builds made from it rank among each other."
+        description="Results on the released runtime rank on the ordinary boards. Custom runtimes made from it rank among each other."
         actions={register}
       >
         {runtime?.repoUrl ? (
@@ -78,7 +78,7 @@ export default function RuntimeDetail() {
           <CellGrid cols={3}>
             {items.map((b) => (
               <Cell key={b.id}>
-                <Link to={buildHref(b)} className="inline-flex items-center gap-2 font-heading text-base font-semibold text-warning hover:underline underline-offset-4">
+                <Link to={customRuntimeHref(b)} className="inline-flex items-center gap-2 font-heading text-base font-semibold text-warning hover:underline underline-offset-4">
                   <GitFork className="size-3.5 shrink-0" /> {b.name}
                 </Link>
                 <p className="mt-2 text-sm text-muted-foreground text-pretty">{b.summary}</p>
@@ -89,7 +89,7 @@ export default function RuntimeDetail() {
               </Cell>
             ))}
           </CellGrid>
-        ) : builds.loading ? (
+        ) : customRuntimes.loading ? (
           <CellGrid cols={3}>
             {Array.from({ length: 3 }).map((_, i) => <Cell key={i}><Skeleton className="h-20" /></Cell>)}
           </CellGrid>

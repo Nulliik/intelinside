@@ -4,7 +4,7 @@ import { ExternalLink } from 'lucide-react'
 import { Cell, CellGrid, Framed, inset } from '@/components/frame'
 import { RuntimeBadge } from '@/components/RuntimeBadge'
 import { ExecutionBadge } from '@/components/ExecutionBadge'
-import { BuildLink } from '@/components/BuildLink'
+import { CustomRuntimeLink } from '@/components/CustomRuntimeLink'
 import { VerificationBadge } from '@/components/VerificationBadge'
 import { UserLink } from '@/components/UserLink'
 import { HardwareLink } from '@/components/HardwareLink'
@@ -100,8 +100,8 @@ export function ResultCard({ result: r, models, quants, runtimes, rank, eyebrow 
           {r.runtimeFlags ? <div className="mt-0.5 font-mono text-xs text-muted-foreground text-pretty">{r.runtimeFlags}</div> : null}
         </Field>
         {r.customRuntime ? (
-          <Field label="Build">
-            <BuildLink build={r.customRuntime} />
+          <Field label="Custom runtime">
+            <CustomRuntimeLink build={r.customRuntime} />
             {r.revision ? <div className="mt-0.5 font-mono text-xs text-muted-foreground">@ {r.revision}</div> : null}
           </Field>
         ) : null}

@@ -132,14 +132,14 @@ export function createSeed(): SeedDb {
     }
   })
 
-  // Builds people have registered. Kept small: at launch there will be none, and the point is to prove the
+  // Custom runtimes people have registered. Kept small: at launch there will be none, and the point is to prove the
   // picker, the board link and the build page work, not to fill the site with forks.
-  const BUILD_SEED: [id: string, owner: string, runtime: string, name: string, summary: string][] = [
-    ['build-1', 'arcpilot', 'vllm', 'fused-attn-b60', 'Fused RMSNorm + QKV, tuned for Arc Pro B60 at batch 1'],
-    ['build-2', 'lunarlaker', 'llamacpp', 'sycl-flash-decode', 'Flash-decode kernel for the SYCL backend, Xe2 only'],
-    ['build-3', 'quantqueen', 'vllm', 'paged-kv-int8', 'INT8 KV cache with a paged allocator, Xe matrix path'],
+  const CUSTOM_RUNTIME_SEED: [id: string, owner: string, runtime: string, name: string, summary: string][] = [
+    ['cr-1', 'arcpilot', 'vllm', 'fused-attn-b60', 'Fused RMSNorm + QKV, tuned for Arc Pro B60 at batch 1'],
+    ['cr-2', 'lunarlaker', 'llamacpp', 'sycl-flash-decode', 'Flash-decode kernel for the SYCL backend, Xe2 only'],
+    ['cr-3', 'quantqueen', 'vllm', 'paged-kv-int8', 'INT8 KV cache with a paged allocator, Xe matrix path'],
   ]
-  const customRuntimes: CustomRuntime[] = BUILD_SEED.map(([id, owner, runtimeId, name, summary], i) => {
+  const customRuntimes: CustomRuntime[] = CUSTOM_RUNTIME_SEED.map(([id, owner, runtimeId, name, summary], i) => {
     const created = daysAgo(45 - i * 9)
     return {
       id, ownerId: userByHandle[owner].id, owner: userByHandle[owner], runtimeId,
@@ -174,7 +174,7 @@ export function createSeed(): SeedDb {
       const runDate = daysAgo(Math.floor(rand() * 60))
       const id = `res-${++n}`
       const submitterId = rig.ownerId
-      // A slice of runs use one of the seeded builds for that runtime, when there is one.
+      // A slice of runs use one of the seeded customRuntimes for that runtime, when there is one.
       const buildsHere = customRuntimes.filter((b) => b.runtimeId === runtime.id)
       const build = buildsHere.length && rand() < 0.22 ? buildsHere[Math.floor(rand() * buildsHere.length)] : undefined
       const handle = users.find((u) => u.id === submitterId)!.handle
