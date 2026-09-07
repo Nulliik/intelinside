@@ -11,3 +11,11 @@ export const RESULTS_DIR_URL = `${REPO_URL}/tree/main/results`
 /** The hardware, model, and runtime catalog. A part gets onto the site by a pull request here. */
 export const CATALOG_DIR_URL = `${REPO_URL}/tree/main/frontend/src/catalog`
 export const CASCADIA_URL = 'https://cascadia.to/'
+
+/** The company behind the site. Named in the Terms and the Privacy Policy, and nowhere else. */
+export const LEGAL_ENTITY = 'Not Community Labs Inc.'
+export const LEGAL_ADDRESS = '344 Grove St #4038, Jersey City, NJ 07302'
+export const LEGAL_EMAIL = 'team@communitylabs.com'
+/** Shown at the top of each legal page. Change it whenever the page's text changes. */
+export const TERMS_UPDATED = 'September 7, 2026'
+export const PRIVACY_UPDATED = 'September 7, 2026'

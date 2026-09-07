@@ -4,6 +4,69 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="dark" />
+    <!--
+      Google Consent Mode v2. Every storage type defaults to denied here, *before* gtag.js loads, so
+      no analytics cookie is set until the visitor accepts in the consent banner. A choice already
+      stored is replayed synchronously, so a returning visitor who accepted is measured from the
+      first hit instead of spending half a second denied.
+
+      The version (2) and the 12-month max age below must stay in sync with CONSENT_VERSION and
+      CONSENT_MAX_AGE_MS in src/lib/consent.ts, which issues every later update.
+    -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() { dataLayer.push(arguments); }
+      gtag('js', new Date());
+      gtag('consent', 'default', {
+        ad_storage: 'denied',
+        ad_user_data: 'denied',
+        ad_personalization: 'denied',
+        analytics_storage: 'denied',
+        functionality_storage: 'denied',
+        personalization_storage: 'denied',
+        security_storage: 'granted',
+        wait_for_update: 500,
+      });
+      try {
+        var raw = localStorage.getItem('intelinside.consent');
+        if (raw) {
+          var rec = JSON.parse(raw);
+          var maxAge = 365 * 24 * 60 * 60 * 1000;
+          if (rec && rec.v === 2 && rec.at && Date.now() - rec.at < maxAge && rec.categories) {
+            var c = rec.categories;
+            gtag('consent', 'update', {
+              functionality_storage: c.functional ? 'granted' : 'denied',
+              personalization_storage: c.functional ? 'granted' : 'denied',
+              analytics_storage: c.analytics ? 'granted' : 'denied',
+              ad_storage: c.marketing ? 'granted' : 'denied',
+              ad_user_data: c.marketing ? 'granted' : 'denied',
+              ad_personalization: c.marketing ? 'granted' : 'denied',
+            });
+          }
+        }
+      } catch (e) {}
+      gtag('config', 'G-DNTXPVPPEJ');
+
+      // Fetch the tag itself only when we are not on a developer's machine, so `npm run dev` and a
+      // phone pointed at the laptop over the LAN never reach the property. Everything above still
+      // runs locally: the banner and src/lib/consent.ts behave exactly as they do in production, the
+      // commands just queue in dataLayer and go nowhere instead of setting Google's cookies.
+      (function () {
+        var host = location.hostname;
+        var local =
+          host === 'localhost' ||
+          host === '127.0.0.1' ||
+          host === '::1' ||
+          host === '[::1]' ||
+          /\.local(host)?$/.test(host) ||
+          /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(host);
+        if (local) return;
+        var tag = document.createElement('script');
+        tag.async = true;
+        tag.src = 'https://www.googletagmanager.com/gtag/js?id=G-DNTXPVPPEJ';
+        document.head.appendChild(tag);
+      })();
+    </script>
     <link rel="icon" type="image/png" href="/favicon.png" />
     <meta name="description" content="Local LLM speed on Intel hardware: real decode tok/s by model, quant, and runtime on Arc GPUs, Core Ultra chips, and Xeon boxes, posted by the community. Add your rig." />
     <title>intelinside</title>
