@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { RuntimeBadge } from '@/components/RuntimeBadge'
+import { ExecutionBadge } from '@/components/ExecutionBadge'
 import { VerificationBadge } from '@/components/VerificationBadge'
 import { UserLink } from '@/components/UserLink'
 import { HardwareLink } from '@/components/HardwareLink'
@@ -66,7 +67,10 @@ export function LeaderboardTable({ rows, runtimes, models, quants }: Props) {
                 </TableCell>
               ) : null}
               <TableCell className={td}>
-                <RuntimeBadge runtime={byId[result.runtimeId]} version={result.runtimeVersion} />
+                <span className="inline-flex items-center gap-1 whitespace-nowrap">
+                  <RuntimeBadge runtime={byId[result.runtimeId]} version={result.runtimeVersion} />
+                  <ExecutionBadge result={result} iconOnly />
+                </span>
               </TableCell>
               <TableCell className={`${td} text-right font-mono text-base font-medium tnum`}>
                 <Link to={`/results/${result.id}`} onClick={(e) => e.stopPropagation()} className="rounded-sm hover:underline underline-offset-4" aria-label={`${fmtTps(result.decodeTps)} tokens per second, open result`}>

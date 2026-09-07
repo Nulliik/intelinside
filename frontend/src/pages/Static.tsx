@@ -20,11 +20,14 @@ export function Guidelines() {
           <ul>
             <li>Generate at least 256 tokens from a short prompt and average over a few runs.</li>
             <li>Report the runtime version you used and link the repo you ran in, yours or the runtime's.</li>
+            <li>Note the flags and settings that moved the number: the backend you compiled in, flash attention, KV cache precision. The same card on the same runtime can differ twofold on these.</li>
             <li>If you ran on one card out of several, submit it as a component result and set the quantity you used.</li>
             <li>A Core Ultra chip carries CPU cores, an iGPU, and an NPU, and each is its own part. Submit the unit the model ran on; a result on the CPU part means its cores. Use whole rig when the run spanned more than one unit.</li>
           </ul>
           <h2>Ranking</h2>
           <p>Each rig, or each part at a given quantity, appears once on a board at its best decode tok/s. The earliest run wins a tie. Boards mix runtimes; filter by runtime to compare like with like.</p>
+          <h2>Stock and modified runtimes</h2>
+          <p>A result says whether it ran on a stock runtime — the released one, however you configured or built it — or a modified one, where you changed the runtime itself with a custom kernel or op, a patch, or a fork. A modified stack can beat stock by a wide margin on the same silicon, so boards rank stock runs against each other and leave modified ones out until you turn on <strong>Include modified</strong>. Nothing is hidden and modified results are not lesser; they answer a different question, and they rank among each other on the same board. A modified result carries the fork and the exact revision behind it, because an implementation changes week to week and only the revision makes the number reproducible.</p>
           <h2>Verification</h2>
           <p>Every result starts self-reported. When enough signed-in members confirm it, it becomes community-verified. Confirm only what you reproduced or checked.</p>
           <h2>Flags</h2>

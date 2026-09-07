@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { ExternalLink } from 'lucide-react'
 import { Cell, CellGrid, Framed, inset } from '@/components/frame'
 import { RuntimeBadge } from '@/components/RuntimeBadge'
+import { ExecutionBadge } from '@/components/ExecutionBadge'
 import { VerificationBadge } from '@/components/VerificationBadge'
 import { UserLink } from '@/components/UserLink'
 import { HardwareLink } from '@/components/HardwareLink'
@@ -90,7 +91,24 @@ export function ResultCard({ result: r, models, quants, runtimes, rank, eyebrow 
         ) : (
           <Field label="Summary">{r.rig?.summary ?? '—'}</Field>
         )}
-        <Field label="Runtime"><RuntimeBadge runtime={runtime} version={r.runtimeVersion || undefined} /></Field>
+        <Field label="Runtime">
+          <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
+            <RuntimeBadge runtime={runtime} version={r.runtimeVersion || undefined} />
+            <ExecutionBadge result={r} />
+          </span>
+          {r.runtimeFlags ? <div className="mt-0.5 font-mono text-xs text-muted-foreground text-pretty">{r.runtimeFlags}</div> : null}
+          {r.execution === 'modified' && (r.modSourceUrl || r.modRevision) ? (
+            <div className="mt-0.5 font-mono text-xs text-muted-foreground text-pretty">
+              {r.modSourceUrl ? (
+                <a href={r.modSourceUrl} target="_blank" rel="noreferrer" className="hover:underline underline-offset-4">
+                  {r.modSourceUrl.replace(/^https?:\/\/(www\.)?/, '')}
+                </a>
+              ) : null}
+              {r.modSourceUrl && r.modRevision ? ' @ ' : null}
+              {r.modRevision}
+            </div>
+          ) : null}
+        </Field>
         <Field label="Prompt tok/s"><span className="font-mono tnum">{fmtTps(r.promptTps)}</span></Field>
         <Field label="Time to first token"><span className="font-mono tnum">{fmtMs(r.ttftMs)}</span></Field>
         <Field label="Context length"><span className="font-mono tnum">{r.contextLength ? fmtInt(r.contextLength) : '—'}</span></Field>

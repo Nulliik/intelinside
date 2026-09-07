@@ -17,6 +17,7 @@ Every result on the site can also live here as a file, and a file here can becom
      "quant": "q4_k_m",
      "runtime": "llamacpp",
      "runtimeVersion": "b6512",
+     "runtimeFlags": "-fa 1 -ngl 99, SYCL backend",
      "decodeTps": 34.2,
      "promptTps": 410,
      "ttftMs": 120,
@@ -27,10 +28,31 @@ Every result on the site can also live here as a file, and a file here can becom
    }
    ```
 
-   Leave `component` out for a whole-rig result. Ids come from [the catalog](../frontend/src/catalog/); the site's hardware pages show each part's id in the URL. Missing a part? [Add it](../frontend/src/catalog/README.md) in the same pull request.
+   `runtimeFlags` is optional free text: the settings and build options that would change the number if someone
+   rebuilt it. Leave `component` out for a whole-rig result. Ids come from [the catalog](../frontend/src/catalog/); the site's hardware pages show each part's id in the URL. Missing a part? [Add it](../frontend/src/catalog/README.md) in the same pull request.
 
 3. Open a pull request. A check validates the file against the catalog and comments with a link like `/submit?pr=123`.
 4. Open that link. The submit form fills itself from your file, with the pull request as the evidence link. Check the numbers and submit. The result ranks the moment it is in.
+
+### Stock or modified
+
+`execution` defaults to `stock`: the released runtime, however you configured or built it. Set it to `modified` if you
+changed the runtime itself — a custom kernel or op, a patch, a fork — and give the fork and the revision behind it:
+
+```json
+{
+  "execution": "modified",
+  "modSourceUrl": "https://github.com/you/vllm",
+  "modRevision": "a8192fe"
+}
+```
+
+The revision is the point. An implementation changes week to week, so "a custom attention kernel" is not reproducible
+and `github.com/you/vllm @ a8192fe` is. A commit, a tag, or a build id all work.
+
+Boards rank stock runs against each other and keep modified ones out unless a reader turns on **Include modified**, so
+a changed stack is never mistaken for faster silicon. Modified results are not lesser and nothing is hidden — they just
+answer a different question, and they rank among each other on the same board.
 
 The pull request stays as the public record of the run. Merging it is up to the maintainers and changes nothing on the site.
 

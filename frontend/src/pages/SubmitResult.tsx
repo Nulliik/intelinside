@@ -1,13 +1,14 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { ChevronDown, GitPullRequest, Info, Share2 } from 'lucide-react'
+import { ChevronDown, GitPullRequest, Info, Plus, Share2 } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { Textarea } from '@/components/ui/textarea'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -28,7 +29,7 @@ import { REPO, REPO_URL } from '@/lib/brand'
 import { isGitHubUrl } from '@/lib/github'
 import { PrError, fetchPrResults, newResultFileUrl, parsePrRef, resultFileFor, type PrResultFile, type PrResults, type ResultFile } from '@/lib/pr'
 import { UNIT_LABEL, hasDiscreteGpu, hostIn, integratedParts, nestParts, unitLabel } from '@/lib/hardware'
-import { ApiError, type Result, type ResultInput, type ResultRank, type RigSummary } from '@/lib/api/types'
+import { ApiError, REVISION_MAX, RUNTIME_FLAGS_MAX, type ExecutionStack, type Result, type ResultInput, type ResultRank, type RigSummary } from '@/lib/api/types'
 import { fmtTps, pluralize } from '@/lib/format'
 import { resultShareTarget } from '@/lib/share'
 import { cn } from '@/lib/utils'
@@ -44,6 +45,10 @@ type Form = {
   quant: string
   runtimeId: string
   runtimeVersion: string
+  runtimeFlags: string
+  execution: ExecutionStack
+  modSourceUrl: string
+  modRevision: string
   decodeTps: string
   promptTps: string
   ttftMs: string
@@ -57,9 +62,24 @@ type Form = {
 const today = () => new Date().toISOString().slice(0, 10)
 const EMPTY: Form = {
   rigId: '', target: 'rig', componentId: '', componentQuantity: '1', modelId: '', quant: '', runtimeId: '', runtimeVersion: '',
+  runtimeFlags: '', execution: 'stock', modSourceUrl: '', modRevision: '',
   decodeTps: '', promptTps: '', ttftMs: '', contextLength: '', batchSize: '', repoUrl: '', runDate: today(), notes: '',
 }
 const num = (s: string) => (s.trim() === '' ? undefined : Number(s))
+
+// The same model, quant, runtime, and card can differ twofold on kernel choices, so the placeholder names the ones
+// that matter for each runtime rather than leaving people to guess what belongs here.
+const RUNTIME_FLAGS_HINTS: Record<string, string> = {
+  llamacpp: '-fa 1 -ngl 99, SYCL backend',
+  ollama: 'flash attention on, KV cache q8_0',
+  'openvino-genai': 'PERFORMANCE_HINT=THROUGHPUT, dynamic quantization on',
+  'ipex-llm': 'XMX on, low-bit sym_int4',
+  vllm: 'attention backend, chunked prefill on',
+  pytorch: 'torch.compile, SDPA backend',
+  cascadia: 'kernel and build options you changed',
+}
+const runtimeFlagsPlaceholder = (runtimeId: string) =>
+  RUNTIME_FLAGS_HINTS[runtimeId] ?? 'Backend, attention kernel, KV cache precision'
 const isoAtNoon = (day: string) => new Date(`${day}T12:00:00`).toISOString()
 
 /** Mirrors the server's rules so the form can flag problems before the request. */
@@ -73,6 +93,14 @@ function validate(f: Form, quantsFor: string[]): Record<string, string> {
   else if (quantsFor.length && !quantsFor.includes(f.quant)) e.quant = 'That quant has no board for this model.'
   if (!f.runtimeId) e.runtimeId = 'Pick a runtime.'
   if (!f.runtimeVersion.trim()) e.runtimeVersion = 'Enter the runtime version.'
+  if (f.runtimeFlags.trim().length > RUNTIME_FLAGS_MAX) e.runtimeFlags = `Use ${RUNTIME_FLAGS_MAX} characters or fewer.`
+  if (f.execution === 'modified') {
+    const source = f.modSourceUrl.trim()
+    if (source && !/^https?:\/\/\S+$/.test(source)) e.modSourceUrl = 'Enter a full URL, starting with https://.'
+    if (f.modRevision.trim().length > REVISION_MAX) e.modRevision = `Use ${REVISION_MAX} characters or fewer.`
+    // Without one of these the label says nothing anyone can act on.
+    if (!source && !f.modRevision.trim()) e.modSourceUrl = 'Add the fork or the revision, so the run can be reproduced.'
+  }
   const d = num(f.decodeTps)
   if (d == null || Number.isNaN(d) || !(d > 0)) e.decodeTps = 'Enter decode tok/s above zero.'
   for (const k of ['promptTps', 'ttftMs', 'contextLength', 'batchSize'] as const) {
@@ -92,6 +120,10 @@ function toInput(f: Form): ResultInput {
     quant: f.quant,
     runtimeId: f.runtimeId,
     runtimeVersion: f.runtimeVersion.trim(),
+    runtimeFlags: f.runtimeFlags.trim() || undefined,
+    execution: f.execution,
+    modSourceUrl: f.execution === 'modified' ? f.modSourceUrl.trim() || undefined : undefined,
+    modRevision: f.execution === 'modified' ? f.modRevision.trim() || undefined : undefined,
     rigId: f.rigId,
     componentId: component ? f.componentId : undefined,
     componentQuantity: component ? Number(f.componentQuantity) || 1 : undefined,
@@ -125,6 +157,10 @@ function formFromFile(file: Partial<ResultFile>, rigs: RigSummary[], evidenceUrl
       quant: file.quant && QUANT_BY_ID[file.quant] ? file.quant : '',
       runtimeId: file.runtime && RUNTIME_BY_ID[file.runtime] ? file.runtime : '',
       runtimeVersion: file.runtimeVersion ?? '',
+      runtimeFlags: file.runtimeFlags ?? '',
+      execution: file.execution ?? 'stock',
+      modSourceUrl: file.modSourceUrl ?? '',
+      modRevision: file.modRevision ?? '',
       decodeTps: text(file.decodeTps),
       promptTps: text(file.promptTps),
       ttftMs: text(file.ttftMs),
@@ -186,6 +222,7 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
   const [form, setForm] = useState<Form>(() => ({ ...EMPTY, rigId: sp.get('rig') ?? '', modelId: sp.get('model') ?? '', quant: sp.get('quant') ?? '' }))
   const [initialized, setInitialized] = useState(mode === 'create')
   const [creatingRig, setCreatingRig] = useState(false)
+  const [flagsOpen, setFlagsOpen] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [attempted, setAttempted] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -213,7 +250,8 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
     setForm({
       rigId: r.rigId, target: r.componentId ? 'component' : 'rig', componentId: r.componentId ?? '', componentQuantity: String(r.componentQuantity ?? 1),
       modelId: r.modelId, quant: r.quant, runtimeId: r.runtimeId, runtimeVersion: r.runtimeVersion,
-      decodeTps: String(r.decodeTps), promptTps: r.promptTps?.toString() ?? '', ttftMs: r.ttftMs?.toString() ?? '',
+      runtimeFlags: r.runtimeFlags ?? '', execution: r.execution ?? 'stock',
+      modSourceUrl: r.modSourceUrl ?? '', modRevision: r.modRevision ?? '', decodeTps: String(r.decodeTps), promptTps: r.promptTps?.toString() ?? '', ttftMs: r.ttftMs?.toString() ?? '',
       contextLength: r.contextLength?.toString() ?? '', batchSize: r.batchSize?.toString() ?? '',
       repoUrl: r.repoUrl, runDate: r.runDate.slice(0, 10), notes: r.notes ?? '',
     })
@@ -348,6 +386,10 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
     quant: form.quant,
     runtimeId: form.runtimeId,
     runtimeVersion: form.runtimeVersion,
+    runtimeFlags: form.runtimeFlags.trim() || undefined,
+    execution: form.execution,
+    modSourceUrl: form.execution === 'modified' ? form.modSourceUrl.trim() || undefined : undefined,
+    modRevision: form.execution === 'modified' ? form.modRevision.trim() || undefined : undefined,
     rigId: form.rigId,
     rig: selectedRig,
     componentId: form.target === 'component' ? form.componentId || undefined : undefined,
@@ -448,7 +490,7 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
                     setDone(null)
                     setAttempted(false)
                     setErrors({})
-                    setForm({ ...EMPTY, rigId: form.rigId, runtimeId: form.runtimeId, runtimeVersion: form.runtimeVersion })
+                    setForm({ ...EMPTY, rigId: form.rigId, runtimeId: form.runtimeId, runtimeVersion: form.runtimeVersion, runtimeFlags: form.runtimeFlags, execution: form.execution, modSourceUrl: form.modSourceUrl, modRevision: form.modRevision })
                   }}
                 >
                   Submit another
@@ -790,6 +832,59 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
                   <Input {...inputProps('runtimeVersion')} placeholder="0.10.0, or b6512 for llama.cpp" className="font-mono" />
                 </Field>
               </div>
+              {/* Optional and usually empty, so it stays folded away. A prefilled value or an error opens it, otherwise
+                  a stock submission never has to look at it. */}
+              {flagsOpen || form.runtimeFlags || errors.runtimeFlags ? (
+                <Field
+                  id="runtimeFlags"
+                  label="Flags and settings"
+                  error={errors.runtimeFlags}
+                  hint="Optional. What someone else would need to reproduce this number."
+                >
+                  <Input
+                    {...inputProps('runtimeFlags')}
+                    autoFocus={flagsOpen}
+                    placeholder={runtimeFlagsPlaceholder(form.runtimeId)}
+                    className="font-mono"
+                  />
+                </Field>
+              ) : (
+                <Button type="button" variant="ghost" size="sm" className="w-fit" onClick={() => setFlagsOpen(true)}>
+                  <Plus data-icon="inline-start" /> Add flags and settings
+                </Button>
+              )}
+              <div className="grid gap-1.5">
+                <Label>Execution stack</Label>
+                <ToggleGroup
+                  value={[form.execution]}
+                  onValueChange={(v) => set({ execution: ((v as string[])[0] as ExecutionStack) || 'stock' })}
+                  variant="outline"
+                  size="sm"
+                  className="w-fit"
+                >
+                  <ToggleGroupItem value="stock">Stock</ToggleGroupItem>
+                  <ToggleGroupItem value="modified">Modified</ToggleGroupItem>
+                </ToggleGroup>
+                <p className="text-xs text-muted-foreground">
+                  {form.execution === 'stock'
+                    ? 'The released runtime, however you configured or built it. Boards rank stock runs against each other.'
+                    : 'You changed the runtime itself: a custom kernel or op, a patch, a fork. Boards keep these out by default, so a changed stack is never mistaken for faster hardware.'}
+                </p>
+              </div>
+              {form.execution === 'modified' ? (
+                <div className="grid gap-4 border-l-2 border-warning/40 pl-4 sm:grid-cols-2">
+                  <Field id="modSourceUrl" label="Fork or source" error={errors.modSourceUrl}>
+                    <Input {...inputProps('modSourceUrl')} type="url" placeholder="https://github.com/you/vllm" />
+                  </Field>
+                  <Field id="modRevision" label="Source revision" error={errors.modRevision} hint="A commit, a tag, or a build id.">
+                    <Input {...inputProps('modRevision')} placeholder="a8192fe" className="font-mono" />
+                  </Field>
+                  <p className="text-xs text-muted-foreground sm:col-span-2">
+                    An implementation changes week to week, so the revision is what makes the number reproducible. Say what you
+                    changed in the notes below.
+                  </p>
+                </div>
+              ) : null}
             </Step>
 
             <Step n={5} title="Numbers" hint="Decode speed ranks. Average a few runs of at least 256 tokens.">

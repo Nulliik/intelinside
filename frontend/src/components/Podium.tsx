@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { CellGrid } from '@/components/frame'
 import { RuntimeBadge } from '@/components/RuntimeBadge'
+import { ExecutionBadge } from '@/components/ExecutionBadge'
 import { VerificationBadge } from '@/components/VerificationBadge'
 import { UserAvatar } from '@/components/UserAvatar'
 import { RankMedal } from '@/components/RankMedal'
@@ -70,7 +71,7 @@ export function Podium({ rows, runtimes, models, quants }: { rows: BoardRow[]; r
             <div className="mt-auto">
               <div className="text-xs font-medium uppercase tracking-label text-muted-foreground">Runtime</div>
               <div className="mt-1 text-sm">
-                <RuntimeBadge runtime={rt[result.runtimeId]} version={result.runtimeVersion} />
+                <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1"><RuntimeBadge runtime={rt[result.runtimeId]} version={result.runtimeVersion} /><ExecutionBadge result={result} /></span>
               </div>
             </div>
           </div>

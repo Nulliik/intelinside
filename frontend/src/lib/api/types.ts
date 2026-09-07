@@ -87,6 +87,18 @@ export type Verification = { status: VerificationStatus; confirmations: number; 
 export type FlagReason = 'implausible' | 'wrong_hardware' | 'duplicate' | 'spam' | 'other'
 export type Moderation = { flags: number; hidden: boolean; flaggedByMe?: boolean; reasons?: FlagReason[] }
 
+/** Longest runtime-flags string accepted. Long enough for a llama.cpp command tail, short enough to stay one line. */
+export const RUNTIME_FLAGS_MAX = 200
+/** Longest source-revision string: a commit hash, a tag, or a build id. */
+export const REVISION_MAX = 80
+
+/**
+ * Whether the number came off a released runtime or a changed one. A fork with a hand-tuned attention kernel can beat
+ * stock by a wide margin, which reads as a hardware win unless the board says otherwise, so boards rank stock alone
+ * by default and modified results are opt-in.
+ */
+export type ExecutionStack = 'stock' | 'modified'
+
 export type Result = {
   id: string
   submitterId: string
@@ -95,6 +107,14 @@ export type Result = {
   quant: string
   runtimeId: string
   runtimeVersion: string
+  /** Flags and settings that change the number: backend, flash attention, KV cache quantization. Free text. */
+  runtimeFlags?: string
+  /** Stock unless the runtime itself was changed. */
+  execution: ExecutionStack
+  /** Modified only: the fork or repo the changed runtime lives in. */
+  modSourceUrl?: string
+  /** Modified only: the exact revision that produced this number — a commit, a tag, or a build id. */
+  modRevision?: string
   rigId: string
   rig?: RigSummary
   componentId?: string
@@ -157,6 +177,8 @@ export type BoardParams = {
   vendor?: string
   type?: HardwareType
   verification?: VerificationStatus
+  /** Boards rank stock runs alone unless this is set. */
+  includeModified?: boolean
   q?: string
   limit?: number
   cursor?: string

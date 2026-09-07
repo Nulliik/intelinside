@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
 import { PageHeader } from '@/components/PageHeader'
 import { LeaderboardTable } from '@/components/LeaderboardTable'
 import { TpsBarChart } from '@/components/TpsBarChart'
@@ -49,6 +50,8 @@ export default function Board() {
   const vendor = sp.get('vendor') ?? ''
   const type = sp.get('type') ?? ''
   const verification = sp.get('verification') ?? ''
+  // Off by default: the board is a hardware comparison, so a changed runtime is opt-in rather than mixed in.
+  const includeModified = sp.get('modified') === '1'
   const q = sp.get('q') ?? ''
   const update = (patch: Record<string, string | undefined>) => {
     const next = new URLSearchParams(sp)
@@ -64,6 +67,7 @@ export default function Board() {
     vendor: vendor || undefined,
     type: (type || undefined) as HardwareType | undefined,
     verification: (verification || undefined) as VerificationStatus | undefined,
+    includeModified,
     q: q || undefined,
   }
 
@@ -73,7 +77,7 @@ export default function Board() {
   // Nothing is fetched while sealed: the ranking is not shown.
   const board = useAsync(
     () => (sealed ? Promise.resolve(undefined) : quant ? api.board(modelId, quant, params) : Promise.reject(new Error('no quant'))),
-    [modelId, quant, kind, runtime.join(','), vendor, type, verification, q, sealed],
+    [modelId, quant, kind, runtime.join(','), vendor, type, verification, includeModified, q, sealed],
   )
   const [extra, setExtra] = useState<BoardRow[]>([])
   const [cursor, setCursor] = useState<string | undefined>()
@@ -192,6 +196,14 @@ export default function Board() {
             <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
             <SelectContent>{verificationItems.map((i) => <SelectItem key={i.value} value={i.value}>{i.label}</SelectItem>)}</SelectContent>
           </Select>
+          <label className="flex items-center gap-2 whitespace-nowrap text-sm text-muted-foreground">
+            <Switch
+              checked={includeModified}
+              onCheckedChange={(on) => update({ modified: on ? '1' : undefined })}
+              aria-label="Include results from modified runtimes"
+            />
+            Include modified
+          </label>
           <Button variant="outline" size="sm" className="md:hidden" onClick={() => setShowChart((s) => !s)}>
             <BarChart3 data-icon="inline-start" /> {showChart ? 'Hide chart' : 'Chart'}
           </Button>
