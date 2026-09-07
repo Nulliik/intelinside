@@ -10,13 +10,15 @@ import { TpsBarChart } from '@/components/TpsBarChart'
 import { ResultsTable } from '@/components/ResultsTable'
 import { EmptyState } from '@/components/EmptyState'
 import { ErrorState } from '@/components/ErrorState'
+import { SealedBoard, sealedLabel } from '@/components/launch'
 import { Block, Cell, CellGrid, Section, inset } from '@/components/frame'
 import { useAsync } from '@/hooks/useAsync'
 import { useCatalog } from '@/hooks/useCatalog'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { useSealed } from '@/hooks/useSealed'
 import { useSession } from '@/hooks/useSession'
 import { api } from '@/lib/api'
-import { fmtDate, fmtInt, fmtTps } from '@/lib/format'
+import { fmtDate, fmtInt, fmtTps, fmtWeekday } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
 /**
@@ -26,6 +28,7 @@ import { cn } from '@/lib/utils'
 export default function BuildDetail() {
   const { buildId } = useParams()
   const { user, requestSignIn } = useSession()
+  const { sealed, revealAt } = useSealed()
   const cat = useCatalog()
   const build = useAsync(() => (buildId ? api.customRuntime(buildId) : Promise.reject(new Error('no build'))), [buildId])
   usePageTitle(build.data?.name ?? 'Build')
@@ -96,16 +99,28 @@ export default function BuildDetail() {
         ) : null}
       </PageHeader>
 
-      <Section>
-        <CellGrid cols={4}>
-          <Stat label="best tok/s" value={b ? fmtTps(b.bestTps) : undefined} />
-          <Stat label="results" value={b ? fmtInt(b.resultsCount ?? 0) : undefined} />
-          <Stat label="rigs it has run on" value={b ? fmtInt(b.rigsCount ?? 0) : undefined} />
-          <Stat label="people posting on it" value={b ? fmtInt(new Set(b.results.map((r) => r.submitterId)).size) : undefined} />
-        </CellGrid>
-      </Section>
+      {sealed ? null : (
+        <Section>
+          <CellGrid cols={4}>
+            <Stat label="best tok/s" value={b ? fmtTps(b.bestTps) : undefined} />
+            <Stat label="results" value={b ? fmtInt(b.resultsCount ?? 0) : undefined} />
+            <Stat label="rigs it has run on" value={b ? fmtInt(b.rigsCount ?? 0) : undefined} />
+            <Stat label="people posting on it" value={b ? fmtInt(new Set(b.results.map((r) => r.submitterId)).size) : undefined} />
+          </CellGrid>
+        </Section>
+      )}
 
-      {b && b.results.length ? (
+      {sealed && revealAt ? (
+        <Section label="Results on this build" action={sealedLabel(revealAt)}>
+          <SealedBoard
+            revealAt={revealAt}
+            variant="chart"
+            lead={`Results on this build are sealed until ${fmtWeekday(revealAt)}.`}
+            ask="Post what it does for you and it is on the board the moment it goes live."
+            submitTo={b ? `/submit?runtime=${b.runtimeId}&build=${b.id}` : '/submit'}
+          />
+        </Section>
+      ) : b && b.results.length ? (
         <>
           <Section label="Tok/s by model">
             <Block>
