@@ -1,0 +1,7 @@
+.DS_Store
+*.log
+node_modules/
+
+# Editor and tooling directories that are personal, not project configuration.
+.idea/
+.vscode/
