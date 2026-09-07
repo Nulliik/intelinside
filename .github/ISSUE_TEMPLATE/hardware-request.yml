@@ -1,0 +1,66 @@
+name: Request hardware or a model
+description: A GPU, CPU, iGPU, NPU, memory, model, or runtime the catalog is missing.
+title: 'Catalog: '
+labels: [catalog]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Comfortable with TypeScript? Adding it yourself is one line in
+        [`frontend/src/catalog/index.ts`](https://github.com/labscommunity/intelinside/blob/main/frontend/src/catalog/README.md)
+        and lands faster than this form. Otherwise fill this in and someone will add it.
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind of entry
+      options:
+        - GPU (discrete)
+        - CPU
+        - Integrated GPU
+        - NPU
+        - Memory
+        - Model
+        - Runtime
+        - Quantization
+    validations:
+      required: true
+  - type: input
+    id: name
+    attributes:
+      label: Name
+      description: As the vendor writes it.
+      placeholder: Arc Pro B60
+    validations:
+      required: true
+  - type: input
+    id: vendor
+    attributes:
+      label: Vendor
+      placeholder: Intel
+    validations:
+      required: true
+  - type: textarea
+    id: specs
+    attributes:
+      label: Specs
+      description: |
+        The numbers people compare. GPUs: VRAM, memory type, Xe cores, TDP. CPUs: cores, threads, boost
+        clock, TDP, platform. Models: parameters, architecture, and which quantizations people run.
+      placeholder: |
+        24 GB GDDR6, 20 Xe cores, 200 W, Battlemage, released 2025-05-19
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: Source
+      description: Where the specs come from — a vendor product page or the model card.
+      placeholder: https://www.intel.com/...
+    validations:
+      required: true
+  - type: checkboxes
+    id: integrated
+    attributes:
+      label: For a CPU
+      options:
+        - label: This chip has an iGPU or NPU on the package, and I have listed them in the specs above.

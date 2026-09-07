@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/PageHeader'
 import { Block, Section } from '@/components/frame'
 import { usePageTitle } from '@/hooks/usePageTitle'
-import { BRAND_NAME, CASCADIA_URL, CATALOG_REPO_URL, RESULTS_REPO, RESULTS_REPO_URL } from '@/lib/brand'
+import { BRAND_NAME, CASCADIA_URL, CATALOG_DIR_URL, REPO, REPO_URL } from '@/lib/brand'
 
 const prose = 'max-w-2xl space-y-4 text-sm leading-relaxed text-muted-foreground [&_h2]:mt-8 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:text-foreground [&_li]:ml-5 [&_li]:list-disc [&_a]:text-foreground [&_a]:underline [&_a]:underline-offset-4'
 
@@ -20,19 +20,22 @@ export function Guidelines() {
           <ul>
             <li>Generate at least 256 tokens from a short prompt and average over a few runs.</li>
             <li>Report the runtime version you used and link the repo you ran in, yours or the runtime's.</li>
+            <li>Note the flags and settings that moved the number: the backend you compiled in, flash attention, KV cache precision. The same card on the same runtime can differ twofold on these.</li>
             <li>If you ran on one card out of several, submit it as a component result and set the quantity you used.</li>
             <li>A Core Ultra chip carries CPU cores, an iGPU, and an NPU, and each is its own part. Submit the unit the model ran on; a result on the CPU part means its cores. Use whole rig when the run spanned more than one unit.</li>
           </ul>
           <h2>Ranking</h2>
           <p>Each rig, or each part at a given quantity, appears once on a board at its best decode tok/s. The earliest run wins a tie. Boards mix runtimes; filter by runtime to compare like with like.</p>
+          <h2>Stock and modified runtimes</h2>
+          <p>A result says whether it ran on a stock runtime — the released one, however you configured or built it — or a modified one, where you changed the runtime itself with a custom kernel or op, a patch, or a fork. A modified stack can beat stock by a wide margin on the same silicon, so boards rank stock runs against each other and leave modified ones out until you turn on <strong>Include modified</strong>. Nothing is hidden and modified results are not lesser; they answer a different question, and they rank among each other on the same board. A modified result carries the fork and the exact revision behind it, because an implementation changes week to week and only the revision makes the number reproducible.</p>
           <h2>Verification</h2>
           <p>Every result starts self-reported. When enough signed-in members confirm it, it becomes community-verified. Confirm only what you reproduced or checked.</p>
           <h2>Flags</h2>
           <p>Flag numbers that look implausible, wrong hardware, duplicates, or spam. Past a few flags an entry is hidden until the team reviews it.</p>
           <h2 id="by-pr">Submitting by pull request</h2>
-          <p>Prefer git? Add a JSON file under <code>results/your-handle/</code> in <a href={RESULTS_REPO_URL} target="_blank" rel="noreferrer">{RESULTS_REPO}</a> and open a pull request. A check validates it against the catalog and comments with a link that opens the submit form filled in from your file, with the pull request as the evidence link. The format is in the repo's <a href={`${RESULTS_REPO_URL}/tree/main/results`} target="_blank" rel="noreferrer">results folder</a>. Going the other way, every freshly submitted result offers "Add to the results repo", which writes the file for you.</p>
+          <p>Prefer git? Add a JSON file under <code>results/your-handle/</code> in <a href={REPO_URL} target="_blank" rel="noreferrer">{REPO}</a> and open a pull request. A check validates it against the catalog and comments with a link that opens the submit form filled in from your file, with the pull request as the evidence link. The format is in the repo's <a href={`${REPO_URL}/tree/main/results`} target="_blank" rel="noreferrer">results folder</a>. Going the other way, every freshly submitted result offers "Add to the results repo", which writes the file for you.</p>
           <h2>Adding hardware or models</h2>
-          <p>The catalog is open source. Open a pull request at <a href={CATALOG_REPO_URL} target="_blank" rel="noreferrer">the catalog repo</a> with the part or model and it shows up here after the next sync.</p>
+          <p>The catalog of hardware, models, runtimes, and quantizations lives in the same repo, in <a href={CATALOG_DIR_URL} target="_blank" rel="noreferrer">frontend/src/catalog</a>. Add the part or model there, open a pull request, and it appears on the site with the next deploy. The folder's README shows the shape of each entry.</p>
         </Block>
       </Section>
     </div>

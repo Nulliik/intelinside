@@ -1,0 +1,50 @@
+name: Validate the catalog
+
+# Hardware, models, runtimes, and quantizations added by pull request are checked for unique ids, resolved
+# cross-references, and the fields every entry needs. See frontend/src/catalog/README.md.
+on:
+  pull_request:
+    paths:
+      - 'frontend/src/catalog/**'
+      - 'frontend/src/lib/api/types.ts'
+      - 'frontend/scripts/validate-catalog.mjs'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci --prefix frontend
+      - name: Typecheck
+        run: npm --prefix frontend run typecheck
+      - name: Validate
+        id: validate
+        continue-on-error: true
+        run: node frontend/scripts/validate-catalog.mjs --report report.md
+      - name: Comment on the pull request
+        # Forks get a read-only token, so the comment is best effort; the check status still shows the outcome.
+        continue-on-error: true
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs')
+            const marker = '<!-- intelinside-catalog -->'
+            const report = fs.existsSync('report.md') ? fs.readFileSync('report.md', 'utf8') : 'The catalog check did not run.'
+            const number = context.payload.pull_request.number
+            const body = `${marker}\n${report}\nThe entry shows up on the site with the next deploy. Format notes are in [frontend/src/catalog/README.md](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/main/frontend/src/catalog/README.md).`
+            const { data: comments } = await github.rest.issues.listComments({ ...context.repo, issue_number: number, per_page: 100 })
+            const existing = comments.find((c) => c.body && c.body.startsWith(marker))
+            if (existing) await github.rest.issues.updateComment({ ...context.repo, comment_id: existing.id, body })
+            else await github.rest.issues.createComment({ ...context.repo, issue_number: number, body })
+      - name: Fail when the catalog has problems
+        if: steps.validate.outcome != 'success'
+        run: exit 1

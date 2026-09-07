@@ -16,9 +16,9 @@ import { useSealed } from '@/hooks/useSealed'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { api } from '@/lib/api'
 import type { HardwareType } from '@/lib/api/types'
-import { CATALOG_REPO_URL } from '@/lib/brand'
+import { CATALOG_DIR_URL } from '@/lib/brand'
 import { PAGE_SEO } from '@/lib/seo'
-import { HARDWARE_TYPE_LABEL, HARDWARE_TYPES, VENDORS } from '@/mocks/catalog'
+import { HARDWARE_TYPE_LABEL, HARDWARE_TYPES, VENDORS } from '@/catalog'
 
 const ALL = 'all'
 const vendorItems = [{ value: ALL, label: 'All vendors' }, ...VENDORS.map((v) => ({ value: v, label: v })), { value: 'Generic', label: 'Generic' }]
@@ -42,9 +42,9 @@ export default function Hardware() {
             The open database of Intel hardware for local AI.
           </>
         }
-        description="Arc, Core Ultra, Xeon, and Gaudi are seeded. Other vendors' parts are welcome by pull request for comparison, and show up after the next sync."
+        description="Arc, Core Ultra, Xeon, and Gaudi are seeded. Other vendors' parts are welcome by pull request for comparison, and show up with the next deploy."
         actions={
-          <Button variant="outline" render={<a href={CATALOG_REPO_URL} target="_blank" rel="noreferrer" />} nativeButton={false}>
+          <Button variant="outline" render={<a href={CATALOG_DIR_URL} target="_blank" rel="noreferrer" />} nativeButton={false}>
             Add hardware by PR <ExternalLink data-icon="inline-end" />
           </Button>
         }

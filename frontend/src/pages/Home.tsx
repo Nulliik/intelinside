@@ -17,7 +17,7 @@ import { usePageTitle } from '@/hooks/usePageTitle'
 import { useSession } from '@/hooks/useSession'
 import { api } from '@/lib/api'
 import type { HardwareItem } from '@/lib/api/types'
-import { CATALOG_REPO_URL } from '@/lib/brand'
+import { CATALOG_DIR_URL } from '@/lib/brand'
 import { fmtInstant, fmtInt } from '@/lib/format'
 import { PAGE_SEO } from '@/lib/seo'
 import { cn } from '@/lib/utils'
@@ -197,7 +197,7 @@ export default function Home() {
           <div className={cn('flex flex-col gap-4 border-t py-5 sm:flex-row sm:items-center sm:justify-between', inset)}>
             <p className="text-sm text-muted-foreground text-pretty">
               {home.data ? `${fmtInt(home.data.stats.hardware)} parts` : 'Parts'} across CPUs, GPUs, integrated graphics, NPUs, and memory. Intel is seeded and leads the boards; other vendors' parts are welcome for comparison. Missing something?{' '}
-              <a href={CATALOG_REPO_URL} target="_blank" rel="noreferrer" className="text-foreground underline underline-offset-4">
+              <a href={CATALOG_DIR_URL} target="_blank" rel="noreferrer" className="text-foreground underline underline-offset-4">
                 Add it by pull request
               </a>
               .

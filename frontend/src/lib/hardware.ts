@@ -1,5 +1,5 @@
 import type { HardwareItem, HardwareType } from '@/lib/api/types'
-import { HARDWARE, HARDWARE_BY_ID } from '@/mocks/catalog'
+import { HARDWARE, HARDWARE_BY_ID } from '@/catalog'
 
 // A CPU like the Core Ultra 7 265K carries an iGPU and an NPU on its package. The catalog records that on the CPU
 // entry (`integrated`); everything here derives from it. The parts stay separate catalog items, so a model run on

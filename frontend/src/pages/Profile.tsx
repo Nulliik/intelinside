@@ -13,7 +13,7 @@ import { useCatalog } from '@/hooks/useCatalog'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { api } from '@/lib/api'
 import { fmtDate, fmtInt } from '@/lib/format'
-import { QUANT_BY_ID } from '@/mocks/catalog'
+import { QUANT_BY_ID } from '@/catalog'
 import { cn } from '@/lib/utils'
 
 type Tab = 'rigs' | 'results'

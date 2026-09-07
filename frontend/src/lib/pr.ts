@@ -1,6 +1,6 @@
-import type { Result, ResultInput } from '@/lib/api/types'
-import { RESULTS_REPO } from '@/lib/brand'
-import { HARDWARE_BY_ID, MODEL_BY_ID, QUANT_BY_ID, RUNTIME_BY_ID } from '@/mocks/catalog'
+import { REVISION_MAX, RUNTIME_FLAGS_MAX, type ExecutionStack, type Result, type ResultInput } from '@/lib/api/types'
+import { REPO } from '@/lib/brand'
+import { HARDWARE_BY_ID, MODEL_BY_ID, QUANT_BY_ID, RUNTIME_BY_ID } from '@/catalog'
 
 // Submitting by pull request. A contributor adds `results/<handle>/<name>.json` to the site's repo and opens a PR;
 // the repo's check validates the file with `parseResultFile` (the same code, run by frontend/scripts/validate-results.mjs)
@@ -21,6 +21,14 @@ export type ResultFile = {
   quant: string
   runtime: string
   runtimeVersion: string
+  /** Flags and settings that change the number, as you would type them: "-fa 1, SYCL backend". */
+  runtimeFlags?: string
+  /** "stock" (the default) or "modified" when the runtime itself was changed. */
+  execution?: ExecutionStack
+  /** Modified only: the fork the changed runtime lives in. */
+  modSourceUrl?: string
+  /** Modified only: the exact revision behind the number — a commit, a tag, or a build id. */
+  modRevision?: string
   decodeTps: number
   promptTps?: number
   ttftMs?: number
@@ -34,7 +42,7 @@ export type ResultFile = {
 }
 
 export type PrRef = { number: number; url: string }
-export const prUrl = (number: number) => `https://github.com/${RESULTS_REPO}/pull/${number}`
+export const prUrl = (number: number) => `https://github.com/${REPO}/pull/${number}`
 
 /** Accepts a PR number, "#12", or a PR URL on the site's repo. */
 export function parsePrRef(input: string): PrRef | null {
@@ -44,7 +52,7 @@ export function parsePrRef(input: string): PrRef | null {
   try {
     const url = new URL(text)
     const match = url.pathname.match(/^\/([^/]+\/[^/]+)\/pull\/(\d+)/)
-    if ((url.hostname === 'github.com' || url.hostname === 'www.github.com') && match && match[1].toLowerCase() === RESULTS_REPO.toLowerCase())
+    if ((url.hostname === 'github.com' || url.hostname === 'www.github.com') && match && match[1].toLowerCase() === REPO.toLowerCase())
       return { number: Number(match[2]), url: prUrl(Number(match[2])) }
   } catch {
     /* not a URL */
@@ -97,6 +105,18 @@ export function parseResultFile(raw: unknown): { file: Partial<ResultFile>; prob
   file.runtime = str('runtime', true)
   if (file.runtime && !RUNTIME_BY_ID[file.runtime]) problems.push(`"runtime" ${file.runtime} is not a runtime id in the catalog.`)
   file.runtimeVersion = str('runtimeVersion', true)
+  file.runtimeFlags = str('runtimeFlags')
+  if (file.runtimeFlags && file.runtimeFlags.length > RUNTIME_FLAGS_MAX) problems.push(`"runtimeFlags" must be ${RUNTIME_FLAGS_MAX} characters or fewer.`)
+  const execution = str('execution')
+  if (execution && execution !== 'stock' && execution !== 'modified') problems.push('"execution" must be "stock" or "modified".')
+  else file.execution = (execution as ExecutionStack | undefined) ?? 'stock'
+  file.modSourceUrl = str('modSourceUrl')
+  file.modRevision = str('modRevision')
+  if (file.modRevision && file.modRevision.length > REVISION_MAX) problems.push(`"modRevision" must be ${REVISION_MAX} characters or fewer.`)
+  if (file.execution === 'modified' && !file.modSourceUrl && !file.modRevision)
+    problems.push('A modified runtime needs "modSourceUrl" or "modRevision", so the run can be reproduced.')
+  if (file.execution !== 'modified' && (file.modSourceUrl || file.modRevision))
+    problems.push('"modSourceUrl" and "modRevision" only apply when "execution" is "modified".')
   file.decodeTps = num('decodeTps', true)
   file.promptTps = num('promptTps')
   file.ttftMs = num('ttftMs')
@@ -122,7 +142,7 @@ export class PrError extends Error {}
 
 async function github<T>(path: string, accept = 'application/vnd.github+json'): Promise<T> {
   const response = await fetch(`${API}${path}`, { headers: { Accept: accept, 'X-GitHub-Api-Version': '2022-11-28' } })
-  if (response.status === 404) throw new PrError(`No such pull request on ${RESULTS_REPO}. The repo has to be public and the number right.`)
+  if (response.status === 404) throw new PrError(`No such pull request on ${REPO}. The repo has to be public and the number right.`)
   if (response.status === 403 || response.status === 429) {
     if (response.headers.get('x-ratelimit-remaining') === '0') throw new PrError("GitHub's API limit for your network is used up. Try again in a few minutes.")
     throw new PrError('GitHub refused the request.')
@@ -137,8 +157,8 @@ type PrFilePayload = { filename: string; status: string; contents_url: string }
 /** The result files a pull request adds or changes, read through GitHub's public API. */
 export async function fetchPrResults(ref: PrRef): Promise<PrResults> {
   const [pr, changed] = await Promise.all([
-    github<PrPayload>(`/repos/${RESULTS_REPO}/pulls/${ref.number}`),
-    github<PrFilePayload[]>(`/repos/${RESULTS_REPO}/pulls/${ref.number}/files?per_page=100`),
+    github<PrPayload>(`/repos/${REPO}/pulls/${ref.number}`),
+    github<PrFilePayload[]>(`/repos/${REPO}/pulls/${ref.number}/files?per_page=100`),
   ])
   const candidates = changed.filter((f) => f.status !== 'removed' && /^results\/[^/]+\/[^/]+\.json$/.test(f.filename))
   if (!candidates.length) throw new PrError(`That pull request adds no result file. Files live at ${RESULTS_DIR}/<your-handle>/<name>.json.`)
@@ -166,6 +186,14 @@ export function resultFileFor(r: Result | ResultInput, resultUrl?: string): Resu
     quant: r.quant,
     runtime: r.runtimeId,
     runtimeVersion: r.runtimeVersion,
+    ...(r.runtimeFlags ? { runtimeFlags: r.runtimeFlags } : {}),
+    ...(r.execution === 'modified'
+      ? {
+          execution: 'modified' as const,
+          ...(r.modSourceUrl ? { modSourceUrl: r.modSourceUrl } : {}),
+          ...(r.modRevision ? { modRevision: r.modRevision } : {}),
+        }
+      : {}),
     decodeTps: r.decodeTps,
     ...(r.promptTps != null ? { promptTps: r.promptTps } : {}),
     ...(r.ttftMs != null ? { ttftMs: r.ttftMs } : {}),
@@ -184,5 +212,5 @@ export function resultFileFor(r: Result | ResultInput, resultUrl?: string): Resu
 export function newResultFileUrl(handle: string, file: ResultFile): string {
   const name = `${file.runDate}-${file.model}-${file.quant}-${file.runtime}`.replace(/[^a-z0-9-]+/gi, '-').toLowerCase()
   const params = new URLSearchParams({ filename: `${RESULTS_DIR}/${handle}/${name}.json`, value: `${JSON.stringify(file, null, 2)}\n` })
-  return `https://github.com/${RESULTS_REPO}/new/main?${params}`
+  return `https://github.com/${REPO}/new/main?${params}`
 }

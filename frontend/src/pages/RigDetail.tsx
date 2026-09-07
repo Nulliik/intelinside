@@ -28,7 +28,7 @@ import { ApiError } from '@/lib/api/types'
 import { fmtDate, fmtWeekday, pluralize } from '@/lib/format'
 import { rigShareTarget } from '@/lib/share'
 import { UNIT_LABEL, nestParts } from '@/lib/hardware'
-import { HARDWARE_TYPE_LABEL } from '@/mocks/catalog'
+import { HARDWARE_TYPE_LABEL } from '@/catalog'
 import { cn } from '@/lib/utils'
 
 export default function RigDetail() {

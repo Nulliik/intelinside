@@ -6,7 +6,7 @@ import type {
 import { ApiError } from './types'
 import { isGitHubUrl } from '@/lib/github'
 import { hostIn } from '@/lib/hardware'
-import { HARDWARE_BY_ID, MODELS, MODEL_BY_ID, QUANTS, QUANT_BY_ID, RUNTIMES, VISIBLE_HARDWARE } from '@/mocks/catalog'
+import { HARDWARE_BY_ID, MODELS, MODEL_BY_ID, QUANTS, QUANT_BY_ID, RUNTIMES, VISIBLE_HARDWARE } from '@/catalog'
 import { createSeed, rigSummaryLine, type SeedDb } from '@/mocks/seed'
 
 // In-memory implementation of the API contract. Same ranking, thresholds, and
@@ -140,6 +140,7 @@ function bestPerKey(items: Result[], key: (r: Result) => string): Result[] {
 function matchesFilter(r: Result, p: Partial<BoardParams>): boolean {
   if (p.runtime?.length && !p.runtime.includes(r.runtimeId)) return false
   if (p.verification && r.verification.status !== p.verification) return false
+  if (!p.includeModified && r.execution === 'modified') return false
   const rig = rigOf(r)
   if (p.vendor) {
     if (r.componentId) {
@@ -401,7 +402,7 @@ export const mockApi: Api = {
     const r = db.results.find((x) => x.id === id)
     if (!r || !canSee(r)) return fail('not_found', 'No such result.', 404)
     const kind: BoardKind = r.componentId ? 'components' : 'rigs'
-    const rows = bestRows(r.modelId, r.quant, kind)
+    const rows = bestRows(r.modelId, r.quant, kind, { includeModified: r.execution === 'modified' })
     const i = rows.findIndex((x) => unitKey(x) === unitKey(r))
     const detail: ResultDetail = { ...hydrateResult(r), rank: i >= 0 ? { kind, position: i + 1, boardSize: rows.length } : undefined }
     return delay(detail)
@@ -500,7 +501,7 @@ export const mockApi: Api = {
     return delay(res)
   },
   async topResults(params = {}) {
-    let items = visibleResults()
+    let items = visibleResults().filter((r) => r.execution !== 'modified')
     if (params.model) items = items.filter((r) => r.modelId === params.model)
     if (params.quant) items = items.filter((r) => r.quant === params.quant)
     const best = bestPerKey(items, (r) => `${unitKey(r)}|${r.modelId}|${r.quant}`)

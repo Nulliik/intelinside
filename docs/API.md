@@ -1,6 +1,6 @@
 # API contract (draft for Jack)
 
-Companion to [SPEC.md](SPEC.md). The front end talks to the network only through `src/lib/api.ts`, whose functions map one-to-one onto these endpoints. Anything not listed here is not needed for v1.
+The front end talks to the network only through `src/lib/api.ts`, whose functions map one-to-one onto these endpoints. Anything not listed here is not needed for v1.
 
 ## Conventions
 
@@ -32,7 +32,7 @@ Companion to [SPEC.md](SPEC.md). The front end talks to the network only through
 | GET | `/api/hardware?type=&vendor=&q=&limit=&cursor=` | `HardwareItem[]` with `resultsCount` and `rigsCount` |
 | GET | `/api/hardware/:hardwareId` | `HardwareItem` plus `chart: ChartBar[]`, `rigs: RigSummary[]`, `results: Result[]` (component-level results naming this part, best first) |
 
-Catalog data comes from the open catalog repo. The backend re-syncs on merge; the front end never writes catalog data.
+Catalog data is seeded from `frontend/src/catalog/`, the source of truth in this repo, via generated migrations. The front end never writes catalog data.
 
 A CPU's `integrated` list is catalog data too. Results only ever name one part, so `GET /api/hardware/:hardwareId` for an iGPU or NPU returns the runs on that unit alone; the front end fetches a CPU's integrated parts separately to show the cores, iGPU, and NPU side by side. `componentHost` on a result is the rig's CPU whose `integrated` list contains `componentId`, or absent.
 

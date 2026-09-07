@@ -10,7 +10,7 @@ const only = process.argv.includes('--only') ? process.argv[process.argv.indexOf
 const server = await createServer({ server: { middlewareMode: true }, appType: 'custom' })
 
 try {
-  const { HARDWARE, MODELS, QUANTS, RUNTIMES } = await server.ssrLoadModule('/src/mocks/catalog.ts')
+  const { HARDWARE, MODELS, QUANTS, RUNTIMES } = await server.ssrLoadModule('/src/catalog/index.ts')
   const hardwareStatements = [
     'insert into public.hardware (id, type, vendor, name, series, specs, release_date, image_url, source, integrated) values',
     HARDWARE.map((item) => row([

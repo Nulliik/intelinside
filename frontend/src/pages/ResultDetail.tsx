@@ -20,7 +20,7 @@ import { api } from '@/lib/api'
 import { ApiError } from '@/lib/api/types'
 import { fmtTps } from '@/lib/format'
 import { resultShareTarget } from '@/lib/share'
-import { QUANT_BY_ID } from '@/mocks/catalog'
+import { QUANT_BY_ID } from '@/catalog'
 import { cn } from '@/lib/utils'
 
 export default function ResultDetail() {

@@ -1,13 +1,13 @@
 import { supabase, signOutSupabase } from '@/lib/auth'
 import { RegExpMatcher, englishDataset, englishRecommendedTransformers } from 'obscenity'
 import { hostIn } from '@/lib/hardware'
-import { HARDWARE_BY_ID, MODELS, MODEL_BY_ID, QUANTS, QUANT_BY_ID, RUNTIMES, VISIBLE_HARDWARE } from '@/mocks/catalog'
+import { HARDWARE_BY_ID, MODELS, MODEL_BY_ID, QUANTS, QUANT_BY_ID, RUNTIMES, VISIBLE_HARDWARE } from '@/catalog'
 import type {
   Api, BestRank, BoardKind, BoardParams, BoardResponse, BoardRow, BoardUnit, ChartBar, FlagReason,
   HardwareDetail, HardwareItem, HomeResponse, ModelSummary, Moderation, Page, Result,
   ResultDetail, ResultInput, Rig, RigDetail, RigSummary, TopResultsResponse, User, UserStats,
 } from './types'
-import { ApiError } from './types'
+import { ApiError, REVISION_MAX, RUNTIME_FLAGS_MAX } from './types'
 
 type ProfileRow = {
   id: string
@@ -35,6 +35,10 @@ type ResultRow = {
   quant_id: string
   runtime_id: string
   runtime_version: string
+  runtime_flags: string | null
+  execution: 'stock' | 'modified'
+  mod_source_url: string | null
+  mod_revision: string | null
   rig_id: number | string
   component_id: string | null
   component_quantity: number | null
@@ -102,6 +106,7 @@ function moderateText(entries: Array<[field: string, value: string | null | unde
 function resultPayload(input: Partial<ResultInput>, create = false): Record<string, unknown> {
   const map: [keyof ResultInput, string][] = [
     ['modelId', 'model_id'], ['quant', 'quant_id'], ['runtimeId', 'runtime_id'], ['runtimeVersion', 'runtime_version'],
+    ['runtimeFlags', 'runtime_flags'], ['execution', 'execution'], ['modSourceUrl', 'mod_source_url'], ['modRevision', 'mod_revision'],
     ['rigId', 'rig_id'], ['componentId', 'component_id'], ['componentQuantity', 'component_quantity'],
     ['decodeTps', 'decode_tps'], ['promptTps', 'prompt_tps'], ['ttftMs', 'ttft_ms'], ['contextLength', 'context_length'],
     ['batchSize', 'batch_size'], ['notes', 'notes'], ['repoUrl', 'repo_url'], ['runDate', 'run_date'],
@@ -111,6 +116,10 @@ function resultPayload(input: Partial<ResultInput>, create = false): Record<stri
     if (create || source in input) payload[target] = input[source] ?? null
   }
   if (payload.component_id == null) payload.component_quantity = null
+  if (payload.execution !== 'modified') {
+    if ('mod_source_url' in payload) payload.mod_source_url = null
+    if ('mod_revision' in payload) payload.mod_revision = null
+  }
   return payload
 }
 
@@ -223,6 +232,10 @@ function view(snapshot: Snapshot) {
       quant: row.quant_id,
       runtimeId: row.runtime_id,
       runtimeVersion: row.runtime_version,
+      runtimeFlags: optional(row.runtime_flags),
+      execution: row.execution ?? 'stock',
+      modSourceUrl: optional(row.mod_source_url),
+      modRevision: optional(row.mod_revision),
       rigId: stringId(row.rig_id),
       rig: resultRig ? rigSummary(resultRig) : undefined,
       componentId: optional(row.component_id),
@@ -291,6 +304,7 @@ function boardItems(results: Result[], modelId: string, quant: string, params: P
     if (params.kind === 'rigs' ? result.componentId : params.kind === 'components' ? !result.componentId : false) return false
     if (params.runtime?.length && !params.runtime.includes(result.runtimeId)) return false
     if (params.verification && result.verification.status !== params.verification) return false
+    if (!params.includeModified && result.execution === 'modified') return false
     if (params.vendor) {
       if (result.component?.vendor !== params.vendor && !result.rig?.summary.toLowerCase().includes(params.vendor.toLowerCase())) return false
     }
@@ -520,14 +534,14 @@ export const supabaseApi: Api = {
     if (!row) throw new ApiError('not_found', 'No such result.', 404)
     const result = data.result(row)
     const kind: BoardKind = result.componentId ? 'components' : 'rigs'
-    const ranked = boardItems(snapshot.results.map(data.result), result.modelId, result.quant, { kind })
+    const ranked = boardItems(snapshot.results.map(data.result), result.modelId, result.quant, { kind, includeModified: result.execution === 'modified' })
     const position = ranked.findIndex((candidate) => unitKey(candidate) === unitKey(result))
     const detail: ResultDetail = { ...result, rank: position >= 0 ? { kind, position: position + 1, boardSize: ranked.length } : undefined }
     return detail
   },
   async createResult(input) {
     const submitterId = await requireUserId()
-    moderateText([['runtimeVersion', input.runtimeVersion, 80], ['notes', input.notes, 5000]])
+    moderateText([['runtimeVersion', input.runtimeVersion, 80], ['runtimeFlags', input.runtimeFlags, RUNTIME_FLAGS_MAX], ['modRevision', input.modRevision, REVISION_MAX], ['notes', input.notes, 5000]])
     const created = await rows<ResultRow[]>(requiredClient().from('results').insert({
       ...resultPayload(input, true),
       submitter_id: submitterId,
@@ -536,7 +550,7 @@ export const supabaseApi: Api = {
   },
   async updateResult(id, input) {
     await requireUserId()
-    moderateText([['runtimeVersion', input.runtimeVersion, 80], ['notes', input.notes, 5000]])
+    moderateText([['runtimeVersion', input.runtimeVersion, 80], ['runtimeFlags', input.runtimeFlags, RUNTIME_FLAGS_MAX], ['modRevision', input.modRevision, REVISION_MAX], ['notes', input.notes, 5000]])
     const updated = await rows<ResultRow[]>(requiredClient().from('results').update(resultPayload(input)).eq('id', id).select('*'))
     if (!updated.length) throw new ApiError('not_found', 'No such result.', 404)
     return supabaseApi.result(id)
@@ -592,7 +606,7 @@ export const supabaseApi: Api = {
   async topResults(params = {}) {
     const snapshot = await loadSnapshot()
     const data = view(snapshot)
-    let results = snapshot.results.map(data.result).filter((result) => !result.moderation.hidden)
+    let results = snapshot.results.map(data.result).filter((result) => !result.moderation.hidden && result.execution !== 'modified')
     if (params.model) results = results.filter((result) => result.modelId === params.model)
     if (params.quant) results = results.filter((result) => result.quant === params.quant)
     const best = bestPerKey(results, (result) => `${unitKey(result)}|${result.modelId}|${result.quant}`)

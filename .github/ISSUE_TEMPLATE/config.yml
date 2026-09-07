@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Post a result
+    url: https://github.com/labscommunity/intelinside/blob/main/results/README.md
+    about: Submit a benchmark run by pull request, or use the submit form on the site.
+  - name: Add hardware yourself
+    url: https://github.com/labscommunity/intelinside/blob/main/frontend/src/catalog/README.md
+    about: One entry in one file. Faster than waiting on a request.

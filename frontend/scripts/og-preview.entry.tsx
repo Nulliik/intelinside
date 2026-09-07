@@ -9,7 +9,7 @@ import { Resvg } from '@resvg/resvg-js'
 import { loadCardAssets, loadFonts, runtimeLogoAsset, type AssetSource } from '../src/og/assets.js'
 import { ResultCardImage, RigCardImage } from '../src/og/cards.js'
 import type { ResultCardData, RigCardData } from '../src/og/data.js'
-import { RUNTIMES } from '../src/mocks/catalog.js'
+import { RUNTIMES } from '../src/catalog/index.js'
 
 const root = path.resolve(process.cwd())
 const outDir = path.resolve(process.argv[2] ?? '.og-preview')

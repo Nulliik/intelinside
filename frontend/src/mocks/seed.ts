@@ -1,5 +1,5 @@
 import type { FlagReason, HardwareType, Result, Rig, User } from '@/lib/api/types'
-import { HARDWARE_BY_ID, MODEL_BY_ID, RUNTIMES } from './catalog'
+import { HARDWARE_BY_ID, MODEL_BY_ID, RUNTIMES } from '@/catalog'
 
 // Deterministic seed so the same rigs and numbers show up on every reload.
 
@@ -156,8 +156,14 @@ export function createSeed(): SeedDb {
       const runDate = daysAgo(Math.floor(rand() * 60))
       const id = `res-${++n}`
       const submitterId = rig.ownerId
+      const modified = rand() < 0.12
+      const handle = users.find((u) => u.id === submitterId)!.handle
       const result: Result = {
         id, submitterId, modelId: model, quant, runtimeId: runtime.id, runtimeVersion: pick(RUNTIME_VERSIONS[runtime.id]),
+        runtimeFlags: rand() < 0.4 ? pick(['-fa 1 -ngl 99', 'SYCL backend, KV cache q8_0', 'PERFORMANCE_HINT=THROUGHPUT', 'XMX on']) : undefined,
+        execution: modified ? 'modified' : 'stock',
+        modSourceUrl: modified ? `https://github.com/${handle}/${runtime.id}` : undefined,
+        modRevision: modified ? Math.floor(rand() * 0xfffffff).toString(16).padStart(7, '0') : undefined,
         rigId: rig.id,
         componentId: componentLevel ? target.hardwareId : undefined,
         componentQuantity: componentLevel ? usedQty : undefined,
@@ -167,7 +173,7 @@ export function createSeed(): SeedDb {
         contextLength: rand() < 0.75 ? pick([2048, 4096, 4096, 8192]) : undefined,
         batchSize: rand() < 0.6 ? 1 : undefined,
         notes: rand() < 0.25 ? pick(['Fresh driver, no thermal throttling.', 'Room was warm; expect a few percent more when cool.', 'Speculative decoding off.', 'KV cache 2 GB.', 'Averaged over 5 runs of 256 tokens.']) : undefined,
-        repoUrl: rand() < 0.6 ? `https://github.com/${users.find((u) => u.id === submitterId)!.handle}/${rig.id.replace('rig-', '')}-bench` : runtime.repoUrl,
+        repoUrl: rand() < 0.6 ? `https://github.com/${handle}/${rig.id.replace('rig-', '')}-bench` : runtime.repoUrl,
         runDate,
         verification: { status: 'self_reported', confirmations: 0 },
         moderation: { flags: 0, hidden: false },

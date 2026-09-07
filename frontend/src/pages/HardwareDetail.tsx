@@ -20,7 +20,7 @@ import type { HardwareDetail as HardwareDetailData, HardwareItem } from '@/lib/a
 import { fmtDate, fmtTps, fmtWeekday, pluralize } from '@/lib/format'
 import { UNIT_LABEL, hostsOf, integratedParts } from '@/lib/hardware'
 import { cn } from '@/lib/utils'
-import { HARDWARE_TYPE_LABEL } from '@/mocks/catalog'
+import { HARDWARE_TYPE_LABEL } from '@/catalog'
 
 const SPEC_LABEL: Record<string, string> = {
   cores: 'Cores', threads: 'Threads', boostGhz: 'Boost clock', tdpW: 'TDP', platform: 'Platform', vramGb: 'Memory', memoryType: 'Memory type',
