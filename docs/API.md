@@ -1,6 +1,6 @@
 # API contract (draft for Jack)
 
-Companion to [SPEC.md](SPEC.md). The front end talks to the network only through `src/lib/api.ts`, whose functions map one-to-one onto these endpoints. Anything not listed here is not needed for v1.
+The front end talks to the network only through `src/lib/api.ts`, whose functions map one-to-one onto these endpoints. Anything not listed here is not needed for v1.
 
 ## Conventions
 

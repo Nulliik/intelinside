@@ -10,7 +10,7 @@ import { fmtInstant, fmtWeekday } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
 /*
-  Launch week (docs/SPEC.md §8, Home). While VITE_REVEAL_AT is in the future, pages swap their ranked views for
+  Launch week. While VITE_REVEAL_AT is in the future, pages swap their ranked views for
   these: a silhouette of what will live there with a message in a clearing on top, and on the home page a countdown
   to the moment the board goes live. Nothing here shows a number that depends on how many people have taken part.
   RigSilhouette doubles as the ordinary home page's empty state when there are no rigs.
