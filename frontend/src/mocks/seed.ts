@@ -134,6 +134,17 @@ export function createSeed(): SeedDb {
 
   // Custom runtimes people have registered. Kept small: at launch there will be none, and the point is to prove the
   // picker, the board link and the build page work, not to fill the site with forks.
+  const RUNTIME_FLAG_SEED: Record<string, string[]> = {
+    llamacpp: ['-fa 1 -ngl 99', '-fa 1 -ngl 99 -sm layer', 'SYCL backend, -fa 1'],
+    ollama: ['flash attention on, KV cache q8_0', 'num_gpu 99, num_batch 512'],
+    'openvino-genai': ['PERFORMANCE_HINT=LATENCY', 'PERFORMANCE_HINT=THROUGHPUT', 'dynamic quantization on'],
+    'ipex-llm': ['XMX on, sym_int4', 'low-bit sym_int4, bf16 kv'],
+    vllm: ['chunked prefill on, --max-num-seqs 8', 'FlashAttention backend'],
+    pytorch: ['torch.compile, SDPA flash', 'IPEX optimize, bf16'],
+    cascadia: ['int4 weights, batch 1'],
+    default: ['batch 1'],
+  }
+
   const CUSTOM_RUNTIME_SEED: [id: string, owner: string, runtime: string, name: string, summary: string][] = [
     ['cr-1', 'arcpilot', 'vllm', 'fused-attn-b60', 'Fused RMSNorm + QKV, tuned for Arc Pro B60 at batch 1'],
     ['cr-2', 'lunarlaker', 'llamacpp', 'sycl-flash-decode', 'Flash-decode kernel for the SYCL backend, Xe2 only'],
@@ -180,7 +191,7 @@ export function createSeed(): SeedDb {
       const handle = users.find((u) => u.id === submitterId)!.handle
       const result: Result = {
         id, submitterId, modelId: model, quant, runtimeId: runtime.id, runtimeVersion: pick(RUNTIME_VERSIONS[runtime.id]),
-        runtimeFlags: rand() < 0.4 ? pick(['-fa 1 -ngl 99', 'SYCL backend, KV cache q8_0', 'PERFORMANCE_HINT=THROUGHPUT', 'XMX on']) : undefined,
+        runtimeFlags: rand() < 0.4 ? pick(RUNTIME_FLAG_SEED[runtime.id] ?? RUNTIME_FLAG_SEED.default) : undefined,
         customRuntimeId: build?.id,
         customRuntime: build,
         revision: build ? Math.floor(rand() * 0xfffffff).toString(16).padStart(7, '0') : undefined,
