@@ -419,6 +419,18 @@ export const mockApi: Api = {
     return delay(undefined)
   },
 
+  async runtimeSummaries() {
+    const visible = db.results.filter(canSee)
+    return delay(RUNTIMES.map((runtime) => {
+      const mine = visible.filter((r) => r.runtimeId === runtime.id)
+      return {
+        ...runtime,
+        resultsCount: mine.length,
+        buildsCount: db.customRuntimes.filter((b) => b.runtimeId === runtime.id).length,
+        bestTps: mine.length ? Math.max(...mine.map((r) => r.decodeTps)) : undefined,
+      }
+    }))
+  },
   async customRuntimes(params = {}) {
     let items = db.customRuntimes.slice()
     if (params.runtime) items = items.filter((b) => b.runtimeId === params.runtime)

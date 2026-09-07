@@ -124,6 +124,9 @@ export type CustomRuntime = {
 export type CustomRuntimeInput = Pick<CustomRuntime, 'runtimeId' | 'name' | 'repoUrl' | 'summary' | 'notes'>
 export type CustomRuntimeDetail = CustomRuntime & { results: Result[]; chart: ChartBar[] }
 
+/** A runtime with what has been posted on it, for the runtimes index. */
+export type RuntimeSummary = Runtime & { resultsCount: number; buildsCount: number; bestTps?: number }
+
 export type Result = {
   id: string
   submitterId: string
@@ -276,6 +279,8 @@ export interface Api {
   updateRig(id: string, input: Partial<RigInput>): Promise<Rig>
   deleteRig(id: string): Promise<void>
   /** Every build for a runtime, the submitter's own first. Public read, so signing in is not required. */
+  /** Every runtime with its result and build counts. Named apart from `runtimes()`, which is catalog data. */
+  runtimeSummaries(): Promise<RuntimeSummary[]>
   customRuntimes(params?: { runtime?: string; owner?: string }): Promise<Page<CustomRuntime>>
   customRuntime(id: string): Promise<CustomRuntimeDetail>
   createCustomRuntime(input: CustomRuntimeInput): Promise<CustomRuntime>

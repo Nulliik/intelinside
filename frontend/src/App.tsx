@@ -6,6 +6,9 @@ import Board from '@/pages/Board'
 import Hardware from '@/pages/Hardware'
 import HardwareDetail from '@/pages/HardwareDetail'
 import BuildDetail from '@/pages/BuildDetail'
+import BuildEditor from '@/pages/BuildEditor'
+import Runtimes from '@/pages/Runtimes'
+import RuntimeDetail from '@/pages/RuntimeDetail'
 import Rigs from '@/pages/Rigs'
 import RigDetail from '@/pages/RigDetail'
 import ResultDetail from '@/pages/ResultDetail'
@@ -25,7 +28,12 @@ export default function App() {
         <Route path="/models/:modelId/:quant" element={<Board />} />
         <Route path="/hardware" element={<Hardware />} />
         <Route path="/hardware/:hardwareId" element={<HardwareDetail />} />
+        <Route path="/runtimes" element={<Runtimes />} />
+        <Route path="/runtimes/builds/new" element={<BuildEditor />} />
+        <Route path="/runtimes/:runtimeId" element={<RuntimeDetail />} />
+        <Route path="/runtimes/:runtimeId/builds/new" element={<BuildEditor />} />
         <Route path="/runtimes/:runtimeId/builds/:buildId" element={<BuildDetail />} />
+        <Route path="/runtimes/:runtimeId/builds/:buildId/edit" element={<BuildEditor />} />
         <Route path="/rigs" element={<Rigs />} />
         <Route path="/rigs/new" element={<RigEditor />} />
         <Route path="/rigs/:rigId" element={<RigDetail />} />

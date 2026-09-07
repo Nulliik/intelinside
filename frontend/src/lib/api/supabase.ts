@@ -574,6 +574,19 @@ export const supabaseApi: Api = {
     await rows(requiredClient().from('rigs').delete().eq('id', id).select('id'))
   },
 
+  async runtimeSummaries() {
+    const snapshot = await loadSnapshot()
+    const visible = snapshot.results.filter((row) => !row.hidden)
+    return RUNTIMES.map((runtime) => {
+      const mine = visible.filter((row) => row.runtime_id === runtime.id)
+      return {
+        ...runtime,
+        resultsCount: mine.length,
+        buildsCount: snapshot.customRuntimes.filter((row) => row.runtime_id === runtime.id).length,
+        bestTps: mine.length ? Math.max(...mine.map((row) => numberValue(row.decode_tps))) : undefined,
+      }
+    })
+  },
   async customRuntimes(params = {}) {
     const snapshot = await loadSnapshot()
     const data = view(snapshot)

@@ -1,8 +1,9 @@
-import { ExternalLink, GitFork } from 'lucide-react'
+import { ExternalLink, GitFork, Pencil } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PageHeader } from '@/components/PageHeader'
+import { IconAction } from '@/components/IconAction'
 import { RuntimeBadge } from '@/components/RuntimeBadge'
 import { UserLink } from '@/components/UserLink'
 import { TpsBarChart } from '@/components/TpsBarChart'
@@ -46,7 +47,13 @@ export default function BuildDetail() {
   return (
     <div>
       <PageHeader
-        eyebrow={runtime ? `Build · ${runtime.name}` : 'Build'}
+        eyebrow={
+          <span className="inline-flex items-center gap-2">
+            <Link to="/runtimes" className="hover:text-foreground">Runtimes</Link>
+            <span className="text-muted-foreground/50">/</span>
+            {runtime ? <Link to={`/runtimes/${runtime.id}`} className="hover:text-foreground">{runtime.name}</Link> : null}
+          </span>
+        }
         title={
           <span className="inline-flex flex-wrap items-center gap-3">
             {b ? b.name : <Skeleton className="h-9 w-72" />}
@@ -58,7 +65,16 @@ export default function BuildDetail() {
           </span>
         }
         description={b?.summary}
-        actions={submit}
+        actions={
+          <>
+            {b && user?.id === b.ownerId ? (
+              <IconAction label="Edit" to={`/runtimes/${b.runtimeId}/builds/${b.id}/edit`}>
+                <Pencil />
+              </IconAction>
+            ) : null}
+            {submit}
+          </>
+        }
       >
         {b ? (
           <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">

@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils'
 const LINKS = [
   { to: '/models', label: 'Models' },
   { to: '/hardware', label: 'Hardware' },
+  { to: '/runtimes', label: 'Runtimes' },
   { to: '/rigs', label: 'Rigs' },
 ]
 

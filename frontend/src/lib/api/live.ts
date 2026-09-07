@@ -60,6 +60,7 @@ export const liveApi: Api = {
   createRig: (input) => req('/api/rigs', { method: 'POST', json: input }),
   updateRig: (id, input) => req(`/api/rigs/${id}`, { method: 'PATCH', json: input }),
   deleteRig: (id) => req(`/api/rigs/${id}`, { method: 'DELETE' }),
+  runtimeSummaries: () => req('/api/runtimes/summaries'),
   customRuntimes: (params) => req(`/api/builds${qs(params as Query)}`),
   customRuntime: (id) => req(`/api/builds/${id}`),
   createCustomRuntime: (input) => req('/api/builds', { method: 'POST', json: input }),

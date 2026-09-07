@@ -14,21 +14,24 @@ import { cn } from '@/lib/utils'
  * nobody leaves a half-filled result to go and create one somewhere else.
  */
 export function BuildForm({
+  build,
   runtimeId,
   onCreated,
   onCancel,
 }: {
+  /** Present when editing. Absent registers a new one. */
+  build?: CustomRuntime
   runtimeId?: string
   onCreated: (build: CustomRuntime) => void
   onCancel?: () => void
 }) {
   const cat = useCatalog()
   const runtimes = cat.data?.runtimes ?? []
-  const [runtime, setRuntime] = useState(runtimeId ?? '')
-  const [name, setName] = useState('')
-  const [repoUrl, setRepoUrl] = useState('')
-  const [summary, setSummary] = useState('')
-  const [notes, setNotes] = useState('')
+  const [runtime, setRuntime] = useState(build?.runtimeId ?? runtimeId ?? '')
+  const [name, setName] = useState(build?.name ?? '')
+  const [repoUrl, setRepoUrl] = useState(build?.repoUrl ?? '')
+  const [summary, setSummary] = useState(build?.summary ?? '')
+  const [notes, setNotes] = useState(build?.notes ?? '')
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState(false)
 
@@ -42,8 +45,9 @@ export function BuildForm({
     setErrors(next)
     if (Object.keys(next).length) return
     setBusy(true)
+    const input = { runtimeId: runtime, name: name.trim(), repoUrl: repoUrl.trim(), summary: summary.trim(), notes: notes.trim() || undefined }
     try {
-      onCreated(await api.createCustomRuntime({ runtimeId: runtime, name: name.trim(), repoUrl: repoUrl.trim(), summary: summary.trim(), notes: notes.trim() || undefined }))
+      onCreated(build ? await api.updateCustomRuntime(build.id, input) : await api.createCustomRuntime(input))
     } catch (error) {
       setErrors(error instanceof ApiError && error.fields ? error.fields : { name: 'Could not save the build. Try again.' })
     } finally {
@@ -81,7 +85,7 @@ export function BuildForm({
         <Textarea id="build-notes" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Optional" />
       </FormField>
       <div className="flex flex-wrap items-center gap-2">
-        <Button type="button" onClick={save} disabled={busy}>{busy ? 'Saving…' : 'Save build'}</Button>
+        <Button type="button" onClick={save} disabled={busy}>{busy ? 'Saving…' : build ? 'Save changes' : 'Save build'}</Button>
         {onCancel ? <Button type="button" variant="outline" onClick={onCancel} disabled={busy}>Cancel</Button> : null}
       </div>
     </div>
