@@ -26,8 +26,9 @@ export function Guidelines() {
           </ul>
           <h2>Ranking</h2>
           <p>Each rig, or each part at a given quantity, appears once on a board at its best decode tok/s. The earliest run wins a tie. Boards mix runtimes; filter by runtime to compare like with like.</p>
-          <h2>Stock and modified runtimes</h2>
-          <p>A result says whether it ran on a stock runtime — the released one, however you configured or built it — or a modified one, where you changed the runtime itself with a custom kernel or op, a patch, or a fork. A modified stack can beat stock by a wide margin on the same silicon, so boards rank stock runs against each other and leave modified ones out until you turn on <strong>Include modified</strong>. Nothing is hidden and modified results are not lesser; they answer a different question, and they rank among each other on the same board. A modified result carries the fork and the exact revision behind it, because an implementation changes week to week and only the revision makes the number reproducible.</p>
+          <h2>Stock runtimes and builds</h2>
+          <p>A result either ran on a stock runtime — the released one, however you configured or built it — or on a <strong>build</strong>: a changed runtime someone registered, with a custom kernel or op, a patch, or a fork. A build can beat stock by a wide margin on the same silicon, so boards rank stock runs against each other and leave builds out until you turn on <strong>Include modified</strong>. Nothing is hidden and builds are not lesser; they answer a different question, rank among each other on the same board, and gather on the build's own page.</p>
+          <p>Register a build once, from the submit form, and every later result just picks it. You can post a result on anyone's build, not only your own — a public fork is a real thing anyone can run. Each result names the exact revision it used, because an implementation changes week to week and only the revision makes a number reproducible.</p>
           <h2>Verification</h2>
           <p>Every result starts self-reported. When enough signed-in members confirm it, it becomes community-verified. Confirm only what you reproduced or checked.</p>
           <h2>Flags</h2>

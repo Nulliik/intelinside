@@ -34,25 +34,29 @@ Every result on the site can also live here as a file, and a file here can becom
 3. Open a pull request. A check validates the file against the catalog and comments with a link like `/submit?pr=123`.
 4. Open that link. The submit form fills itself from your file, with the pull request as the evidence link. Check the numbers and submit. The result ranks the moment it is in.
 
-### Stock or modified
+### Stock or a build
 
-`execution` defaults to `stock`: the released runtime, however you configured or built it. Set it to `modified` if you
-changed the runtime itself — a custom kernel or op, a patch, a fork — and give the fork and the revision behind it:
+A run on the released runtime needs nothing extra. If you ran a changed runtime — a custom kernel or op, a patch,
+a fork — name the build it ran on and the revision behind it:
 
 ```json
 {
-  "execution": "modified",
-  "modSourceUrl": "https://github.com/you/vllm",
-  "modRevision": "a8192fe"
+  "build": "7",
+  "revision": "a8192fe"
 }
 ```
 
-The revision is the point. An implementation changes week to week, so "a custom attention kernel" is not reproducible
-and `github.com/you/vllm @ a8192fe` is. A commit, a tag, or a build id all work.
+`build` is the number at the end of the build's URL on the site, or its exact name, the same way `rig` works.
+Register the build once on the site and every later result just names it. You can post against anyone's build, not
+only your own — a public fork is a real thing anyone can run, and one object per fork is what keeps those runs
+comparable.
 
-Boards rank stock runs against each other and keep modified ones out unless a reader turns on **Include modified**, so
-a changed stack is never mistaken for faster silicon. Modified results are not lesser and nothing is hidden — they just
-answer a different question, and they rank among each other on the same board.
+The revision is the point. An implementation changes week to week, so "a custom attention kernel" is not
+reproducible and `a8192fe` is. A commit, a tag, or a build id all work.
+
+Boards rank stock runs against each other and keep builds out unless a reader turns on **Include modified**, so a
+changed stack is never mistaken for faster silicon. Builds are not lesser and nothing is hidden — they answer a
+different question, rank among each other on the same board, and collect on the build's own page.
 
 The pull request stays as the public record of the run. Merging it is up to the maintainers and changes nothing on the site.
 
