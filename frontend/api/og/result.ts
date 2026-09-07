@@ -24,7 +24,7 @@ export async function GET(request: Request): Promise<Response> {
       return new Response('Not found', { status: 404, headers: { 'cache-control': 'public, max-age=60' } })
     }
     const source = bundledAssets(BUNDLED_OG_ASSETS, httpAssets(url.origin))
-    const [fonts, assets] = await Promise.all([loadFonts(source), loadCardAssets(source, 'dots-result.svg', { avatar: data.owner.avatarUrl, runtimeLogo: runtimeLogoAsset(data.runtimeLogo) })])
+    const [fonts, assets] = await Promise.all([loadFonts(source), loadCardAssets(source, 'dots-result.svg', { runtimeLogo: runtimeLogoAsset(data.runtimeLogo) })])
     const response = new ImageResponse(jsx(ResultCardImage, { data, assets }), { width: 1200, height: 630, fonts, headers: CARD_HEADERS })
     console.log(`og result ${id}: rendered in ${Date.now() - started} ms`)
     return response

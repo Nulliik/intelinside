@@ -54,7 +54,7 @@ function frame(assets: CardAssets, ...children: ReactNode[]): ReactElement {
   )
 }
 
-function avatar(owner: Owner, src: string | undefined, size: number): ReactElement {
+function avatar(owner: Owner, size: number): ReactElement {
   const style: CSSProperties = {
     width: size,
     height: size,
@@ -63,14 +63,13 @@ function avatar(owner: Owner, src: string | undefined, size: number): ReactEleme
     border: '1px solid rgba(255,255,255,0.1)',
     overflow: 'hidden',
   }
-  if (src) return h('img', { src, width: size, height: size, style: { ...style, objectFit: 'cover' } })
   return div(flex({ ...style, alignItems: 'center', justifyContent: 'center', fontSize: size * 0.39, fontWeight: 500, color: FG }), owner.initials)
 }
 
-function ownerRow(owner: Owner, avatarSrc: string | undefined, trailing: string): ReactElement {
+function ownerRow(owner: Owner, trailing: string): ReactElement {
   return div(
     flex({ position: 'absolute', left: 80, bottom: 46, alignItems: 'center', gap: 12, fontSize: 22, lineHeight: '28px', color: MUTED }),
-    avatar(owner, avatarSrc, 36),
+    avatar(owner, 36),
     span({ color: FG, fontWeight: 500 }, owner.handle),
     span({}, trailing),
   )
@@ -146,7 +145,7 @@ export function ResultCardImage({ data, assets }: { data: ResultCardData; assets
           ]
         : []),
     ),
-    ownerRow(data.owner, assets.avatar, `· ${fmtDate(data.runDate)}`),
+    ownerRow(data.owner, `· ${fmtDate(data.runDate)}`),
   )
 }
 
@@ -189,6 +188,6 @@ export function RigCardImage({ data, assets }: { data: RigCardData; assets: Card
       div(flex({ marginTop: 26, flexDirection: 'column', gap: 10, fontSize: 25, lineHeight: '32px', color: FG }), ...parts),
       best,
     ),
-    ownerRow(data.owner, assets.avatar, `· ${data.resultsCount} ${data.resultsCount === 1 ? 'result' : 'results'}`),
+    ownerRow(data.owner, `· ${data.resultsCount} ${data.resultsCount === 1 ? 'result' : 'results'}`),
   )
 }

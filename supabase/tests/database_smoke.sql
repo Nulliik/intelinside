@@ -53,6 +53,23 @@ select public.create_rig(
   '[{"hardware_id":"intel-core-ultra-9-285k","quantity":1}]'::jsonb
 );
 
+do $$
+begin
+  begin
+    perform public.create_rig(
+      '__invalid_photo_path_must_fail__',
+      'test',
+      'https://example.com/not-a-storage-object',
+      null,
+      '[{"hardware_id":"intel-core-ultra-9-285k","quantity":1}]'::jsonb
+    );
+    raise exception 'unowned rig photo path unexpectedly succeeded';
+  exception
+    when check_violation then null;
+  end;
+end;
+$$;
+
 select public.update_rig(
   (select id from public.rigs where name = '__rls_smoke_rig__'),
   '__rls_smoke_rig__',

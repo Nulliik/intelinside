@@ -22,7 +22,7 @@ type RigRow = {
   owner_id: string
   name: string
   os: string
-  photo_url: string | null
+  photo_path: string | null
   notes: string | null
   created_at: string
   updated_at: string
@@ -74,6 +74,8 @@ const textMatcher = new RegExpMatcher({
   ...englishRecommendedTransformers,
 })
 
+const RIG_PHOTOS_BUCKET = 'rig-photos'
+
 const requiredClient = () => {
   if (!supabase) throw new ApiError('not_configured', 'Supabase is not configured.', 500)
   return supabase
@@ -100,6 +102,29 @@ function moderateText(entries: Array<[field: string, value: string | null | unde
   }
   if (Object.keys(fields).length) {
     throw new ApiError('moderation_rejected', 'Please revise the highlighted text.', 400, fields)
+  }
+}
+
+function rigPhotoUrl(path: string | null): string | undefined {
+  return path ? requiredClient().storage.from(RIG_PHOTOS_BUCKET).getPublicUrl(path).data.publicUrl : undefined
+}
+
+function rigPhotoPath(value: string | undefined): string | null {
+  if (!value) return null
+
+  try {
+    const client = requiredClient()
+    const marker = '__rig_photo_path__'
+    const expected = new URL(client.storage.from(RIG_PHOTOS_BUCKET).getPublicUrl(marker).data.publicUrl)
+    const uploaded = new URL(value)
+    if (uploaded.origin !== expected.origin || !uploaded.pathname.startsWith(expected.pathname.slice(0, -marker.length))) {
+      throw new Error('not a rig photo URL')
+    }
+    const path = decodeURIComponent(uploaded.pathname.slice(expected.pathname.length - marker.length))
+    if (!path) throw new Error('missing rig photo path')
+    return path
+  } catch {
+    throw new ApiError('validation', 'Choose a photo uploaded to this site.', 400)
   }
 }
 
@@ -188,7 +213,7 @@ function view(snapshot: Snapshot) {
     return {
       id,
       name: row.name,
-      photoUrl: optional(row.photo_url),
+      photoUrl: rigPhotoUrl(row.photo_path),
       summary: summaryLine(componentsByRig.get(id) ?? []),
       owner: owner ? publicUser(owner) : undefined,
       resultsCount: matching.length,
@@ -206,7 +231,7 @@ function view(snapshot: Snapshot) {
       owner: owner ? publicUser(owner) : undefined,
       name: row.name,
       os: row.os,
-      photoUrl: optional(row.photo_url),
+      photoUrl: rigPhotoUrl(row.photo_path),
       notes: optional(row.notes),
       components: componentRows.map((component) => ({
         hardwareId: component.hardware_id,
@@ -481,7 +506,7 @@ export const supabaseApi: Api = {
     const id = await rows<number | string>(requiredClient().rpc('create_rig', {
       p_name: input.name.trim(),
       p_os: input.os.trim(),
-      p_photo_url: input.photoUrl ?? null,
+      p_photo_path: rigPhotoPath(input.photoUrl),
       p_notes: input.notes ?? null,
       p_components: input.components.map((part) => ({ hardware_id: part.hardwareId, quantity: part.quantity })),
     }))
@@ -503,7 +528,7 @@ export const supabaseApi: Api = {
       p_rig_id: id,
       p_name: merged.name.trim(),
       p_os: merged.os.trim(),
-      p_photo_url: merged.photoUrl ?? null,
+      p_photo_path: rigPhotoPath(merged.photoUrl),
       p_notes: merged.notes ?? null,
       p_components: merged.components.map((part) => ({ hardware_id: part.hardwareId, quantity: part.quantity })),
     }))
@@ -630,8 +655,8 @@ export const supabaseApi: Api = {
     const safeName = file.name.toLowerCase().replace(/[^a-z0-9._-]+/g, '-').slice(-100) || 'photo'
     const path = `${userId}/${crypto.randomUUID()}-${safeName}`
     const client = requiredClient()
-    const { error } = await client.storage.from('rig-photos').upload(path, file, { contentType: file.type, upsert: false })
+    const { error } = await client.storage.from(RIG_PHOTOS_BUCKET).upload(path, file, { contentType: file.type, upsert: false })
     if (error) throw apiError(error)
-    return { url: client.storage.from('rig-photos').getPublicUrl(path).data.publicUrl }
+    return { url: client.storage.from(RIG_PHOTOS_BUCKET).getPublicUrl(path).data.publicUrl }
   },
 }
