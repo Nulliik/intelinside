@@ -99,12 +99,18 @@ export function ResultCard({ result: r, models, quants, runtimes, rank, eyebrow 
           </span>
           {r.runtimeFlags ? <div className="mt-0.5 font-mono text-xs text-muted-foreground text-pretty">{r.runtimeFlags}</div> : null}
         </Field>
-        {r.customRuntime ? (
-          <Field label="Custom runtime">
-            <CustomRuntimeLink build={r.customRuntime} />
-            {r.revision ? <div className="mt-0.5 font-mono text-xs text-muted-foreground">@ {r.revision}</div> : null}
-          </Field>
-        ) : null}
+        {/* Always present, so the grid is a full 12 cells either way — 4 rows at three columns, 6 at two — and a
+            stock run answers the question rather than staying silent about it. */}
+        <Field label="Custom runtime">
+          {r.customRuntime ? (
+            <>
+              <CustomRuntimeLink build={r.customRuntime} />
+              {r.revision ? <div className="mt-0.5 font-mono text-xs text-muted-foreground">@ {r.revision}</div> : null}
+            </>
+          ) : (
+            <span className="text-muted-foreground">Stock</span>
+          )}
+        </Field>
         <Field label="Prompt tok/s"><span className="font-mono tnum">{fmtTps(r.promptTps)}</span></Field>
         <Field label="Time to first token"><span className="font-mono tnum">{fmtMs(r.ttftMs)}</span></Field>
         <Field label="Context length"><span className="font-mono tnum">{r.contextLength ? fmtInt(r.contextLength) : '—'}</span></Field>
