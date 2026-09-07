@@ -19,6 +19,7 @@ export function Guidelines() {
           <h2>How to measure decode tok/s</h2>
           <ul>
             <li>Generate at least 256 tokens from a short prompt and average over a few runs.</li>
+            <li>Measure one request at a time. A throughput configuration — OpenVINO's <code>PERFORMANCE_HINT=THROUGHPUT</code>, vLLM serving many sequences at once, llama.cpp with parallel slots — reports the total across concurrent requests, which is a larger and different number from what one person sees waiting for one answer. If that is what you measured, say so in the flags and set the batch size.</li>
             <li>Report the runtime version you used and link the repo you ran in, yours or the runtime's.</li>
             <li>Note the flags and settings that moved the number: the backend you compiled in, flash attention, KV cache precision. The same card on the same runtime can differ twofold on these.</li>
             <li>If you ran on one card out of several, submit it as a component result and set the quantity you used.</li>
@@ -26,8 +27,9 @@ export function Guidelines() {
           </ul>
           <h2>Ranking</h2>
           <p>Each rig, or each part at a given quantity, appears once on a board at its best decode tok/s. The earliest run wins a tie. Boards mix runtimes; filter by runtime to compare like with like.</p>
-          <h2>Stock and modified runtimes</h2>
-          <p>A result says whether it ran on a stock runtime — the released one, however you configured or built it — or a modified one, where you changed the runtime itself with a custom kernel or op, a patch, or a fork. A modified stack can beat stock by a wide margin on the same silicon, so boards rank stock runs against each other and leave modified ones out until you turn on <strong>Include modified</strong>. Nothing is hidden and modified results are not lesser; they answer a different question, and they rank among each other on the same board. A modified result carries the fork and the exact revision behind it, because an implementation changes week to week and only the revision makes the number reproducible.</p>
+          <h2>Stock and custom runtimes</h2>
+          <p>A result either ran on a stock runtime — the released one, however you configured or built it — or on a <strong>custom runtime</strong>: one someone registered after changing it, with a custom kernel or op, a patch, or a fork. A custom runtime can beat stock by a wide margin on the same silicon, so boards rank stock runs against each other and leave custom ones out until you turn on <strong>Include modified</strong>. Nothing is hidden and they are not lesser; they answer a different question, rank among each other on the same board, and gather on the custom runtime's own page.</p>
+          <p>Register a custom runtime once, from the submit form, and every later result just picks it. You can post a result on anyone's, not only your own — a public fork is a real thing anyone can run. Each result names the exact revision it used, because an implementation changes week to week and only the revision makes a number reproducible.</p>
           <h2>Verification</h2>
           <p>Every result starts self-reported. When enough signed-in members confirm it, it becomes community-verified. Confirm only what you reproduced or checked.</p>
           <h2>Flags</h2>

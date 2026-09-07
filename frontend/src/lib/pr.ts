@@ -1,4 +1,4 @@
-import { REVISION_MAX, RUNTIME_FLAGS_MAX, type ExecutionStack, type Result, type ResultInput } from '@/lib/api/types'
+import { REVISION_MAX, RUNTIME_FLAGS_MAX, type Result, type ResultInput } from '@/lib/api/types'
 import { REPO } from '@/lib/brand'
 import { HARDWARE_BY_ID, MODEL_BY_ID, QUANT_BY_ID, RUNTIME_BY_ID } from '@/catalog'
 
@@ -23,12 +23,10 @@ export type ResultFile = {
   runtimeVersion: string
   /** Flags and settings that change the number, as you would type them: "-fa 1, SYCL backend". */
   runtimeFlags?: string
-  /** "stock" (the default) or "modified" when the runtime itself was changed. */
-  execution?: ExecutionStack
-  /** Modified only: the fork the changed runtime lives in. */
-  modSourceUrl?: string
-  /** Modified only: the exact revision behind the number — a commit, a tag, or a build id. */
-  modRevision?: string
+  /** The custom runtime this ran on: the number at the end of its URL on the site, or its exact name. Omit for stock. */
+  customRuntime?: string
+  /** Custom runtimes only: the exact revision behind the number — a commit, a tag, or a build id. */
+  revision?: string
   decodeTps: number
   promptTps?: number
   ttftMs?: number
@@ -107,16 +105,11 @@ export function parseResultFile(raw: unknown): { file: Partial<ResultFile>; prob
   file.runtimeVersion = str('runtimeVersion', true)
   file.runtimeFlags = str('runtimeFlags')
   if (file.runtimeFlags && file.runtimeFlags.length > RUNTIME_FLAGS_MAX) problems.push(`"runtimeFlags" must be ${RUNTIME_FLAGS_MAX} characters or fewer.`)
-  const execution = str('execution')
-  if (execution && execution !== 'stock' && execution !== 'modified') problems.push('"execution" must be "stock" or "modified".')
-  else file.execution = (execution as ExecutionStack | undefined) ?? 'stock'
-  file.modSourceUrl = str('modSourceUrl')
-  file.modRevision = str('modRevision')
-  if (file.modRevision && file.modRevision.length > REVISION_MAX) problems.push(`"modRevision" must be ${REVISION_MAX} characters or fewer.`)
-  if (file.execution === 'modified' && !file.modSourceUrl && !file.modRevision)
-    problems.push('A modified runtime needs "modSourceUrl" or "modRevision", so the run can be reproduced.')
-  if (file.execution !== 'modified' && (file.modSourceUrl || file.modRevision))
-    problems.push('"modSourceUrl" and "modRevision" only apply when "execution" is "modified".')
+  file.customRuntime = str('customRuntime')
+  file.revision = str('revision')
+  if (file.revision && file.revision.length > REVISION_MAX) problems.push(`"revision" must be ${REVISION_MAX} characters or fewer.`)
+  // It is resolved against the site when the form loads, so the file only has to be shaped right here.
+  if (file.revision && !file.customRuntime) problems.push('"revision" needs a "customRuntime"; a stock run has no revision.')
   file.decodeTps = num('decodeTps', true)
   file.promptTps = num('promptTps')
   file.ttftMs = num('ttftMs')
@@ -187,13 +180,8 @@ export function resultFileFor(r: Result | ResultInput, resultUrl?: string): Resu
     runtime: r.runtimeId,
     runtimeVersion: r.runtimeVersion,
     ...(r.runtimeFlags ? { runtimeFlags: r.runtimeFlags } : {}),
-    ...(r.execution === 'modified'
-      ? {
-          execution: 'modified' as const,
-          ...(r.modSourceUrl ? { modSourceUrl: r.modSourceUrl } : {}),
-          ...(r.modRevision ? { modRevision: r.modRevision } : {}),
-        }
-      : {}),
+    ...(r.customRuntimeId ? { customRuntime: r.customRuntimeId } : {}),
+    ...(r.revision ? { revision: r.revision } : {}),
     decodeTps: r.decodeTps,
     ...(r.promptTps != null ? { promptTps: r.promptTps } : {}),
     ...(r.ttftMs != null ? { ttftMs: r.ttftMs } : {}),

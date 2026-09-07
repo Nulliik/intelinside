@@ -8,7 +8,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { CustomRuntimeForm } from '@/components/CustomRuntimeForm'
 import { Textarea } from '@/components/ui/textarea'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -29,7 +29,7 @@ import { REPO, REPO_URL } from '@/lib/brand'
 import { isGitHubUrl } from '@/lib/github'
 import { PrError, fetchPrResults, newResultFileUrl, parsePrRef, resultFileFor, type PrResultFile, type PrResults, type ResultFile } from '@/lib/pr'
 import { UNIT_LABEL, hasDiscreteGpu, hostIn, integratedParts, nestParts, unitLabel } from '@/lib/hardware'
-import { ApiError, REVISION_MAX, RUNTIME_FLAGS_MAX, type ExecutionStack, type Result, type ResultInput, type ResultRank, type RigSummary } from '@/lib/api/types'
+import { ApiError, REVISION_MAX, RUNTIME_FLAGS_MAX, type CustomRuntime, type Result, type ResultInput, type ResultRank, type RigSummary } from '@/lib/api/types'
 import { fmtTps, pluralize } from '@/lib/format'
 import { resultShareTarget } from '@/lib/share'
 import { cn } from '@/lib/utils'
@@ -46,9 +46,9 @@ type Form = {
   runtimeId: string
   runtimeVersion: string
   runtimeFlags: string
-  execution: ExecutionStack
-  modSourceUrl: string
-  modRevision: string
+  /** Empty means stock. */
+  customId: string
+  revision: string
   decodeTps: string
   promptTps: string
   ttftMs: string
@@ -62,7 +62,7 @@ type Form = {
 const today = () => new Date().toISOString().slice(0, 10)
 const EMPTY: Form = {
   rigId: '', target: 'rig', componentId: '', componentQuantity: '1', modelId: '', quant: '', runtimeId: '', runtimeVersion: '',
-  runtimeFlags: '', execution: 'stock', modSourceUrl: '', modRevision: '',
+  runtimeFlags: '', customId: '', revision: '',
   decodeTps: '', promptTps: '', ttftMs: '', contextLength: '', batchSize: '', repoUrl: '', runDate: today(), notes: '',
 }
 const num = (s: string) => (s.trim() === '' ? undefined : Number(s))
@@ -94,13 +94,7 @@ function validate(f: Form, quantsFor: string[]): Record<string, string> {
   if (!f.runtimeId) e.runtimeId = 'Pick a runtime.'
   if (!f.runtimeVersion.trim()) e.runtimeVersion = 'Enter the runtime version.'
   if (f.runtimeFlags.trim().length > RUNTIME_FLAGS_MAX) e.runtimeFlags = `Use ${RUNTIME_FLAGS_MAX} characters or fewer.`
-  if (f.execution === 'modified') {
-    const source = f.modSourceUrl.trim()
-    if (source && !/^https?:\/\/\S+$/.test(source)) e.modSourceUrl = 'Enter a full URL, starting with https://.'
-    if (f.modRevision.trim().length > REVISION_MAX) e.modRevision = `Use ${REVISION_MAX} characters or fewer.`
-    // Without one of these the label says nothing anyone can act on.
-    if (!source && !f.modRevision.trim()) e.modSourceUrl = 'Add the fork or the revision, so the run can be reproduced.'
-  }
+  if (f.revision.trim().length > REVISION_MAX) e.revision = `Use ${REVISION_MAX} characters or fewer.`
   const d = num(f.decodeTps)
   if (d == null || Number.isNaN(d) || !(d > 0)) e.decodeTps = 'Enter decode tok/s above zero.'
   for (const k of ['promptTps', 'ttftMs', 'contextLength', 'batchSize'] as const) {
@@ -121,9 +115,8 @@ function toInput(f: Form): ResultInput {
     runtimeId: f.runtimeId,
     runtimeVersion: f.runtimeVersion.trim(),
     runtimeFlags: f.runtimeFlags.trim() || undefined,
-    execution: f.execution,
-    modSourceUrl: f.execution === 'modified' ? f.modSourceUrl.trim() || undefined : undefined,
-    modRevision: f.execution === 'modified' ? f.modRevision.trim() || undefined : undefined,
+    customRuntimeId: f.customId || undefined,
+    revision: f.customId ? f.revision.trim() || undefined : undefined,
     rigId: f.rigId,
     componentId: component ? f.componentId : undefined,
     componentQuantity: component ? Number(f.componentQuantity) || 1 : undefined,
@@ -139,7 +132,7 @@ function toInput(f: Form): ResultInput {
 }
 
 /** Fills the form from a result file. Ids the catalog does not know stay blank and are reported, so the rest still lands. */
-function formFromFile(file: Partial<ResultFile>, rigs: RigSummary[], evidenceUrl: string, prev: Form): { form: Form; problems: string[] } {
+function formFromFile(file: Partial<ResultFile>, rigs: RigSummary[], customRuntimes: CustomRuntime[], evidenceUrl: string, prev: Form): { form: Form; problems: string[] } {
   const problems: string[] = []
   const wanted = file.rig?.toLowerCase()
   const rig = wanted ? rigs.find((r) => r.id.toLowerCase() === wanted) ?? rigs.find((r) => r.name.toLowerCase() === wanted) : undefined
@@ -158,9 +151,8 @@ function formFromFile(file: Partial<ResultFile>, rigs: RigSummary[], evidenceUrl
       runtimeId: file.runtime && RUNTIME_BY_ID[file.runtime] ? file.runtime : '',
       runtimeVersion: file.runtimeVersion ?? '',
       runtimeFlags: file.runtimeFlags ?? '',
-      execution: file.execution ?? 'stock',
-      modSourceUrl: file.modSourceUrl ?? '',
-      modRevision: file.modRevision ?? '',
+      customId: file.customRuntime && customRuntimes.some((b) => b.id === file.customRuntime) ? file.customRuntime : '',
+      revision: file.revision ?? '',
       decodeTps: text(file.decodeTps),
       promptTps: text(file.promptTps),
       ttftMs: text(file.ttftMs),
@@ -221,10 +213,23 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
   const [rigsTick, setRigsTick] = useState(0)
   const myRigs = useAsync(() => (user ? api.rigs({ owner: user.handle, limit: 100 }) : Promise.resolve(null)), [user?.handle, rigsTick])
   const existing = useAsync(() => (mode === 'edit' && resultId ? api.result(resultId) : Promise.resolve(null)), [mode, resultId])
-  const [form, setForm] = useState<Form>(() => ({ ...EMPTY, rigId: sp.get('rig') ?? '', modelId: sp.get('model') ?? '', quant: sp.get('quant') ?? '' }))
+  const [form, setForm] = useState<Form>(() => ({ ...EMPTY, rigId: sp.get('rig') ?? '', modelId: sp.get('model') ?? '', quant: sp.get('quant') ?? '', runtimeId: sp.get('runtime') ?? '', customId: sp.get('custom') ?? '' }))
   const [initialized, setInitialized] = useState(mode === 'create')
   const [creatingRig, setCreatingRig] = useState(false)
   const [flagsOpen, setFlagsOpen] = useState(false)
+  const [customRuntimesTick, setCustomRuntimesTick] = useState(0)
+  const [creatingCustomRuntime, setCreatingCustomRuntime] = useState(false)
+  // Every build for the chosen runtime, not just the submitter's: a public fork is a real thing anyone can run,
+  // and one object per fork is what keeps those runs comparable. Refetched when a new one is registered.
+  const customRuntimeList = useAsync(
+    () => (form.runtimeId ? api.customRuntimes({ runtime: form.runtimeId }) : Promise.resolve(null)),
+    [form.runtimeId, customRuntimesTick],
+  )
+  const customRuntimes = customRuntimeList.data?.items ?? []
+  const myCustomRuntimes = customRuntimes.filter((b) => b.ownerId === user?.id)
+  const otherCustomRuntimes = customRuntimes.filter((b) => b.ownerId !== user?.id)
+  const selectedCustomRuntime = customRuntimes.find((b) => b.id === form.customId)
+  const runtimeName = cat.data?.runtimes.find((r) => r.id === form.runtimeId)?.name ?? ''
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [attempted, setAttempted] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -252,8 +257,8 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
     setForm({
       rigId: r.rigId, target: r.componentId ? 'component' : 'rig', componentId: r.componentId ?? '', componentQuantity: String(r.componentQuantity ?? 1),
       modelId: r.modelId, quant: r.quant, runtimeId: r.runtimeId, runtimeVersion: r.runtimeVersion,
-      runtimeFlags: r.runtimeFlags ?? '', execution: r.execution ?? 'stock',
-      modSourceUrl: r.modSourceUrl ?? '', modRevision: r.modRevision ?? '', decodeTps: String(r.decodeTps), promptTps: r.promptTps?.toString() ?? '', ttftMs: r.ttftMs?.toString() ?? '',
+      runtimeFlags: r.runtimeFlags ?? '', customId: r.customRuntimeId ?? '', revision: r.revision ?? '',
+      decodeTps: String(r.decodeTps), promptTps: r.promptTps?.toString() ?? '', ttftMs: r.ttftMs?.toString() ?? '',
       contextLength: r.contextLength?.toString() ?? '', batchSize: r.batchSize?.toString() ?? '',
       repoUrl: r.repoUrl, runDate: r.runDate.slice(0, 10), notes: r.notes ?? '',
     })
@@ -271,7 +276,7 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
   // Prefill from a pull request on the site's repo: read its result files, fill what the catalog knows, keep the PR as evidence.
   const applyPrFile = (results: PrResults, index: number) => {
     const chosen = results.files[index]
-    const filled = formFromFile(chosen.file, rigItems ?? [], results.pr.url, form)
+    const filled = formFromFile(chosen.file, rigItems ?? [], customRuntimes, results.pr.url, form)
     setForm(filled.form)
     setPrFile(index)
     setPrProblems([...chosen.problems, ...filled.problems])
@@ -389,9 +394,10 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
     runtimeId: form.runtimeId,
     runtimeVersion: form.runtimeVersion,
     runtimeFlags: form.runtimeFlags.trim() || undefined,
-    execution: form.execution,
-    modSourceUrl: form.execution === 'modified' ? form.modSourceUrl.trim() || undefined : undefined,
-    modRevision: form.execution === 'modified' ? form.modRevision.trim() || undefined : undefined,
+    customRuntimeId: form.customId || undefined,
+    customRuntime: customRuntimes.find((b) => b.id === form.customId),
+    revision: form.customId ? form.revision.trim() || undefined : undefined,
+    execution: form.customId ? 'modified' : 'stock',
     rigId: form.rigId,
     rig: selectedRig,
     componentId: form.target === 'component' ? form.componentId || undefined : undefined,
@@ -492,7 +498,7 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
                     setDone(null)
                     setAttempted(false)
                     setErrors({})
-                    setForm({ ...EMPTY, rigId: form.rigId, runtimeId: form.runtimeId, runtimeVersion: form.runtimeVersion, runtimeFlags: form.runtimeFlags, execution: form.execution, modSourceUrl: form.modSourceUrl, modRevision: form.modRevision })
+                    setForm({ ...EMPTY, rigId: form.rigId, runtimeId: form.runtimeId, runtimeVersion: form.runtimeVersion, runtimeFlags: form.runtimeFlags, customId: form.customId, revision: form.revision })
                   }}
                 >
                   Submit another
@@ -855,37 +861,81 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
                   <Plus data-icon="inline-start" /> Add flags and settings
                 </Button>
               )}
-              <div className="grid gap-1.5">
-                <Label>Execution stack</Label>
-                <ToggleGroup
-                  value={[form.execution]}
-                  onValueChange={(v) => set({ execution: ((v as string[])[0] as ExecutionStack) || 'stock' })}
-                  variant="outline"
-                  size="sm"
-                  className="w-fit"
-                >
-                  <ToggleGroupItem value="stock">Stock</ToggleGroupItem>
-                  <ToggleGroupItem value="modified">Modified</ToggleGroupItem>
-                </ToggleGroup>
-                <p className="text-xs text-muted-foreground">
-                  {form.execution === 'stock'
-                    ? 'The released runtime, however you configured or built it. Boards rank stock runs against each other.'
-                    : 'You changed the runtime itself: a custom kernel or op, a patch, a fork. Boards keep these out by default, so a changed stack is never mistaken for faster hardware.'}
-                </p>
-              </div>
-              {form.execution === 'modified' ? (
-                <div className="grid gap-4 border-l-2 border-warning/40 pl-4 sm:grid-cols-2">
-                  <Field id="modSourceUrl" label="Fork or source" error={errors.modSourceUrl}>
-                    <Input {...inputProps('modSourceUrl')} type="url" placeholder="https://github.com/you/vllm" />
-                  </Field>
-                  <Field id="modRevision" label="Source revision" error={errors.modRevision} hint="A commit, a tag, or a build id.">
-                    <Input {...inputProps('modRevision')} placeholder="a8192fe" className="font-mono" />
-                  </Field>
-                  <p className="text-xs text-muted-foreground sm:col-span-2">
-                    An implementation changes week to week, so the revision is what makes the number reproducible. Say what you
-                    changed in the notes below.
-                  </p>
+              {/* Picking a build is what says "modified" — there is no separate toggle. Every build for this runtime
+                  is listed, not only the submitter's, because a public fork is a real thing anyone can run. */}
+              <Field
+                id="customId"
+                label="Custom runtime"
+                error={errors.customId}
+                hint={form.customId
+                  ? 'Boards keep customRuntimes out until a reader turns on "Include modified", so a changed stack is never mistaken for faster hardware.'
+                  : 'Stock is the released runtime, however you configured or built it.'}
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <NativeSelect
+                    className="w-full sm:w-auto sm:min-w-72"
+                    id="customId"
+                    value={form.customId}
+                    disabled={!form.runtimeId}
+                    aria-invalid={!!errors.customId}
+                    onChange={(e) => set({ customId: e.target.value, ...(e.target.value ? {} : { revision: '' }) })}
+                  >
+                    <NativeSelectOption value="">Stock{runtimeName ? ` ${runtimeName}` : ''}</NativeSelectOption>
+                    {/* Grouped only when there is something to contrast: with none of your own, a lone "yours vs
+                        theirs" heading names a distinction the reader cannot see. Every other entry carries its
+                        owner's handle anyway, so the flat list loses nothing. */}
+                    {myCustomRuntimes.length ? (
+                      <>
+                        <optgroup label="Yours">
+                          {myCustomRuntimes.map((b) => <NativeSelectOption key={b.id} value={b.id}>{b.name}</NativeSelectOption>)}
+                        </optgroup>
+                        {otherCustomRuntimes.length ? (
+                          <optgroup label="Registered by other people">
+                            {otherCustomRuntimes.map((b) => (
+                              <NativeSelectOption key={b.id} value={b.id}>{b.name} — {b.owner?.handle ?? 'unknown'}</NativeSelectOption>
+                            ))}
+                          </optgroup>
+                        ) : null}
+                      </>
+                    ) : (
+                      otherCustomRuntimes.map((b) => (
+                        <NativeSelectOption key={b.id} value={b.id}>{b.name} — {b.owner?.handle ?? 'unknown'}</NativeSelectOption>
+                      ))
+                    )}
+                  </NativeSelect>
+                  {form.runtimeId ? (
+                    <Button type="button" variant="outline" size="sm" onClick={() => setCreatingCustomRuntime(true)}>
+                      <Plus data-icon="inline-start" /> New
+                    </Button>
+                  ) : null}
                 </div>
+                {selectedCustomRuntime ? (
+                  <p className="mt-0.5 text-xs text-muted-foreground text-pretty">{selectedCustomRuntime.summary}</p>
+                ) : null}
+              </Field>
+              {creatingCustomRuntime ? (
+                <div className="border-l-2 border-warning/40 pl-4">
+                  <CustomRuntimeForm
+                    runtimeId={form.runtimeId}
+                    onCancel={() => setCreatingCustomRuntime(false)}
+                    onCreated={(build) => {
+                      setCustomRuntimesTick((n) => n + 1)
+                      setCreatingCustomRuntime(false)
+                      set({ customId: build.id })
+                    }}
+                  />
+                </div>
+              ) : null}
+              {form.customId ? (
+                <Field
+                  id="revision"
+                  label="Revision"
+                  error={errors.revision}
+                  hint="The commit, tag, or build id behind this number. A fork moves week to week, so this is what makes the run reproducible."
+                  className="max-w-xs"
+                >
+                  <Input {...inputProps('revision')} placeholder="a8192fe" className="font-mono" />
+                </Field>
               ) : null}
             </Step>
 

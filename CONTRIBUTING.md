@@ -31,13 +31,19 @@ request is up to the maintainers and changes nothing on the site — the PR is t
 ### What makes a good result
 
 - Generate at least 256 tokens from a short prompt and average over a few runs.
+- Measure one request at a time. A throughput configuration — OpenVINO's
+  `PERFORMANCE_HINT=THROUGHPUT`, vLLM serving many sequences at once, llama.cpp with parallel slots —
+  reports the total across concurrent requests, which is a larger and different number from what one
+  person sees waiting for one answer. If that is what you measured, say so in the flags and set the
+  batch size.
 - Report the runtime version, and link the repo you ran in — yours or the runtime's.
 - Note the flags and settings that moved the number — backend, flash attention, KV cache precision. The same
   card on the same runtime can differ twofold on these.
-- Say whether the runtime was stock or modified. Stock means the released runtime, however you configured or
-  built it. If you changed the runtime itself — custom kernel or op, patch, fork — mark it modified and give
-  the fork and the exact revision, so someone else can reproduce the number. Boards rank stock alone by
-  default, so a changed stack is never mistaken for faster hardware.
+- Say whether it ran on a stock runtime or a custom runtime. Stock means the released runtime, however you configured
+  or built it. If you changed the runtime itself — custom kernel or op, patch, fork — register it once as a
+  custom runtime and name it, along with the exact revision, so someone else can reproduce the number. You can post on
+  anyone's, not only your own. Boards rank stock alone by default, so a changed stack is never mistaken
+  for faster hardware.
 - Ran on one card out of several? Submit it as a component result and set the quantity you used.
 - A Core Ultra chip carries CPU cores, an iGPU, and an NPU, and each is its own part. Submit the unit the
   model actually ran on. Use whole rig when the run spanned more than one.

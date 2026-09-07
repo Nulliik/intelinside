@@ -1,13 +1,14 @@
 import { supabase, signOutSupabase } from '@/lib/auth'
 import { RegExpMatcher, englishDataset, englishRecommendedTransformers } from 'obscenity'
 import { hostIn } from '@/lib/hardware'
-import { HARDWARE_BY_ID, MODELS, MODEL_BY_ID, QUANTS, QUANT_BY_ID, RUNTIMES, VISIBLE_HARDWARE } from '@/catalog'
+import { HARDWARE_BY_ID, MODELS, MODEL_BY_ID, QUANTS, QUANT_BY_ID, RUNTIMES, RUNTIME_BY_ID, VISIBLE_HARDWARE } from '@/catalog'
 import type {
   Api, BestRank, BoardKind, BoardParams, BoardResponse, BoardRow, BoardUnit, ChartBar, FlagReason,
   HardwareDetail, HardwareItem, HomeResponse, ModelSummary, Moderation, Page, Result,
   ResultDetail, ResultInput, Rig, RigDetail, RigSummary, TopResultsResponse, User, UserStats,
+  CustomRuntime,
 } from './types'
-import { ApiError, REVISION_MAX, RUNTIME_FLAGS_MAX } from './types'
+import { ApiError, BUILD_SUMMARY_MAX, REVISION_MAX, RUNTIME_FLAGS_MAX } from './types'
 
 type ProfileRow = {
   id: string
@@ -36,9 +37,8 @@ type ResultRow = {
   runtime_id: string
   runtime_version: string
   runtime_flags: string | null
-  execution: 'stock' | 'modified'
-  mod_source_url: string | null
-  mod_revision: string | null
+  custom_runtime_id: number | string | null
+  revision: string | null
   rig_id: number | string
   component_id: string | null
   component_quantity: number | null
@@ -57,6 +57,17 @@ type ResultRow = {
   created_at: string
   updated_at: string
 }
+type CustomRuntimeRow = {
+  id: number | string
+  owner_id: string
+  runtime_id: string
+  name: string
+  repo_url: string
+  summary: string
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
 type ConfirmationRow = { result_id: number | string; user_id: string }
 type FlagRow = { result_id: number | string; user_id: string; reason: FlagReason }
 type Snapshot = {
@@ -65,6 +76,7 @@ type Snapshot = {
   rigs: RigRow[]
   components: ComponentRow[]
   results: ResultRow[]
+  customRuntimes: CustomRuntimeRow[]
   confirmations: ConfirmationRow[]
   flags: FlagRow[]
 }
@@ -131,7 +143,7 @@ function rigPhotoPath(value: string | undefined): string | null {
 function resultPayload(input: Partial<ResultInput>, create = false): Record<string, unknown> {
   const map: [keyof ResultInput, string][] = [
     ['modelId', 'model_id'], ['quant', 'quant_id'], ['runtimeId', 'runtime_id'], ['runtimeVersion', 'runtime_version'],
-    ['runtimeFlags', 'runtime_flags'], ['execution', 'execution'], ['modSourceUrl', 'mod_source_url'], ['modRevision', 'mod_revision'],
+    ['runtimeFlags', 'runtime_flags'], ['customRuntimeId', 'custom_runtime_id'], ['revision', 'revision'],
     ['rigId', 'rig_id'], ['componentId', 'component_id'], ['componentQuantity', 'component_quantity'],
     ['decodeTps', 'decode_tps'], ['promptTps', 'prompt_tps'], ['ttftMs', 'ttft_ms'], ['contextLength', 'context_length'],
     ['batchSize', 'batch_size'], ['notes', 'notes'], ['repoUrl', 'repo_url'], ['runDate', 'run_date'],
@@ -141,10 +153,8 @@ function resultPayload(input: Partial<ResultInput>, create = false): Record<stri
     if (create || source in input) payload[target] = input[source] ?? null
   }
   if (payload.component_id == null) payload.component_quantity = null
-  if (payload.execution !== 'modified') {
-    if ('mod_source_url' in payload) payload.mod_source_url = null
-    if ('mod_revision' in payload) payload.mod_revision = null
-  }
+  // A stock run carries no revision, whatever the form sent.
+  if (payload.custom_runtime_id == null && 'revision' in payload) payload.revision = null
   return payload
 }
 
@@ -152,15 +162,16 @@ async function loadSnapshot(): Promise<Snapshot> {
   const client = requiredClient()
   const { data: sessionData } = await client.auth.getSession()
   const userId = sessionData.session?.user.id ?? null
-  const [profiles, rigs, components, results, confirmations, flags] = await Promise.all([
+  const [profiles, rigs, components, results, customRuntimes, confirmations, flags] = await Promise.all([
     rows<ProfileRow[]>(client.from('profiles').select('*')),
     rows<RigRow[]>(client.from('rigs').select('*')),
     rows<ComponentRow[]>(client.from('rig_components').select('*')),
     rows<ResultRow[]>(client.from('results').select('*')),
+    rows<CustomRuntimeRow[]>(client.from('custom_runtimes').select('*')),
     userId ? rows<ConfirmationRow[]>(client.from('result_confirmations').select('result_id,user_id')) : Promise.resolve([]),
     userId ? rows<FlagRow[]>(client.from('result_flags').select('result_id,user_id,reason')) : Promise.resolve([]),
   ])
-  return { userId, profiles, rigs, components, results, confirmations, flags }
+  return { userId, profiles, rigs, components, results, customRuntimes, confirmations, flags }
 }
 
 const stringId = (value: number | string) => String(value)
@@ -205,6 +216,29 @@ function view(snapshot: Snapshot) {
     componentsByRig.set(id, [...(componentsByRig.get(id) ?? []), component])
   }
   const resultRows = snapshot.results
+
+  const customRuntime = (row: CustomRuntimeRow): CustomRuntime => {
+    const id = stringId(row.id)
+    const mine = resultRows.filter((result) => result.custom_runtime_id != null && stringId(result.custom_runtime_id) === id && !result.hidden)
+    const profile = profileById.get(row.owner_id)
+    return {
+      id,
+      ownerId: row.owner_id,
+      owner: profile ? publicUser(profile) : undefined,
+      runtimeId: row.runtime_id,
+      runtime: RUNTIME_BY_ID[row.runtime_id],
+      name: row.name,
+      repoUrl: row.repo_url,
+      summary: row.summary,
+      notes: optional(row.notes),
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      resultsCount: mine.length,
+      rigsCount: new Set(mine.map((result) => stringId(result.rig_id))).size,
+      bestTps: mine.length ? Math.max(...mine.map((result) => numberValue(result.decode_tps))) : undefined,
+    }
+  }
+  const customRuntimeById = new Map(snapshot.customRuntimes.map((row) => [stringId(row.id), customRuntime(row)]))
 
   const rigSummary = (row: RigRow): RigSummary => {
     const id = stringId(row.id)
@@ -258,9 +292,10 @@ function view(snapshot: Snapshot) {
       runtimeId: row.runtime_id,
       runtimeVersion: row.runtime_version,
       runtimeFlags: optional(row.runtime_flags),
-      execution: row.execution ?? 'stock',
-      modSourceUrl: optional(row.mod_source_url),
-      modRevision: optional(row.mod_revision),
+      customRuntimeId: row.custom_runtime_id == null ? undefined : stringId(row.custom_runtime_id),
+      customRuntime: row.custom_runtime_id == null ? undefined : customRuntimeById.get(stringId(row.custom_runtime_id)),
+      revision: optional(row.revision),
+      execution: row.custom_runtime_id == null ? 'stock' : 'modified',
       rigId: stringId(row.rig_id),
       rig: resultRig ? rigSummary(resultRig) : undefined,
       componentId: optional(row.component_id),
@@ -293,7 +328,7 @@ function view(snapshot: Snapshot) {
     }
   }
 
-  return { profileById, rigById, componentsByRig, rigSummary, rig, result }
+  return { profileById, rigById, componentsByRig, rigSummary, rig, result, customRuntime, customRuntimeById }
 }
 
 function paginate<T>(items: T[], limit = 25, cursor?: string): Page<T> {
@@ -539,6 +574,69 @@ export const supabaseApi: Api = {
     await rows(requiredClient().from('rigs').delete().eq('id', id).select('id'))
   },
 
+  async runtimeSummaries() {
+    const snapshot = await loadSnapshot()
+    const visible = snapshot.results.filter((row) => !row.hidden)
+    return RUNTIMES.map((runtime) => {
+      const mine = visible.filter((row) => row.runtime_id === runtime.id)
+      return {
+        ...runtime,
+        resultsCount: mine.length,
+        buildsCount: snapshot.customRuntimes.filter((row) => row.runtime_id === runtime.id).length,
+        bestTps: mine.length ? Math.max(...mine.map((row) => numberValue(row.decode_tps))) : undefined,
+      }
+    })
+  },
+  async customRuntimes(params = {}) {
+    const snapshot = await loadSnapshot()
+    const data = view(snapshot)
+    let items = snapshot.customRuntimes.map(data.customRuntime)
+    if (params.runtime) items = items.filter((build) => build.runtimeId === params.runtime)
+    if (params.owner) items = items.filter((build) => build.owner?.handle === params.owner)
+    // The submitter's own first: the picker shows them under "Yours" without a second query.
+    const mine = snapshot.userId
+    items.sort((a, b) =>
+      Number(b.ownerId === mine) - Number(a.ownerId === mine) || b.createdAt.localeCompare(a.createdAt))
+    return { items }
+  },
+  async customRuntime(id) {
+    const snapshot = await loadSnapshot()
+    const data = view(snapshot)
+    const build = data.customRuntimeById.get(id)
+    if (!build) throw new ApiError('not_found', 'No such build.', 404)
+    const results = snapshot.results
+      .map(data.result)
+      .filter((result) => result.customRuntimeId === id && !result.moderation.hidden)
+      .sort((a, b) => b.decodeTps - a.decodeTps)
+    return { ...build, results, chart: bestChart(results, true) }
+  },
+  async createCustomRuntime(input) {
+    const ownerId = await requireUserId()
+    moderateText([['name', input.name, 120], ['summary', input.summary, BUILD_SUMMARY_MAX], ['notes', input.notes, 5000]])
+    const created = await rows<CustomRuntimeRow[]>(requiredClient().from('custom_runtimes').insert({
+      owner_id: ownerId,
+      runtime_id: input.runtimeId,
+      name: input.name.trim(),
+      repo_url: input.repoUrl.trim(),
+      summary: input.summary.trim(),
+      notes: input.notes?.trim() || null,
+    }).select('*'))
+    return supabaseApi.customRuntime(stringId(created[0].id))
+  },
+  async updateCustomRuntime(id, input) {
+    await requireUserId()
+    moderateText([['name', input.name, 120], ['summary', input.summary, BUILD_SUMMARY_MAX], ['notes', input.notes, 5000]])
+    const payload: Record<string, unknown> = {}
+    if ('runtimeId' in input) payload.runtime_id = input.runtimeId
+    if ('name' in input) payload.name = input.name?.trim()
+    if ('repoUrl' in input) payload.repo_url = input.repoUrl?.trim()
+    if ('summary' in input) payload.summary = input.summary?.trim()
+    if ('notes' in input) payload.notes = input.notes?.trim() || null
+    const updated = await rows<CustomRuntimeRow[]>(requiredClient().from('custom_runtimes').update(payload).eq('id', id).select('*'))
+    if (!updated.length) throw new ApiError('not_found', 'No such build, or it is not yours.', 404)
+    return supabaseApi.customRuntime(id)
+  },
+
   async results(params = {}) {
     const snapshot = await loadSnapshot()
     const data = view(snapshot)
@@ -566,7 +664,7 @@ export const supabaseApi: Api = {
   },
   async createResult(input) {
     const submitterId = await requireUserId()
-    moderateText([['runtimeVersion', input.runtimeVersion, 80], ['runtimeFlags', input.runtimeFlags, RUNTIME_FLAGS_MAX], ['modRevision', input.modRevision, REVISION_MAX], ['notes', input.notes, 5000]])
+    moderateText([['runtimeVersion', input.runtimeVersion, 80], ['runtimeFlags', input.runtimeFlags, RUNTIME_FLAGS_MAX], ['revision', input.revision, REVISION_MAX], ['notes', input.notes, 5000]])
     const created = await rows<ResultRow[]>(requiredClient().from('results').insert({
       ...resultPayload(input, true),
       submitter_id: submitterId,
@@ -575,7 +673,7 @@ export const supabaseApi: Api = {
   },
   async updateResult(id, input) {
     await requireUserId()
-    moderateText([['runtimeVersion', input.runtimeVersion, 80], ['runtimeFlags', input.runtimeFlags, RUNTIME_FLAGS_MAX], ['modRevision', input.modRevision, REVISION_MAX], ['notes', input.notes, 5000]])
+    moderateText([['runtimeVersion', input.runtimeVersion, 80], ['runtimeFlags', input.runtimeFlags, RUNTIME_FLAGS_MAX], ['revision', input.revision, REVISION_MAX], ['notes', input.notes, 5000]])
     const updated = await rows<ResultRow[]>(requiredClient().from('results').update(resultPayload(input)).eq('id', id).select('*'))
     if (!updated.length) throw new ApiError('not_found', 'No such result.', 404)
     return supabaseApi.result(id)

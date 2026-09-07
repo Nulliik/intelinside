@@ -5,6 +5,10 @@ import Models from '@/pages/Models'
 import Board from '@/pages/Board'
 import Hardware from '@/pages/Hardware'
 import HardwareDetail from '@/pages/HardwareDetail'
+import CustomRuntimeDetail from '@/pages/CustomRuntimeDetail'
+import CustomRuntimeEditor from '@/pages/CustomRuntimeEditor'
+import Runtimes from '@/pages/Runtimes'
+import RuntimeDetail from '@/pages/RuntimeDetail'
 import Rigs from '@/pages/Rigs'
 import RigDetail from '@/pages/RigDetail'
 import ResultDetail from '@/pages/ResultDetail'
@@ -24,6 +28,12 @@ export default function App() {
         <Route path="/models/:modelId/:quant" element={<Board />} />
         <Route path="/hardware" element={<Hardware />} />
         <Route path="/hardware/:hardwareId" element={<HardwareDetail />} />
+        <Route path="/runtimes" element={<Runtimes />} />
+        <Route path="/runtimes/custom/new" element={<CustomRuntimeEditor />} />
+        <Route path="/runtimes/:runtimeId" element={<RuntimeDetail />} />
+        <Route path="/runtimes/:runtimeId/custom/new" element={<CustomRuntimeEditor />} />
+        <Route path="/runtimes/:runtimeId/custom/:customId" element={<CustomRuntimeDetail />} />
+        <Route path="/runtimes/:runtimeId/custom/:customId/edit" element={<CustomRuntimeEditor />} />
         <Route path="/rigs" element={<Rigs />} />
         <Route path="/rigs/new" element={<RigEditor />} />
         <Route path="/rigs/:rigId" element={<RigDetail />} />

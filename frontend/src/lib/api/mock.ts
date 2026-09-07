@@ -2,11 +2,12 @@ import type {
   Api, BestRank, BoardKind, BoardParams, BoardResponse, BoardRow, BoardUnit, ChartBar, FlagReason, HardwareDetail, HardwareItem, HomeResponse, Model, ModelSummary,
   Moderation, Page, Quant, Result, ResultDetail, ResultInput, Rig, RigDetail, RigSummary,
   Runtime, TopResultsResponse, User, UserStats, Verification,
+  CustomRuntime, CustomRuntimeInput,
 } from './types'
-import { ApiError } from './types'
+import { ApiError, BUILD_SUMMARY_MAX } from './types'
 import { isGitHubUrl } from '@/lib/github'
 import { hostIn } from '@/lib/hardware'
-import { HARDWARE_BY_ID, MODELS, MODEL_BY_ID, QUANTS, QUANT_BY_ID, RUNTIMES, VISIBLE_HARDWARE } from '@/catalog'
+import { HARDWARE_BY_ID, MODELS, MODEL_BY_ID, QUANTS, QUANT_BY_ID, RUNTIMES, RUNTIME_BY_ID, VISIBLE_HARDWARE } from '@/catalog'
 import { createSeed, rigSummaryLine, type SeedDb } from '@/mocks/seed'
 
 // In-memory implementation of the API contract. Same ranking, thresholds, and
@@ -100,11 +101,43 @@ function hydrateRig(rig: Rig): Rig {
   }
 }
 
+/** Counts a build carries wherever it is shown: how much has been posted on it, and by how many machines. */
+function hydrateBuild(b: CustomRuntime): CustomRuntime {
+  const mine = db.results.filter((r) => canSee(r) && r.customRuntimeId === b.id)
+  return {
+    ...b,
+    owner: publicUser(userById(b.ownerId)!),
+    runtime: RUNTIME_BY_ID[b.runtimeId],
+    resultsCount: mine.length,
+    rigsCount: new Set(mine.map((r) => r.rigId)).size,
+    bestTps: mine.length ? Math.max(...mine.map((r) => r.decodeTps)) : undefined,
+  }
+}
+
+/** Mirrors the database's checks so the mock refuses the same shapes the server would. */
+function validateBuild(input: Partial<CustomRuntimeInput>, forCreate: boolean): Record<string, string> {
+  const e: Record<string, string> = {}
+  const need = (k: 'runtimeId' | 'name' | 'repoUrl' | 'summary', msg: string) => {
+    if (forCreate && !String(input[k] ?? '').trim()) e[k] = msg
+  }
+  need('runtimeId', 'Pick the runtime it is based on.')
+  need('name', 'Name the build.')
+  need('repoUrl', 'Link the fork or source.')
+  need('summary', 'Say in one line what changed.')
+  if (input.runtimeId && !RUNTIME_BY_ID[input.runtimeId]) e.runtimeId = 'Unknown runtime.'
+  if (input.repoUrl && !/^https?:\/\/\S+$/.test(input.repoUrl.trim())) e.repoUrl = 'Enter a full URL, starting with https://.'
+  if (input.name && input.name.trim().length > 120) e.name = 'Use 120 characters or fewer.'
+  if (input.summary && input.summary.trim().length > BUILD_SUMMARY_MAX) e.summary = `Use ${BUILD_SUMMARY_MAX} characters or fewer.`
+  return e
+}
+
 function hydrateResult(r: Result): Result {
   const confs = db.confirmations.get(r.id)
   const fl = db.flags.get(r.id)
   return {
     ...r,
+    execution: r.customRuntimeId ? 'modified' : 'stock',
+    customRuntime: r.customRuntimeId ? db.customRuntimes.find((b) => b.id === r.customRuntimeId) : undefined,
     submitter: publicUser(userById(r.submitterId)!),
     rig: rigSummary(rigOf(r)),
     component: r.componentId ? HARDWARE_BY_ID[r.componentId] : undefined,
@@ -386,6 +419,64 @@ export const mockApi: Api = {
     return delay(undefined)
   },
 
+  async runtimeSummaries() {
+    const visible = db.results.filter(canSee)
+    return delay(RUNTIMES.map((runtime) => {
+      const mine = visible.filter((r) => r.runtimeId === runtime.id)
+      return {
+        ...runtime,
+        resultsCount: mine.length,
+        buildsCount: db.customRuntimes.filter((b) => b.runtimeId === runtime.id).length,
+        bestTps: mine.length ? Math.max(...mine.map((r) => r.decodeTps)) : undefined,
+      }
+    }))
+  },
+  async customRuntimes(params = {}) {
+    let items = db.customRuntimes.slice()
+    if (params.runtime) items = items.filter((b) => b.runtimeId === params.runtime)
+    if (params.owner) items = items.filter((b) => userById(b.ownerId)?.handle === params.owner)
+    const mine = sessionUserId
+    items = items
+      .map(hydrateBuild)
+      .sort((a, b) => Number(b.ownerId === mine) - Number(a.ownerId === mine) || b.createdAt.localeCompare(a.createdAt))
+    return delay({ items })
+  },
+  async customRuntime(id) {
+    const build = db.customRuntimes.find((b) => b.id === id)
+    if (!build) return fail('not_found', 'No such build.', 404)
+    const results = db.results.filter((r) => canSee(r) && r.customRuntimeId === id).sort((a, b) => b.decodeTps - a.decodeTps)
+    return delay({ ...hydrateBuild(build), results: results.map(hydrateResult), chart: bestPerModelQuant(results, true) })
+  },
+  async createCustomRuntime(input) {
+    const u = requireUser()
+    const errors = validateBuild(input, true)
+    if (Object.keys(errors).length) return fail('validation', 'Fix the highlighted fields.', 400, errors)
+    const build: CustomRuntime = {
+      id: newId('build'), ownerId: u.id, runtimeId: input.runtimeId!,
+      name: input.name!.trim(), repoUrl: input.repoUrl!.trim(), summary: input.summary!.trim(),
+      notes: input.notes?.trim() || undefined, createdAt: nowIso(), updatedAt: nowIso(),
+    }
+    db.customRuntimes.unshift(build)
+    return delay(hydrateBuild(build))
+  },
+  async updateCustomRuntime(id, input) {
+    const u = requireUser()
+    const build = db.customRuntimes.find((b) => b.id === id)
+    if (!build) return fail('not_found', 'No such build.', 404)
+    if (build.ownerId !== u.id) return fail('forbidden', 'Only the owner can edit this build.', 403)
+    const errors = validateBuild(input, false)
+    if (Object.keys(errors).length) return fail('validation', 'Fix the highlighted fields.', 400, errors)
+    Object.assign(build, {
+      ...(input.runtimeId ? { runtimeId: input.runtimeId } : {}),
+      ...(input.name ? { name: input.name.trim() } : {}),
+      ...(input.repoUrl ? { repoUrl: input.repoUrl.trim() } : {}),
+      ...(input.summary ? { summary: input.summary.trim() } : {}),
+      ...('notes' in input ? { notes: input.notes?.trim() || undefined } : {}),
+      updatedAt: nowIso(),
+    })
+    return delay(hydrateBuild(build))
+  },
+
   async results(params = {}) {
     let items = db.results.filter(canSee)
     if (params.rig) items = items.filter((r) => r.rigId === params.rig)
@@ -416,6 +507,7 @@ export const mockApi: Api = {
     const r: Result = {
       ...input, id: newId('res'), submitterId: u.id,
       componentQuantity: input.componentId ? input.componentQuantity ?? 1 : undefined,
+      execution: input.customRuntimeId ? 'modified' : 'stock',
       verification: { status: 'self_reported', confirmations: 0 }, moderation: { flags: 0, hidden: false },
       createdAt: nowIso(), updatedAt: nowIso(),
     }

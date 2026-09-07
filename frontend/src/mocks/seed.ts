@@ -1,4 +1,4 @@
-import type { FlagReason, HardwareType, Result, Rig, User } from '@/lib/api/types'
+import type { CustomRuntime, FlagReason, HardwareType, Result, Rig, User } from '@/lib/api/types'
 import { HARDWARE_BY_ID, MODEL_BY_ID, RUNTIMES } from '@/catalog'
 
 // Deterministic seed so the same rigs and numbers show up on every reload.
@@ -84,6 +84,7 @@ const ACCEL_TYPES: HardwareType[] = ['gpu', 'igpu', 'npu', 'cpu']
 export type SeedDb = {
   users: User[]
   rigs: Rig[]
+  customRuntimes: CustomRuntime[]
   results: Result[]
   confirmations: Map<string, Set<string>> // resultId -> userIds
   flags: Map<string, Map<string, FlagReason>> // resultId -> userId -> reason
@@ -131,6 +132,34 @@ export function createSeed(): SeedDb {
     }
   })
 
+  // Custom runtimes people have registered. Kept small: at launch there will be none, and the point is to prove the
+  // picker, the board link and the build page work, not to fill the site with forks.
+  const RUNTIME_FLAG_SEED: Record<string, string[]> = {
+    llamacpp: ['-fa 1 -ngl 99', '-fa 1 -ngl 99 -sm layer', 'SYCL backend, -fa 1'],
+    ollama: ['flash attention on, KV cache q8_0', 'num_gpu 99, num_batch 512'],
+    'openvino-genai': ['PERFORMANCE_HINT=LATENCY', 'PERFORMANCE_HINT=THROUGHPUT', 'dynamic quantization on'],
+    'ipex-llm': ['XMX on, sym_int4', 'low-bit sym_int4, bf16 kv'],
+    vllm: ['chunked prefill on, --max-num-seqs 8', 'FlashAttention backend'],
+    pytorch: ['torch.compile, SDPA flash', 'IPEX optimize, bf16'],
+    cascadia: ['int4 weights, batch 1'],
+    default: ['batch 1'],
+  }
+
+  const CUSTOM_RUNTIME_SEED: [id: string, owner: string, runtime: string, name: string, summary: string][] = [
+    ['cr-1', 'arcpilot', 'vllm', 'fused-attn-b60', 'Fused RMSNorm + QKV, tuned for Arc Pro B60 at batch 1'],
+    ['cr-2', 'lunarlaker', 'llamacpp', 'sycl-flash-decode', 'Flash-decode kernel for the SYCL backend, Xe2 only'],
+    ['cr-3', 'quantqueen', 'vllm', 'paged-kv-int8', 'INT8 KV cache with a paged allocator, Xe matrix path'],
+  ]
+  const customRuntimes: CustomRuntime[] = CUSTOM_RUNTIME_SEED.map(([id, owner, runtimeId, name, summary], i) => {
+    const created = daysAgo(45 - i * 9)
+    return {
+      id, ownerId: userByHandle[owner].id, owner: userByHandle[owner], runtimeId,
+      runtime: RUNTIMES.find((r) => r.id === runtimeId), name,
+      repoUrl: `https://github.com/${owner}/${runtimeId}`, summary,
+      createdAt: created, updatedAt: created,
+    }
+  })
+
   const results: Result[] = []
   const confirmations = new Map<string, Set<string>>()
   const flags = new Map<string, Map<string, FlagReason>>()
@@ -156,14 +185,17 @@ export function createSeed(): SeedDb {
       const runDate = daysAgo(Math.floor(rand() * 60))
       const id = `res-${++n}`
       const submitterId = rig.ownerId
-      const modified = rand() < 0.12
+      // A slice of runs use one of the seeded customRuntimes for that runtime, when there is one.
+      const buildsHere = customRuntimes.filter((b) => b.runtimeId === runtime.id)
+      const build = buildsHere.length && rand() < 0.22 ? buildsHere[Math.floor(rand() * buildsHere.length)] : undefined
       const handle = users.find((u) => u.id === submitterId)!.handle
       const result: Result = {
         id, submitterId, modelId: model, quant, runtimeId: runtime.id, runtimeVersion: pick(RUNTIME_VERSIONS[runtime.id]),
-        runtimeFlags: rand() < 0.4 ? pick(['-fa 1 -ngl 99', 'SYCL backend, KV cache q8_0', 'PERFORMANCE_HINT=THROUGHPUT', 'XMX on']) : undefined,
-        execution: modified ? 'modified' : 'stock',
-        modSourceUrl: modified ? `https://github.com/${handle}/${runtime.id}` : undefined,
-        modRevision: modified ? Math.floor(rand() * 0xfffffff).toString(16).padStart(7, '0') : undefined,
+        runtimeFlags: rand() < 0.4 ? pick(RUNTIME_FLAG_SEED[runtime.id] ?? RUNTIME_FLAG_SEED.default) : undefined,
+        customRuntimeId: build?.id,
+        customRuntime: build,
+        revision: build ? Math.floor(rand() * 0xfffffff).toString(16).padStart(7, '0') : undefined,
+        execution: build ? 'modified' : 'stock',
         rigId: rig.id,
         componentId: componentLevel ? target.hardwareId : undefined,
         componentQuantity: componentLevel ? usedQty : undefined,
@@ -200,5 +232,5 @@ export function createSeed(): SeedDb {
     r.moderation = { flags: f.size, hidden: true, reasons: ['implausible'] }
   }
 
-  return { users, rigs, results, confirmations, flags }
+  return { users, rigs, customRuntimes, results, confirmations, flags }
 }

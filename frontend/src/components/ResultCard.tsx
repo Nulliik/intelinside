@@ -4,6 +4,7 @@ import { ExternalLink } from 'lucide-react'
 import { Cell, CellGrid, Framed, inset } from '@/components/frame'
 import { RuntimeBadge } from '@/components/RuntimeBadge'
 import { ExecutionBadge } from '@/components/ExecutionBadge'
+import { CustomRuntimeLink } from '@/components/CustomRuntimeLink'
 import { VerificationBadge } from '@/components/VerificationBadge'
 import { UserLink } from '@/components/UserLink'
 import { HardwareLink } from '@/components/HardwareLink'
@@ -97,17 +98,18 @@ export function ResultCard({ result: r, models, quants, runtimes, rank, eyebrow 
             <ExecutionBadge result={r} />
           </span>
           {r.runtimeFlags ? <div className="mt-0.5 font-mono text-xs text-muted-foreground text-pretty">{r.runtimeFlags}</div> : null}
-          {r.execution === 'modified' && (r.modSourceUrl || r.modRevision) ? (
-            <div className="mt-0.5 font-mono text-xs text-muted-foreground text-pretty">
-              {r.modSourceUrl ? (
-                <a href={r.modSourceUrl} target="_blank" rel="noreferrer" className="hover:underline underline-offset-4">
-                  {r.modSourceUrl.replace(/^https?:\/\/(www\.)?/, '')}
-                </a>
-              ) : null}
-              {r.modSourceUrl && r.modRevision ? ' @ ' : null}
-              {r.modRevision}
-            </div>
-          ) : null}
+        </Field>
+        {/* Always present, so the grid is a full 12 cells either way — 4 rows at three columns, 6 at two — and a
+            stock run answers the question rather than staying silent about it. */}
+        <Field label="Custom runtime">
+          {r.customRuntime ? (
+            <>
+              <CustomRuntimeLink build={r.customRuntime} />
+              {r.revision ? <div className="mt-0.5 font-mono text-xs text-muted-foreground">@ {r.revision}</div> : null}
+            </>
+          ) : (
+            <span className="text-muted-foreground">Stock</span>
+          )}
         </Field>
         <Field label="Prompt tok/s"><span className="font-mono tnum">{fmtTps(r.promptTps)}</span></Field>
         <Field label="Time to first token"><span className="font-mono tnum">{fmtMs(r.ttftMs)}</span></Field>

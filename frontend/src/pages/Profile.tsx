@@ -1,10 +1,11 @@
-import { useParams, useSearchParams } from 'react-router-dom'
-import { ExternalLink } from 'lucide-react'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { ExternalLink, GitFork } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { UserAvatar } from '@/components/UserAvatar'
 import { GitHubMark } from '@/components/GitHubMark'
 import { RigCard } from '@/components/cards'
 import { ResultsTable } from '@/components/ResultsTable'
+import { customRuntimeHref } from '@/components/CustomRuntimeLink'
 import { EmptyState } from '@/components/EmptyState'
 import { ErrorState } from '@/components/ErrorState'
 import { Block, Cell, CellGrid, PillTabs, Section, Toolbar, inset } from '@/components/frame'
@@ -16,7 +17,7 @@ import { fmtDate, fmtInt } from '@/lib/format'
 import { QUANT_BY_ID } from '@/catalog'
 import { cn } from '@/lib/utils'
 
-type Tab = 'rigs' | 'results'
+type Tab = 'rigs' | 'results' | 'custom'
 
 function Stat({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -33,7 +34,7 @@ export default function Profile() {
   const tab = (sp.get('tab') as Tab) || 'rigs'
   const cat = useCatalog()
   const data = useAsync(
-    () => Promise.all([api.user(handle), api.userRigs(handle), api.userResults(handle)]),
+    () => Promise.all([api.user(handle), api.userRigs(handle), api.userResults(handle), api.customRuntimes({ owner: handle })]),
     [handle],
   )
   usePageTitle(handle ? `@${handle}` : 'Profile')
@@ -49,7 +50,7 @@ export default function Profile() {
         <Skeleton className="h-96" />
       </Block>
     )
-  const [user, rigs, results] = data.data
+  const [user, rigs, results, customRuntimes] = data.data
   const s = user.stats
   const model = s?.bestRank ? cat.data.models.find((m) => m.id === s.bestRank!.modelId) : undefined
   return (
@@ -87,6 +88,7 @@ export default function Profile() {
             items={[
               { value: 'rigs', label: 'Rigs', count: rigs.items.length },
               { value: 'results', label: 'Results', count: results.items.length },
+              { value: 'custom', label: 'Custom runtimes', count: customRuntimes.items.length },
             ]}
           />
         </Toolbar>
@@ -99,6 +101,25 @@ export default function Profile() {
             </CellGrid>
           ) : (
             <EmptyState title="No rigs yet" />
+          )
+        ) : tab === 'custom' ? (
+          customRuntimes.items.length ? (
+            <CellGrid cols={3}>
+              {customRuntimes.items.map((b) => (
+                <Cell key={b.id}>
+                  <Link to={customRuntimeHref(b)} className="inline-flex items-center gap-2 font-heading text-base font-semibold text-warning hover:underline underline-offset-4">
+                    <GitFork className="size-3.5 shrink-0" /> {b.name}
+                  </Link>
+                  <p className="mt-2 text-sm text-muted-foreground text-pretty">{b.summary}</p>
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    on {b.runtime?.name ?? b.runtimeId} · <span className="font-mono tnum">{fmtInt(b.resultsCount ?? 0)}</span>{' '}
+                    {b.resultsCount === 1 ? 'result' : 'results'}
+                  </div>
+                </Cell>
+              ))}
+            </CellGrid>
+          ) : (
+            <EmptyState title="No custom runtimes yet" description="A custom runtime is one this person changed — a custom kernel or op, a patch, a fork." />
           )
         ) : results.items.length ? (
           <ResultsTable results={results.items} runtimes={cat.data.runtimes} models={cat.data.models} quants={cat.data.quants} showSubmitter={false} />

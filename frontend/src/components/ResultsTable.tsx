@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { RuntimeBadge } from '@/components/RuntimeBadge'
 import { ExecutionBadge } from '@/components/ExecutionBadge'
+import { CustomRuntimeLink } from '@/components/CustomRuntimeLink'
 import { VerificationBadge } from '@/components/VerificationBadge'
 import { UserLink } from '@/components/UserLink'
 import { HardwareLink } from '@/components/HardwareLink'
@@ -70,7 +71,7 @@ export function ResultsTable({ results, runtimes, models, quants, showHardware =
                 </TableCell>
               ) : null}
               <TableCell className={td}>
-                <span className="inline-flex items-center gap-1 whitespace-nowrap"><RuntimeBadge runtime={rt[r.runtimeId]} version={r.runtimeVersion} /><ExecutionBadge result={r} iconOnly /></span>
+                <span className="inline-flex items-center gap-1 whitespace-nowrap"><RuntimeBadge runtime={rt[r.runtimeId]} version={r.runtimeVersion} />{r.customRuntime ? <CustomRuntimeLink build={r.customRuntime} className="text-xs" /> : <ExecutionBadge result={r} iconOnly />}</span>
               </TableCell>
               <TableCell className={`${td} text-right font-mono text-base font-medium tnum`}>
                 <Link to={`/results/${r.id}`} onClick={(e) => e.stopPropagation()} className="rounded-sm hover:underline underline-offset-4" aria-label={`${fmtTps(r.decodeTps)} tokens per second, open result`}>
