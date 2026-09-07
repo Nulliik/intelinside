@@ -91,13 +91,38 @@ export type Moderation = { flags: number; hidden: boolean; flaggedByMe?: boolean
 export const RUNTIME_FLAGS_MAX = 200
 /** Longest source-revision string: a commit hash, a tag, or a build id. */
 export const REVISION_MAX = 80
+export const BUILD_SUMMARY_MAX = 280
 
 /**
- * Whether the number came off a released runtime or a changed one. A fork with a hand-tuned attention kernel can beat
- * stock by a wide margin, which reads as a hardware win unless the board says otherwise, so boards rank stock alone
- * by default and modified results are opt-in.
+ * Whether the number came off a released runtime or a changed one. Derived from whether the result names a build:
+ * boards rank stock alone by default, so a fork with a hand-tuned kernel is never mistaken for faster hardware.
  */
 export type ExecutionStack = 'stock' | 'modified'
+
+/**
+ * A changed runtime someone owns: a fork, a patch, a custom kernel. The base runtime is catalog data; this is user
+ * content, shaped like a rig. Unlike a rig, a result may reference a build its submitter does not own — a public fork
+ * is a real thing anyone can run, and one object per fork is what keeps those runs comparable.
+ */
+export type CustomRuntime = {
+  id: string
+  ownerId: string
+  owner?: User
+  runtimeId: string
+  runtime?: Runtime
+  name: string
+  repoUrl: string
+  /** One line on what changed. Shown on board rows and in the picker, so it is required. */
+  summary: string
+  notes?: string
+  createdAt: string
+  updatedAt: string
+  resultsCount?: number
+  rigsCount?: number
+  bestTps?: number
+}
+export type CustomRuntimeInput = Pick<CustomRuntime, 'runtimeId' | 'name' | 'repoUrl' | 'summary' | 'notes'>
+export type CustomRuntimeDetail = CustomRuntime & { results: Result[]; chart: ChartBar[] }
 
 export type Result = {
   id: string
@@ -109,12 +134,13 @@ export type Result = {
   runtimeVersion: string
   /** Flags and settings that change the number: backend, flash attention, KV cache quantization. Free text. */
   runtimeFlags?: string
-  /** Stock unless the runtime itself was changed. */
+  /** The build this run used. Absent means stock. */
+  customRuntimeId?: string
+  customRuntime?: CustomRuntime
+  /** Builds only: the exact revision that produced this number — a commit, a tag, or a build id. */
+  revision?: string
+  /** Derived from customRuntimeId; kept on the contract so boards and badges read one field. */
   execution: ExecutionStack
-  /** Modified only: the fork or repo the changed runtime lives in. */
-  modSourceUrl?: string
-  /** Modified only: the exact revision that produced this number — a commit, a tag, or a build id. */
-  modRevision?: string
   rigId: string
   rig?: RigSummary
   componentId?: string
@@ -136,9 +162,11 @@ export type Result = {
   updatedAt: string
 }
 
+/** `execution` and the hydrated `customRuntime` are derived from `customRuntimeId`, so a writer never sends them. */
 export type ResultInput = Omit<
   Result,
-  'id' | 'submitterId' | 'submitter' | 'rig' | 'component' | 'verification' | 'moderation' | 'createdAt' | 'updatedAt'
+  | 'id' | 'submitterId' | 'submitter' | 'rig' | 'component' | 'verification' | 'moderation' | 'createdAt' | 'updatedAt'
+  | 'execution' | 'customRuntime' | 'componentHost'
 >
 
 export type BoardKind = 'rigs' | 'components'
@@ -247,6 +275,11 @@ export interface Api {
   createRig(input: RigInput): Promise<Rig>
   updateRig(id: string, input: Partial<RigInput>): Promise<Rig>
   deleteRig(id: string): Promise<void>
+  /** Every build for a runtime, the submitter's own first. Public read, so signing in is not required. */
+  customRuntimes(params?: { runtime?: string; owner?: string }): Promise<Page<CustomRuntime>>
+  customRuntime(id: string): Promise<CustomRuntimeDetail>
+  createCustomRuntime(input: CustomRuntimeInput): Promise<CustomRuntime>
+  updateCustomRuntime(id: string, input: Partial<CustomRuntimeInput>): Promise<CustomRuntime>
   // results
   results(params?: ResultsParams): Promise<Page<Result>>
   result(id: string): Promise<ResultDetail>

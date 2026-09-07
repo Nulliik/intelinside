@@ -5,6 +5,7 @@ import Models from '@/pages/Models'
 import Board from '@/pages/Board'
 import Hardware from '@/pages/Hardware'
 import HardwareDetail from '@/pages/HardwareDetail'
+import BuildDetail from '@/pages/BuildDetail'
 import Rigs from '@/pages/Rigs'
 import RigDetail from '@/pages/RigDetail'
 import ResultDetail from '@/pages/ResultDetail'
@@ -24,6 +25,7 @@ export default function App() {
         <Route path="/models/:modelId/:quant" element={<Board />} />
         <Route path="/hardware" element={<Hardware />} />
         <Route path="/hardware/:hardwareId" element={<HardwareDetail />} />
+        <Route path="/runtimes/:runtimeId/builds/:buildId" element={<BuildDetail />} />
         <Route path="/rigs" element={<Rigs />} />
         <Route path="/rigs/new" element={<RigEditor />} />
         <Route path="/rigs/:rigId" element={<RigDetail />} />
