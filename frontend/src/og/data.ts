@@ -13,7 +13,7 @@ export function ogEnv(): OgEnv | null {
   return supabaseUrl && supabaseKey ? { supabaseUrl: supabaseUrl.replace(/\/$/, ''), supabaseKey } : null
 }
 
-export type Owner = { handle: string; initials: string; avatarUrl?: string }
+export type Owner = { handle: string; initials: string }
 
 export type ResultCardData = {
   id: string
@@ -67,9 +67,9 @@ type ResultRow = {
   updated_at: string
 }
 type BoardRow = Pick<ResultRow, 'id' | 'rig_id' | 'component_id' | 'component_quantity' | 'decode_tps' | 'run_date'>
-type RigRow = { id: number | string; owner_id: string; name: string; os: string; photo_url: string | null; updated_at: string }
+type RigRow = { id: number | string; owner_id: string; name: string; os: string; photo_path: string | null; updated_at: string }
 type ComponentRow = { hardware_id: string; quantity: number }
-type ProfileRow = { id: string; handle: string; name: string | null; avatar_url: string }
+type ProfileRow = { id: string; handle: string; name: string | null }
 
 const validId = (id: string) => /^\d{1,18}$/.test(id)
 
@@ -88,7 +88,13 @@ function owner(profile: ProfileRow | undefined): Owner {
   const source = profile?.name?.trim() || handle
   const words = source.split(/\s+/).filter(Boolean)
   const initials = (words.length > 1 ? words[0][0] + words[words.length - 1][0] : source.slice(0, 2)).toUpperCase()
-  return { handle, initials, avatarUrl: profile?.avatar_url || undefined }
+  return { handle, initials }
+}
+
+function rigPhotoUrl(env: OgEnv, path: string | null): string | undefined {
+  if (!path) return undefined
+  const encodedPath = path.split('/').map(encodeURIComponent).join('/')
+  return `${env.supabaseUrl}/storage/v1/object/public/rig-photos/${encodedPath}`
 }
 
 /** "Intel Arc Pro B70": the vendor in front unless the name already carries it. */
@@ -117,8 +123,8 @@ export async function loadResultCard(id: string, env: OgEnv): Promise<ResultCard
   if (!row || row.hidden) return null
   const kind = row.component_id ? 'components' : 'rigs'
   const [rig, profile, board] = await Promise.all([
-    rest<RigRow[]>(env, `rigs?id=eq.${row.rig_id}&select=id,owner_id,name,os,photo_url,updated_at`).then(first),
-    rest<ProfileRow[]>(env, `profiles?id=eq.${encodeURIComponent(row.submitter_id)}&select=id,handle,name,avatar_url`).then(first),
+    rest<RigRow[]>(env, `rigs?id=eq.${row.rig_id}&select=id,owner_id,name,os,photo_path,updated_at`).then(first),
+    rest<ProfileRow[]>(env, `profiles?id=eq.${encodeURIComponent(row.submitter_id)}&select=id,handle,name`).then(first),
     rest<BoardRow[]>(
       env,
       `results?model_id=eq.${encodeURIComponent(row.model_id)}&quant_id=eq.${encodeURIComponent(row.quant_id)}&hidden=is.false&component_id=${kind === 'components' ? 'not.is.null' : 'is.null'}&select=id,rig_id,component_id,component_quantity,decode_tps,run_date`,
@@ -170,11 +176,11 @@ export function cardParts(components: ComponentRow[]): RigCardData['parts'] {
 
 export async function loadRigCard(id: string, env: OgEnv): Promise<RigCardData | null> {
   if (!validId(id)) return null
-  const rig = first(await rest<RigRow[]>(env, `rigs?id=eq.${id}&select=id,owner_id,name,os,photo_url,updated_at`))
+  const rig = first(await rest<RigRow[]>(env, `rigs?id=eq.${id}&select=id,owner_id,name,os,photo_path,updated_at`))
   if (!rig) return null
   const [components, profile, results] = await Promise.all([
     rest<ComponentRow[]>(env, `rig_components?rig_id=eq.${id}&select=hardware_id,quantity`),
-    rest<ProfileRow[]>(env, `profiles?id=eq.${encodeURIComponent(rig.owner_id)}&select=id,handle,name,avatar_url`).then(first),
+    rest<ProfileRow[]>(env, `profiles?id=eq.${encodeURIComponent(rig.owner_id)}&select=id,handle,name`).then(first),
     rest<Pick<ResultRow, 'model_id' | 'quant_id' | 'runtime_id' | 'decode_tps'>[]>(env, `results?rig_id=eq.${id}&hidden=is.false&select=model_id,quant_id,runtime_id,decode_tps`),
   ])
   const bestRow = results.reduce<(typeof results)[number] | undefined>((best, row) => (!best || Number(row.decode_tps) > Number(best.decode_tps) ? row : best), undefined)
@@ -193,7 +199,7 @@ export async function loadRigCard(id: string, env: OgEnv): Promise<RigCardData |
       : undefined,
     resultsCount: results.length,
     owner: owner(profile),
-    photoUrl: rig.photo_url || undefined,
+    photoUrl: rigPhotoUrl(env, rig.photo_path),
     updatedAt: rig.updated_at,
   }
 }

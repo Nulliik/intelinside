@@ -18,8 +18,6 @@ export type CardAssets = {
   runtimeLogo?: string
   /** The rig photo, already fetched and inlined; absent when there is none or it could not be read. */
   photo?: string
-  /** The owner's avatar, inlined; absent falls back to initials. */
-  avatar?: string
 }
 
 const FONTS: [FontSpec['name'], FontSpec['weight'], string][] = [
@@ -121,14 +119,13 @@ export function runtimeLogoAsset(logoUrl: string | undefined): string | undefine
 export async function loadCardAssets(
   source: AssetSource,
   background: 'dots-result.svg' | 'dots-side.svg',
-  images: { photo?: string; avatar?: string; runtimeLogo?: string } = {},
+  images: { photo?: string; runtimeLogo?: string } = {},
 ): Promise<CardAssets> {
-  const [dots, mark, photo, avatar, runtimeLogo] = await Promise.all([
+  const [dots, mark, photo, runtimeLogo] = await Promise.all([
     source.text(background),
     source.text('mark.svg'),
     fetchImageDataUrl(images.photo),
-    fetchImageDataUrl(images.avatar),
     images.runtimeLogo ? source.text(images.runtimeLogo).then(svgDataUrl, () => undefined) : undefined,
   ])
-  return { background: svgDataUrl(dots), mark: svgDataUrl(mark), runtimeLogo, photo, avatar }
+  return { background: svgDataUrl(dots), mark: svgDataUrl(mark), runtimeLogo, photo }
 }
