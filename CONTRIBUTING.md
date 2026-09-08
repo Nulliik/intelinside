@@ -122,7 +122,7 @@ The code has a voice; match the file you are editing rather than a general stand
 
 ### Database changes
 
-Migrations live in `supabase/migrations/` and are applied to staging before production. If your change adds
+Migrations live in `supabase/migrations/`. Validate them with the isolated local tests before a reviewed production deployment; the configured hosted database is production. If your change adds
 catalog rows, regenerate the seed rather than hand-writing SQL:
 
 ```bash

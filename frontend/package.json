@@ -5,7 +5,6 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "build:staging": "tsc -b && vite build --mode staging",
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "marks": "node scripts/generate-marks.mjs",
@@ -14,10 +13,9 @@
     "results:validate": "node scripts/validate-results.mjs",
     "og:assets": "node scripts/generate-og-assets.mjs",
     "og:preview": "node scripts/og-preview.mjs",
-    "supabase:db:push:staging": "supabase --workdir .. db push --project-ref ujlacyedspjfekotemmd",
-    "supabase:db:push:prod:dry-run": "supabase --workdir .. db push --project-ref xnzhdnudmgquuwdpuisy --dry-run",
-    "supabase:db:reset:staging": "bash scripts/reset-staging.sh",
-    "results:test": "node --test scripts/tests/pr-results.test.mjs"
+    "supabase:db:push:prod:dry-run": "supabase --workdir .. db push --project-ref ujlacyedspjfekotemmd --dry-run --skip-vault",
+    "results:test": "node --test scripts/tests/pr-results.test.mjs",
+    "supabase:db:push:prod": "supabase --workdir .. db push --project-ref ujlacyedspjfekotemmd --skip-vault"
   },
   "license": "UNLICENSED",
   "private": true,

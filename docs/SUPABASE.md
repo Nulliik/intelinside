@@ -1,84 +1,65 @@
-# Supabase environments
+# Supabase production project
 
-The project uses two independent hosted Supabase projects in the `CLabs`
-organization. No local Supabase stack is required.
+This repository uses one hosted Supabase project in the `CLabs` organization:
 
 | Environment | Project | Project ref | Region |
 | --- | --- | --- | --- |
-| Staging | `intelinside` | `ujlacyedspjfekotemmd` | `us-east-1` |
-| Production | `intelinside-prod` | `xnzhdnudmgquuwdpuisy` | `us-east-1` |
+| Production | `intelinside` | `ujlacyedspjfekotemmd` | `us-east-1` |
+
+This is the live production database, including when accessed from local development.
+There is no configured staging project or hosted reset command.
 
 ## Frontend selection
 
-- `npm run dev` uses `frontend/.env`, which points to staging.
-- `npm run build:staging` produces a staging build.
+- `npm run dev` uses `frontend/.env`. Its configured Supabase project is production.
 - `npm run build` uses `frontend/.env.production.local` when it is present.
-- Hosted deployments should set `VITE_SUPABASE_URL` and
-  `VITE_SUPABASE_PUBLISHABLE_KEY` in the deployment platform rather than rely
-  on ignored local files.
+- Hosted deployments should set `VITE_SUPABASE_URL` to
+  `https://ujlacyedspjfekotemmd.supabase.co` and `VITE_SUPABASE_PUBLISHABLE_KEY`
+  to that project's browser-safe key.
+- Use `VITE_API_MODE=mock` for isolated offline development, or `supabase` to
+  access the production database. Do not run destructive tests against production.
 
 Only the publishable key belongs in a Vite environment variable. Never put a
-Supabase secret or legacy service-role key in a `VITE_*` variable.
-
-Set `VITE_API_MODE=supabase` to read and write the shared hosted database. The
-mock adapter remains available for offline development but is not used by the
-staging configuration.
+Supabase secret or service-role key in a `VITE_*` variable.
 
 Rig writes call the authenticated `create_rig` and `update_rig` database
-functions so the rig and its component rows are changed atomically. Result
+functions so the rig and its component rows are changed atomically. Browser result
 writes use the Supabase table API directly. RLS enforces ownership for both.
-Text length and profanity checks currently run in the browser and are therefore
-user-experience checks, not a server-enforced security boundary.
-
-A fresh clone needs a `frontend/.env` based on `.env.example`, populated with
-the staging URL and browser-safe publishable key. The shared staging database
-currently stores profiles, rigs, rig components, results, confirmations, and
-flags. Models, quantizations, runtimes, and hardware are seeded by migrations.
+Text length and profanity checks run in the browser and trusted PR ingestion
+script; they are not a database-enforced security boundary.
 
 ## Database changes
 
-Run commands from `frontend/`:
+Migrations live in `supabase/migrations/`. Test locally with
+`npm --prefix frontend run results:test`, then review pending production migrations:
 
 ```sh
-npm run supabase:db:push:staging
-npm run supabase:db:push:prod:dry-run
+npm --prefix frontend run supabase:db:push:prod:dry-run
 ```
 
-Production deployment should remain a reviewed CI/release action. There is no
-direct production reset command in this repository.
-
-## Reset staging
-
-The reset command contains a fixed staging project ref, verifies that it differs
-from production, requires an explicit confirmation phrase, and disables seeds:
+Once the pending changes have been reviewed and production deployment is authorized:
 
 ```sh
-npm run supabase:db:reset:staging -- RESET-STAGING
+npm --prefix frontend run supabase:db:push:prod
 ```
 
-This resets user-created database objects and reapplies migrations. Auth users
-and stored files are separate managed services; if a complete environment wipe
-is required, delete and recreate only the staging project instead.
+Both commands explicitly target `ujlacyedspjfekotemmd` and skip unrelated Vault
+updates. There is no production reset script. Never treat this project as disposable.
 
 ## GitHub OAuth
 
-One GitHub OAuth app can serve both environments by registering both Supabase
-callback URLs. Separate OAuth apps are optional if stricter credential isolation
-is preferred:
+Register this Supabase callback URL in the GitHub OAuth app:
 
-- Staging: `https://ujlacyedspjfekotemmd.supabase.co/auth/v1/callback`
-- Production: `https://xnzhdnudmgquuwdpuisy.supabase.co/auth/v1/callback`
+`https://ujlacyedspjfekotemmd.supabase.co/auth/v1/callback`
 
-The GitHub client secrets must be stored in Supabase Auth configuration, never
-in the React application or repository. Site URLs and allowed redirect URLs
-must be configured after the staging and production frontend URLs are known.
+Store the GitHub client secret in Supabase Auth configuration, never in the
+React application or repository. Configure the production site URL and allowed
+redirect URLs in Supabase Auth.
 
-For local staging tests, register the staging callback URL above in the GitHub
-OAuth app, then enable GitHub in the staging project's Auth provider settings.
-The frontend sends users back to `http://localhost:5173/auth/callback` (or the
-equivalent `127.0.0.1` URL) and restores the page they originally requested.
+For local development using production OAuth, allow-list
+`http://localhost:5173/auth/callback` (or the equivalent `127.0.0.1` URL).
 Vite is pinned to port 5173 so it fails clearly instead of silently choosing a
-port that Supabase has not allow-listed.
+port that Supabase has not allow-listed. Local sign-in still accesses production data.
 
 ## Results submitted through PRs
 
@@ -121,9 +102,10 @@ Rig registration and custom-runtime registration remain site operations. Referen
 catalog entries must already exist in both the trusted default-branch catalog and
 the target database; merge/deploy catalog additions before submitting runs that use them.
 
-Use staging first with a real GitHub OAuth account and owned rig to check the full
-GitHub/Supabase integration. This change does not provision secrets, alter branch
-protection, or automatically deploy migrations to production.
+The configured project is production. Use the isolated local ingestion tests for
+validation before deploying migrations. A live integration test requires an
+explicitly intended benchmark submission from a real GitHub OAuth account and
+owned rig; do not use production as a disposable test database.
 
 Run `npm --prefix frontend run results:test` for the local ingestion tests. They
 load the application migrations into an isolated PGlite PostgreSQL instance with
