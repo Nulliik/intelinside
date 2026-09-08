@@ -17,7 +17,7 @@
     "results:test": "node --test scripts/tests/pr-results.test.mjs",
     "supabase:db:push:prod": "supabase --workdir .. db push --project-ref ujlacyedspjfekotemmd --skip-vault"
   },
-  "license": "UNLICENSED",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "dependencies": {
