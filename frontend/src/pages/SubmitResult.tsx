@@ -315,7 +315,7 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
     setErrors({})
     setForm({ ...EMPTY, rigId: rigItems?.length === 1 ? rigItems[0].id : '' })
   }
-  // `?pr=N`, the link the repo's check comments on each pull request, prefills once the rigs are known.
+  // Legacy `?pr=N` links prefill once the rigs are known. New PRs are submitted on merge.
   const prParam = sp.get('pr')
   useEffect(() => {
     if (mode !== 'create' || !prParam || !rigItems || prAuto) return
@@ -595,7 +595,7 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
               ))}
             </ul>
           ) : (
-            <p className="text-xs text-muted-foreground">The form is filled in. Check the numbers, then submit; the pull request is the evidence link.</p>
+            <p className="text-xs text-muted-foreground">This PR will be submitted automatically when merged. Submitting this form too can duplicate the run.</p>
           )}
         </div>
       ) : null}
@@ -629,7 +629,7 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
             <a href={REPO_URL} target="_blank" rel="noreferrer" className="text-foreground underline underline-offset-4">
               {REPO}
             </a>{' '}
-            and open a pull request. A check validates it against the catalog and comments with a link that opens this form filled in from your file, with the pull request as the evidence link.
+            and open a pull request. A check verifies the result, your linked GitHub account, and rig ownership. Merging submits it automatically, with the pull request as evidence; no web form is needed.
           </p>
           <p>
             The format is in the repo's{' '}
@@ -724,7 +724,7 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
                       ))}
                     </ul>
                   ) : (
-                    <p className="mt-1 text-xs text-muted-foreground">Check the numbers, then submit. The pull request is the evidence link.</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Merging this PR submits the result automatically. Avoid submitting the same run twice.</p>
                   )}
                 </div>
                 <div className="flex shrink-0 items-center gap-1">

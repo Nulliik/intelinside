@@ -1,6 +1,6 @@
 <!--
 Adding a result file under results/<your-handle>/? Everything below except the first line is optional —
-the check will comment with a link that finishes the submission for you.
+the check verifies your account and result. Merging imports it automatically; no web form is needed.
 -->
 
 ## What this changes

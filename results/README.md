@@ -4,7 +4,7 @@ Every result on the site can also live here as a file, and a file here can becom
 
 ## Add a result from a file
 
-1. Sign in on the site once so your GitHub handle has a profile, and register the rig you ran on. The rig's URL ends in a number; that number (or the rig's exact name) goes in the file.
+1. Sign in on the site once so your GitHub handle has a profile, and register the rig you ran on. The rig's URL ends in a number; that number (or the rig's exact name) goes in the file. Open the PR using this same GitHub account; an agent can use your authenticated GitHub CLI session. Bot-authored PRs cannot be attributed to your account.
 2. Add `results/<your-github-handle>/<name>.json`:
 
    ```json
@@ -29,10 +29,10 @@ Every result on the site can also live here as a file, and a file here can becom
    ```
 
    `runtimeFlags` is optional free text: the settings and build options that would change the number if someone
-   rebuilt it. Leave `component` out for a whole-rig result. Ids come from [the catalog](../frontend/src/catalog/); the site's hardware pages show each part's id in the URL. Missing a part? [Add it](../frontend/src/catalog/README.md) in the same pull request.
+   rebuilt it. Leave `component` out for a whole-rig result. Ids come from [the catalog](../frontend/src/catalog/); the site's hardware pages show each part's id in the URL. Missing a part? [Add it](../frontend/src/catalog/README.md) first and have a maintainer deploy the catalog to the site and database before submitting your result.
 
-3. Open a pull request. A check validates the file against the catalog and comments with a link like `/submit?pr=123`.
-4. Open that link. The submit form fills itself from your file, with the pull request as the evidence link. Check the numbers and submit. The result ranks the moment it is in.
+3. Open a pull request against `main`. The **Result ingestion** check validates the JSON, matches the PR author’s numeric GitHub ID to their GitHub OAuth identity, and checks rig ownership and database constraints. If no linked account exists, the check asks you to sign up with that GitHub account and rerun it.
+4. A maintainer merges the PR. The workflow reads the merged files and inserts all new results into Supabase in one transaction, attributed to your account with the PR as evidence. No submit form is needed. The PR comment reports the result IDs or the error to fix.
 
 ### Stock or a custom runtime
 
@@ -58,17 +58,22 @@ Boards rank stock runs against each other and keep custom runtimes out unless a 
 changed stack is never mistaken for faster silicon. Custom runtimes are not lesser and nothing is hidden — they answer a
 different question, rank among each other on the same board, and collect on their own pages.
 
-The pull request stays as the public record of the run. Merging it is up to the maintainers and changes nothing on the site.
+The pull request stays as the public record of the run. Closing without merging does not submit anything. Account signup and rig registration are still one-time site steps. Register custom runtimes on the site too, when needed.
 
-The form also accepts a pull request link or number by hand, at the top of the submit page.
+If ingestion fails after merge, no partial batch is committed. Fix the missing account, rig, or catalog configuration, then ask a maintainer to rerun **Validate and ingest result files**, or run it manually with the PR number. Retries read the original merge commit, not the current branch contents. A correction to invalid merged JSON requires a new result file in a new PR.
+
+The legacy form can still prefill from a PR. Do not also submit it there: merge now submits it for you. If you already submitted through that form, add a `result` URL to the JSON to make it an archive.
 
 ## Write the file from a result
 
-Every freshly submitted result offers **Add to the results repo**, which opens GitHub's new-file page with the JSON filled in, path and all. GitHub forks the repo for you if you cannot push to it. The file then carries a `result` link back to the live entry.
+Every freshly submitted result offers **Add to the results repo**, which opens GitHub's new-file page with the JSON filled in, path and all. GitHub forks the repo for you if you cannot push to it. The file then carries a `result` link back to the live entry. Files with this field are archives and do not create or update database rows on merge.
 
 ## Rules
 
 - Files live at `results/<your-github-handle>/<name>.json`. The check fails if the folder does not match the pull request author.
 - Results are your own runs on your own rig. The site enforces rig ownership when the result is submitted.
-- One result per file. Several files in one pull request are fine; the form lets you pick which one to fill from.
-- [`schema.json`](schema.json) describes the shape for editors. Run the same check locally with `npm --prefix frontend run results:validate -- results/<handle>/<name>.json`.
+- One result per new file, at most 100 per PR and 64 KiB per file. The entire batch succeeds or fails together.
+- Each imported repository path is recorded permanently. Rerunning the same PR is safe, including after a live result is deleted. Use a fresh path for each new run; renames and edits cannot submit or overwrite runs. Edit existing live results on the site. Removing a file never deletes a live result.
+- Names must resolve to exactly one rig owned by you or one custom runtime for the selected runtime. Prefer numeric IDs when names are ambiguous.
+- A successful pre-merge check is a point-in-time validation; merge rechecks the account and current database state.
+- [`schema.json`](schema.json) describes the shape for editors. Check the shape and catalog locally with `npm --prefix frontend run results:validate -- results/<handle>/<name>.json`. OAuth identity and database checks run in the GitHub workflow.

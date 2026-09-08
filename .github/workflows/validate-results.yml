@@ -1,59 +1,45 @@
-name: Validate result files
+name: Validate and ingest result files
 
-# Result files added by pull request (results/<handle>/<name>.json) are checked with the same parser the submit form
-# uses, then the PR gets a comment with the link that fills the form in. See results/README.md.
 on:
-  pull_request:
-    paths:
-      - 'results/**'
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review, edited, closed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to recheck, or ingest if already merged'
+        required: true
+        type: string
 
 permissions:
   contents: read
   pull-requests: write
+  statuses: write
+
+concurrency:
+  group: result-ingestion-${{ github.event.pull_request.number || inputs.pr_number }}
+  cancel-in-progress: false
 
 jobs:
-  validate:
+  results:
+    if: github.repository == 'labscommunity/intelinside'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
+      # Privileged workflow: NEVER check out the PR head or run its scripts/config/dependencies.
+      # Even manual retries use trusted code from the repository's default branch.
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-      - run: npm ci --prefix frontend
-      - name: List changed result files
-        id: changed
-        run: |
-          files=$(git diff --name-only --diff-filter=AM "origin/${{ github.base_ref }}...HEAD" -- 'results/*/*.json' | tr '\n' ' ')
-          echo "files=$files" >> "$GITHUB_OUTPUT"
-      - name: Validate
-        id: validate
-        continue-on-error: true
-        run: node frontend/scripts/validate-results.mjs --author "${{ github.event.pull_request.user.login }}" --report report.md ${{ steps.changed.outputs.files }}
-      - name: Comment on the pull request
-        # Forks get a read-only token, so the comment is best effort; the check status still shows the outcome.
-        continue-on-error: true
-        uses: actions/github-script@v7
+      - run: npm ci --prefix frontend --ignore-scripts
+      - name: Validate or ingest the immutable PR result files
+        run: node frontend/scripts/pr-results.mjs
         env:
-          OUTCOME: ${{ steps.validate.outcome }}
+          GITHUB_TOKEN: ${{ github.token }}
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SITE_URL: ${{ vars.SITE_URL || 'https://intelinside-blond.vercel.app' }}
-        with:
-          script: |
-            const fs = require('fs')
-            const marker = '<!-- intelinside-results -->'
-            const report = fs.existsSync('report.md') ? fs.readFileSync('report.md', 'utf8') : 'No result files found.'
-            const number = context.payload.pull_request.number
-            const link = `${process.env.SITE_URL}/submit?pr=${number}`
-            const body = process.env.OUTCOME === 'success'
-              ? `${marker}\n${report}\n**Finish the submission:** [${link}](${link}) fills the form in from this pull request and uses it as the evidence link. Check the numbers, submit, and the result ranks right away.`
-              : `${marker}\n${report}\nFix the file and push again; this check reruns. The format is in [results/README.md](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/main/results/README.md).`
-            const { data: comments } = await github.rest.issues.listComments({ ...context.repo, issue_number: number, per_page: 100 })
-            const existing = comments.find((c) => c.body && c.body.startsWith(marker))
-            if (existing) await github.rest.issues.updateComment({ ...context.repo, comment_id: existing.id, body })
-            else await github.rest.issues.createComment({ ...context.repo, issue_number: number, body })
-      - name: Fail when a file has problems
-        if: steps.validate.outcome != 'success'
-        run: exit 1

@@ -1,5 +1,3 @@
-/Users/jzck/.zshenv:.:2: no such file or directory: /Users/jzck/.cargo/env
-/Users/jzck/.zshenv:.:2: no such file or directory: /Users/jzck/.cargo/env
 begin;
 
 create schema if not exists private;
