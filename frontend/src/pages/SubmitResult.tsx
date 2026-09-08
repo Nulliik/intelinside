@@ -1,13 +1,12 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { ChevronDown, GitPullRequest, Info, Plus, Share2 } from 'lucide-react'
+import { GitPullRequest, Plus, Share2, Terminal } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { AgentPromptDialog } from '@/components/AgentPromptDialog'
 import { CustomRuntimeForm } from '@/components/CustomRuntimeForm'
 import { Textarea } from '@/components/ui/textarea'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
@@ -21,13 +20,12 @@ import { ErrorState } from '@/components/ErrorState'
 import { Block, PillTabs, Section, inset } from '@/components/frame'
 import { useAsync } from '@/hooks/useAsync'
 import { useCatalog } from '@/hooks/useCatalog'
-import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { useSession } from '@/hooks/useSession'
 import { api } from '@/lib/api'
-import { REPO, REPO_URL } from '@/lib/brand'
+import { REPO } from '@/lib/brand'
 import { isGitHubUrl } from '@/lib/github'
-import { PrError, fetchPrResults, newResultFileUrl, parsePrRef, resultFileFor, type PrResultFile, type PrResults, type ResultFile } from '@/lib/pr'
+import { PrError, fetchPrResults, newResultFileUrl, parsePrRef, resultFileFor, type PrResults, type ResultFile } from '@/lib/pr'
 import { UNIT_LABEL, hasDiscreteGpu, hostIn, integratedParts, nestParts, unitLabel } from '@/lib/hardware'
 import { ApiError, REVISION_MAX, RUNTIME_FLAGS_MAX, type CustomRuntime, type Result, type ResultInput, type ResultRank, type RigSummary } from '@/lib/api/types'
 import { fmtTps, pluralize } from '@/lib/format'
@@ -165,17 +163,6 @@ function formFromFile(file: Partial<ResultFile>, rigs: RigSummary[], customRunti
   }
 }
 
-/** One line to tell a PR's result files apart: the part or whole rig, the model and quant, and the decode speed. */
-function fileSummary({ file }: PrResultFile): string {
-  return [
-    file.component ? HARDWARE_BY_ID[file.component]?.name ?? file.component : 'Whole rig',
-    file.model ? `${MODEL_BY_ID[file.model]?.name ?? file.model}${file.quant ? ` ${QUANT_BY_ID[file.quant]?.label ?? file.quant}` : ''}` : undefined,
-    file.decodeTps != null ? `${fmtTps(file.decodeTps)} tok/s` : undefined,
-  ]
-    .filter(Boolean)
-    .join(' · ')
-}
-
 function Step({ n, title, hint, children }: { n: number; title: string; hint?: string; children: ReactNode }) {
   return (
     <section className={cn('border-b py-6', inset)}>
@@ -235,20 +222,16 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState<{ result: Result; rank?: ResultRank } | null>(null)
   const [shareOpen, setShareOpen] = useState(false)
-  const [prInput, setPrInput] = useState(sp.get('pr') ?? '')
   const [pr, setPr] = useState<PrResults | null>(null)
   const [prFile, setPrFile] = useState(0)
   const [prProblems, setPrProblems] = useState<string[]>([])
-  const [prBusy, setPrBusy] = useState(false)
   const [prError, setPrError] = useState<string | null>(null)
   const [prAuto, setPrAuto] = useState(false)
-  const [prOpen, setPrOpen] = useState(false)
-  const [howOpen, setHowOpen] = useState(false)
+  // `?agent=1` is the home page's "Get the prompt": open the dialog on arrival, sign-in redirect included.
+  const [agentOpen, setAgentOpen] = useState(() => mode === 'create' && sp.get('agent') !== null)
   const set = (patch: Partial<Form>) => setForm((f) => ({ ...f, ...patch }))
 
   usePageTitle(mode === 'edit' ? 'Edit result' : 'Submit a result')
-  // The prefill dialog is a bottom sheet on phones, like the share dialog.
-  const phone = useMediaQuery('(max-width: 639px)')
 
   // Prefill from the existing result when editing.
   useEffect(() => {
@@ -283,15 +266,13 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
     setAttempted(false)
     setErrors({})
   }
-  /** `auto` is the `?pr=N` case: success shows the status strip without the dialog, failure opens the dialog on the error. */
-  const prefill = async (input: string, auto = false) => {
+  /** Reads the pull request behind `?pr=N`. Whatever comes back, good or bad, is reported on the strip above the form. */
+  const prefill = async (input: string) => {
     const ref = parsePrRef(input)
     if (!ref) {
-      setPrError(`Enter a pull request number or link on ${REPO}.`)
-      if (auto) setPrOpen(true)
+      setPrError(`That is not a pull request number or link on ${REPO}.`)
       return
     }
-    setPrBusy(true)
     setPrError(null)
     try {
       const results = await fetchPrResults(ref)
@@ -300,9 +281,6 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
     } catch (error) {
       setPr(null)
       setPrError(error instanceof PrError ? error.message : 'Could not reach GitHub.')
-      if (auto) setPrOpen(true)
-    } finally {
-      setPrBusy(false)
     }
   }
   /** Forget the pull request and start the form over. */
@@ -310,7 +288,6 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
     setPr(null)
     setPrProblems([])
     setPrError(null)
-    setPrInput('')
     setAttempted(false)
     setErrors({})
     setForm({ ...EMPTY, rigId: rigItems?.length === 1 ? rigItems[0].id : '' })
@@ -320,7 +297,7 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
   useEffect(() => {
     if (mode !== 'create' || !prParam || !rigItems || prAuto) return
     setPrAuto(true)
-    void prefill(prParam, true)
+    void prefill(prParam)
   }, [mode, prParam, rigItems, prAuto]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const rigDetail = useAsync(() => (form.rigId ? api.rig(form.rigId) : Promise.resolve(null)), [form.rigId])
@@ -518,133 +495,6 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
     onChange: (e: { target: { value: string } }) => set({ [k]: e.target.value } as Partial<Form>),
   })
 
-  const prefillDescription = (
-    <>
-      Opened a pull request to{' '}
-      <a href={REPO_URL} target="_blank" rel="noreferrer" className="text-foreground underline underline-offset-4">
-        {REPO}
-      </a>{' '}
-      with a result file?{' '}
-      <br className="hidden sm:block" />
-      Paste its link and the form fills itself.
-    </>
-  )
-  const prefillBody = (
-    <div className="grid gap-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <Input
-          value={prInput}
-          onChange={(e) => setPrInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault()
-              void prefill(prInput)
-            }
-          }}
-          placeholder={`${REPO_URL}/pull/12`}
-          aria-label="Pull request link or number"
-          aria-invalid={!!prError}
-          className="min-w-0 flex-1"
-          autoFocus
-        />
-        <Button type="button" disabled={prBusy || !prInput.trim()} onClick={() => void prefill(prInput)}>
-          {prBusy ? 'Reading…' : 'Prefill'}
-        </Button>
-      </div>
-      {prError ? <p className="text-xs text-destructive">{prError}</p> : null}
-      {pr ? (
-        <div className="grid gap-2 rounded-lg border p-3 text-sm">
-          <div className="min-w-0">
-            Prefilled from{' '}
-            <a href={pr.pr.url} target="_blank" rel="noreferrer" className="font-medium hover:underline underline-offset-4">
-              #{pr.pr.number}
-            </a>
-            <span className="text-muted-foreground">
-              {' '}· {pr.pr.title} · opened by @{pr.pr.author}
-            </span>
-          </div>
-          {pr.files.length > 1 ? (
-            <fieldset className="-mx-1 grid gap-0.5">
-              <legend className="sr-only">Result file to fill the form from</legend>
-              {pr.files.map((f, i) => (
-                <label
-                  key={f.path}
-                  className={cn('flex min-w-0 cursor-pointer items-start gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-muted/50', i === prFile && 'bg-muted/50')}
-                >
-                  <input type="radio" name="pr-file" value={i} checked={i === prFile} onChange={() => applyPrFile(pr, i)} className="mt-1 size-3.5 shrink-0 accent-primary" />
-                  <span className="min-w-0">
-                    <span className="block truncate">
-                      {fileSummary(f)}
-                      {f.problems.length ? <span className="text-destructive"> · {pluralize(f.problems.length, 'problem')}</span> : null}
-                    </span>
-                    <span className="block truncate font-mono text-xs text-muted-foreground">{f.path.replace(/^results\//, '')}</span>
-                  </span>
-                </label>
-              ))}
-            </fieldset>
-          ) : (
-            <div className="font-mono text-xs text-muted-foreground">{pr.files[0].path}</div>
-          )}
-          {pr.pr.author.toLowerCase() !== user.handle.toLowerCase() ? (
-            <p className="text-xs text-muted-foreground">Opened by @{pr.pr.author}, not you. Results are your own runs on your own rig.</p>
-          ) : null}
-          {prProblems.length ? (
-            <ul className="list-disc pl-5 text-xs text-destructive">
-              {prProblems.map((problem) => (
-                <li key={problem}>{problem}</li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-xs text-muted-foreground">The form is filled in. Check the numbers, then submit; the pull request is the evidence link.</p>
-          )}
-        </div>
-      ) : null}
-      {pr ? (
-        <Button className="w-full" onClick={() => setPrOpen(false)}>
-          Done
-        </Button>
-      ) : null}
-      <div className="rounded-lg border text-sm">
-        <button
-          type="button"
-          onClick={() => setHowOpen((open) => !open)}
-          aria-expanded={howOpen}
-          aria-controls="pr-how-it-works"
-          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left font-medium outline-none transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring/50"
-        >
-          <Info className="size-4 text-muted-foreground" aria-hidden />
-          <span className="flex-1">How it works</span>
-          <ChevronDown className={cn('size-4 text-muted-foreground transition-transform duration-200', howOpen && 'rotate-180')} aria-hidden />
-        </button>
-        {/* Height animates through grid rows, so the panel needs no measuring. `inert` keeps the links out of the tab order while closed. */}
-        <div
-          id="pr-how-it-works"
-          inert={!howOpen}
-          className={cn('grid transition-[grid-template-rows] duration-200 ease-out', howOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]')}
-        >
-          <div className="min-h-0 overflow-hidden">
-            <div className={cn('grid gap-2 border-t px-3 py-2.5 text-muted-foreground transition-opacity duration-200', howOpen ? 'opacity-100' : 'opacity-0')}>
-              <p>
-            Add a JSON file under <code className="font-mono text-xs text-foreground">results/your-handle/</code> in{' '}
-            <a href={REPO_URL} target="_blank" rel="noreferrer" className="text-foreground underline underline-offset-4">
-              {REPO}
-            </a>{' '}
-            and open a pull request. A check validates it against the catalog and comments with a link that opens this form filled in from your file, with the pull request as the evidence link.
-          </p>
-          <p>
-            The format is in the repo's{' '}
-            <a href={`${REPO_URL}/tree/main/results`} target="_blank" rel="noreferrer" className="text-foreground underline underline-offset-4">
-              results folder
-            </a>
-            . Going the other way, every freshly submitted result offers "Add to the results repo", which writes the file for you.
-          </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-
   return (
     <div>
       <PageHeader
@@ -661,34 +511,21 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
         description="Decode tokens per second is what ranks. Everything else is optional but welcome."
         actions={
           mode === 'create' ? (
-            <Button size="xl" onClick={() => setPrOpen(true)}>
-              <GitPullRequest data-icon="inline-start" /> Prefill from a PR
+            <Button size="xl" onClick={() => setAgentOpen(true)}>
+              <Terminal data-icon="inline-start" /> Submit with an agent
             </Button>
           ) : undefined
         }
       />
       {mode === 'create' ? (
-        phone ? (
-          <Sheet open={prOpen} onOpenChange={setPrOpen}>
-            <SheetContent side="bottom" className="max-h-[90dvh] overflow-y-auto rounded-t-xl p-4 pb-7">
-              <SheetHeader className="p-0 pr-8">
-                <SheetTitle>Prefill from a pull request</SheetTitle>
-                <SheetDescription>{prefillDescription}</SheetDescription>
-              </SheetHeader>
-              {prefillBody}
-            </SheetContent>
-          </Sheet>
-        ) : (
-          <Dialog open={prOpen} onOpenChange={setPrOpen}>
-            <DialogContent className="sm:max-w-xl">
-              <DialogHeader>
-                <DialogTitle>Prefill from a pull request</DialogTitle>
-                <DialogDescription>{prefillDescription}</DialogDescription>
-              </DialogHeader>
-              {prefillBody}
-            </DialogContent>
-          </Dialog>
-        )
+        <AgentPromptDialog
+          open={agentOpen}
+          onOpenChange={setAgentOpen}
+          handle={user.handle}
+          rigs={rigs}
+          rigId={form.rigId}
+          onRigChange={(rigId) => set({ rigId, componentId: '', componentQuantity: '1' })}
+        />
       ) : null}
       {mode === 'edit' ? (
         <Block className="pt-0 pb-6">
@@ -701,6 +538,21 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
       <Section rule="both">
         <form onSubmit={onSubmit} noValidate className="grid gap-px bg-border lg:grid-cols-[minmax(0,1fr)_420px]">
           <div className="min-w-0 bg-background">
+            {mode === 'create' && prError ? (
+              <div className={cn('flex flex-wrap items-start justify-between gap-3 border-b bg-card py-3 text-sm', inset)}>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-x-1.5">
+                    <GitPullRequest className="size-3.5 text-muted-foreground" aria-hidden />
+                    <span>Could not read that pull request</span>
+                  </div>
+                  <p className="mt-1 text-xs text-destructive">{prError}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Fill the form in by hand instead; nothing is lost.</p>
+                </div>
+                <Button type="button" variant="ghost" size="sm" className="shrink-0" onClick={clearPr}>
+                  Dismiss
+                </Button>
+              </div>
+            ) : null}
             {mode === 'create' && pr ? (
               <div className={cn('flex flex-wrap items-start justify-between gap-3 border-b bg-card py-3 text-sm', inset)}>
                 <div className="min-w-0">
@@ -712,8 +564,24 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
                         #{pr.pr.number}
                       </a>
                     </span>
-                    <span className="truncate font-mono text-xs text-muted-foreground">{pr.files[prFile]?.path}</span>
+                    {pr.files.length > 1 ? null : <span className="truncate font-mono text-xs text-muted-foreground">{pr.files[prFile]?.path}</span>}
                   </div>
+                  {/* Several result files in one pull request: the form fills from one of them, and this is where you say which. */}
+                  {pr.files.length > 1 ? (
+                    <fieldset className="mt-1.5 -mx-1 grid gap-0.5">
+                      <legend className="sr-only">Result file to fill the form from</legend>
+                      {pr.files.map((f, i) => (
+                        <label
+                          key={f.path}
+                          className={cn('flex min-w-0 cursor-pointer items-center gap-2.5 rounded-md px-1 py-1 transition-colors hover:bg-muted/50', i === prFile && 'bg-muted/50')}
+                        >
+                          <input type="radio" name="pr-file" value={i} checked={i === prFile} onChange={() => applyPrFile(pr, i)} className="size-3.5 shrink-0 accent-primary" />
+                          <span className="min-w-0 truncate font-mono text-xs text-muted-foreground">{f.path}</span>
+                          {f.problems.length ? <span className="shrink-0 text-xs text-destructive">{pluralize(f.problems.length, 'problem')}</span> : null}
+                        </label>
+                      ))}
+                    </fieldset>
+                  ) : null}
                   {pr.pr.author.toLowerCase() !== user.handle.toLowerCase() ? (
                     <p className="mt-1 text-xs text-muted-foreground">Opened by @{pr.pr.author}, not you. Results are your own runs on your own rig.</p>
                   ) : null}
@@ -727,14 +595,9 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
                     <p className="mt-1 text-xs text-muted-foreground">Check the numbers, then submit. The pull request is the evidence link.</p>
                   )}
                 </div>
-                <div className="flex shrink-0 items-center gap-1">
-                  <Button type="button" variant="ghost" size="sm" onClick={() => setPrOpen(true)}>
-                    Change
-                  </Button>
-                  <Button type="button" variant="ghost" size="sm" onClick={clearPr}>
-                    Clear
-                  </Button>
-                </div>
+                <Button type="button" variant="ghost" size="sm" className="shrink-0" onClick={clearPr}>
+                  Clear
+                </Button>
               </div>
             ) : null}
             <Step n={1} title="Rig" hint="Results attach to a rig you own. Add one if it is missing.">
