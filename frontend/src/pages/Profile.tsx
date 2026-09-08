@@ -100,7 +100,7 @@ export default function Profile() {
               ))}
             </CellGrid>
           ) : (
-            <EmptyState title="No rigs yet" />
+            <EmptyState title="No rigs yet" description="No machines registered on this account." />
           )
         ) : tab === 'custom' ? (
           customRuntimes.items.length ? (
@@ -124,7 +124,7 @@ export default function Profile() {
         ) : results.items.length ? (
           <ResultsTable results={results.items} runtimes={cat.data.runtimes} models={cat.data.models} quants={cat.data.quants} showSubmitter={false} />
         ) : (
-          <EmptyState title="No results yet" />
+          <EmptyState title="No results yet" description="Nothing posted from this account yet." />
         )}
       </Section>
     </div>

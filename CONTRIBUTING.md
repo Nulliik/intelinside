@@ -91,11 +91,10 @@ backend or a single credential. Copy `frontend/.env.example` to `frontend/.env` 
 project. The dev server insists on port 5173 and fails loudly rather than picking another, because Supabase
 has to allow-list the OAuth redirect.
 
-Two extra modes exist for the launch-week states, both on mock data:
+One extra mode exists, on mock data, for working on the empty states:
 
 ```bash
-npm --prefix frontend run dev -- --mode sealed   # home page with the countdown, board hidden
-npm --prefix frontend run dev -- --mode launch   # launch morning: sealed, and nothing submitted yet
+npm --prefix frontend run dev -- --mode empty   # nobody has registered a rig or posted a result yet
 ```
 
 Before you open a pull request:

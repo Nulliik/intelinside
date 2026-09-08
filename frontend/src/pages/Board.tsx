@@ -12,19 +12,17 @@ import { LeaderboardTable } from '@/components/LeaderboardTable'
 import { TpsBarChart } from '@/components/TpsBarChart'
 import { RuntimeMark } from '@/components/RuntimeMark'
 import { ModelLogo } from '@/components/ModelLogo'
+import { EmptyBoard } from '@/components/empty'
 import { EmptyState } from '@/components/EmptyState'
 import { ErrorState } from '@/components/ErrorState'
 import { LoadMore } from '@/components/LoadMore'
-import { SealedBoard, sealedLabel } from '@/components/launch'
 import { Block, Framed, PillTabs, Section, Toolbar, inset } from '@/components/frame'
 import { useAsync } from '@/hooks/useAsync'
 import { useCatalog } from '@/hooks/useCatalog'
 import { usePageTitle } from '@/hooks/usePageTitle'
-import { useSealed } from '@/hooks/useSealed'
 import { useSession } from '@/hooks/useSession'
 import { api } from '@/lib/api'
 import type { BoardKind, BoardRow, HardwareType, VerificationStatus } from '@/lib/api/types'
-import { fmtWeekday } from '@/lib/format'
 import { HARDWARE_TYPE_LABEL, HARDWARE_TYPES, QUANT_BY_ID, VENDORS, quantHint } from '@/catalog'
 import { cn } from '@/lib/utils'
 
@@ -42,7 +40,6 @@ export default function Board() {
   const [sp, setSp] = useSearchParams()
   const cat = useCatalog()
   const { user, requestSignIn } = useSession()
-  const { sealed, revealAt } = useSealed()
   const model = cat.data?.models.find((m) => m.id === modelId)
 
   const kind = (sp.get('kind') as BoardKind) || 'rigs'
@@ -74,10 +71,9 @@ export default function Board() {
   const quantLabel = quant ? QUANT_BY_ID[quant]?.label ?? quant : ''
   usePageTitle(model ? `${model.name} ${quantLabel}` : 'Board')
 
-  // Nothing is fetched while sealed: the ranking is not shown.
   const board = useAsync(
-    () => (sealed ? Promise.resolve(undefined) : quant ? api.board(modelId, quant, params) : Promise.reject(new Error('no quant'))),
-    [modelId, quant, kind, runtime.join(','), vendor, type, verification, includeModified, q, sealed],
+    () => (quant ? api.board(modelId, quant, params) : Promise.reject(new Error('no quant'))),
+    [modelId, quant, kind, runtime.join(','), vendor, type, verification, includeModified, q],
   )
   const [extra, setExtra] = useState<BoardRow[]>([])
   const [cursor, setCursor] = useState<string | undefined>()
@@ -146,27 +142,15 @@ export default function Board() {
               items={model.quants.map((qid) => ({
                 value: qid,
                 label: <span className="font-mono">{QUANT_BY_ID[qid]?.label ?? qid}</span>,
-                count: sealed ? undefined : model.resultCounts?.[qid] ?? 0,
+                count: model.resultCounts?.[qid] ?? 0,
                 to: `/models/${model.id}/${qid}${sp.toString() ? `?${sp}` : ''}`,
-                hint: sealed ? quantHint(qid) : `${quantHint(qid)} · ${model.resultCounts?.[qid] ?? 0} results`,
+                hint: `${quantHint(qid)} · ${model.resultCounts?.[qid] ?? 0} results`,
               }))}
             />
           </div>
         ) : null}
       </PageHeader>
 
-      {sealed && revealAt ? (
-        <Section label="Board" action={sealedLabel(revealAt)}>
-          <SealedBoard
-            revealAt={revealAt}
-            variant="chart"
-            lead={`${model?.name ?? modelId} ${quantLabel} is sealed until ${fmtWeekday(revealAt)}.`}
-            ask="Post a result now and you're on it when it goes live."
-            submitTo={`/submit?model=${modelId}&quant=${quant}`}
-            body={`Submissions are open now. Everything posted before then ranks the moment the board goes live on ${fmtWeekday(revealAt)}, and from then on every new result ranks as soon as it is posted.`}
-          />
-        </Section>
-      ) : (
       <Section>
         <Toolbar>
           <PillTabs<BoardKind>
@@ -255,15 +239,23 @@ export default function Board() {
               ) : null}
             </>
           ) : (
-            <EmptyState
-              title={`No results yet for ${model?.name ?? modelId} ${quantLabel} on ${kind}`}
-              description={filtered ? 'Try clearing a filter.' : 'Be the first.'}
-              action={submit}
-            />
+            // A filter that matches nothing is not an empty board, so it keeps the plain message.
+            filtered ? (
+              <EmptyState
+                title={`Nothing matches on the ${model?.name ?? modelId} ${quantLabel} ${kind} board`}
+                description="Try clearing a filter."
+                action={submit}
+              />
+            ) : (
+              <EmptyBoard
+                variant="chart"
+                lead={`No results yet for ${model?.name ?? modelId} ${quantLabel}.`}
+                submitTo={`/submit?model=${modelId}&quant=${quant}`}
+              />
+            )
           )
         ) : null}
       </Section>
-      )}
     </div>
   )
 }

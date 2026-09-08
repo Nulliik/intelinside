@@ -10,17 +10,15 @@ import { Cell, CellGrid, Section } from '@/components/frame'
 import { customRuntimeHref } from '@/components/CustomRuntimeLink'
 import { useAsync } from '@/hooks/useAsync'
 import { usePageTitle } from '@/hooks/usePageTitle'
-import { useSealed } from '@/hooks/useSealed'
 import { useSession } from '@/hooks/useSession'
 import { api } from '@/lib/api'
 import { fmtInt } from '@/lib/format'
 
 /**
  * The runtimes index. Runtimes were catalog rows with no pages until customRuntimes needed somewhere to live; this is that
- * somewhere. Counts sit out launch week with everything else that depends on participation.
+ * somewhere.
  */
 export default function Runtimes() {
-  const { sealed } = useSealed()
   const { user, requestSignIn } = useSession()
   const summaries = useAsync(() => api.runtimeSummaries(), [])
   const customRuntimes = useAsync(() => api.customRuntimes(), [])
@@ -59,17 +57,11 @@ export default function Runtimes() {
                     <span className="font-heading text-base font-semibold">{r.name}</span>
                   </Link>
                   <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-muted-foreground">
-                    {sealed ? (
-                      <span>Results hidden until the board goes live</span>
+                    <span><span className="font-mono text-foreground tnum">{fmtInt(r.resultsCount)}</span> {r.resultsCount === 1 ? 'result' : 'results'}</span>
+                    {r.buildsCount ? (
+                      <span><span className="font-mono text-foreground tnum">{fmtInt(r.buildsCount)}</span> {r.buildsCount === 1 ? 'build' : 'customRuntimes'}</span>
                     ) : (
-                      <>
-                        <span><span className="font-mono text-foreground tnum">{fmtInt(r.resultsCount)}</span> {r.resultsCount === 1 ? 'result' : 'results'}</span>
-                        {r.buildsCount ? (
-                          <span><span className="font-mono text-foreground tnum">{fmtInt(r.buildsCount)}</span> {r.buildsCount === 1 ? 'build' : 'customRuntimes'}</span>
-                        ) : (
-                          <span>none customised yet</span>
-                        )}
-                      </>
+                      <span>none customised yet</span>
                     )}
                   </div>
                 </Cell>
@@ -92,8 +84,7 @@ export default function Runtimes() {
                 </Link>
                 <p className="mt-2 text-sm text-muted-foreground text-pretty">{b.summary}</p>
                 <div className="mt-2 text-xs text-muted-foreground">
-                  on {b.runtime?.name ?? b.runtimeId} · {b.owner?.handle ?? 'unknown'}
-                  {sealed ? null : <> · <span className="font-mono tnum">{fmtInt(b.resultsCount ?? 0)}</span> {b.resultsCount === 1 ? 'result' : 'results'}</>}
+                  on {b.runtime?.name ?? b.runtimeId} · {b.owner?.handle ?? 'unknown'} · <span className="font-mono tnum">{fmtInt(b.resultsCount ?? 0)}</span> {b.resultsCount === 1 ? 'result' : 'results'}
                 </div>
               </Cell>
             ))}

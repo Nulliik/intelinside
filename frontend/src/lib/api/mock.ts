@@ -18,7 +18,7 @@ const FLAG_THRESHOLD = 3
 const LATENCY_MS = 160
 const SESSION_KEY = 'intelinside.mock.session'
 
-/** The seed, or with VITE_MOCK_EMPTY=true the seed's users alone: launch morning, before anyone has registered a rig. */
+/** The seed, or with VITE_MOCK_EMPTY=true the seed's users alone: the site before anyone has registered a rig. */
 function seed(): SeedDb {
   const s = createSeed()
   if (import.meta.env.VITE_MOCK_EMPTY === 'true') return { ...s, rigs: [], results: [], confirmations: new Map(), flags: new Map() }
