@@ -292,7 +292,7 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
     setErrors({})
     setForm({ ...EMPTY, rigId: rigItems?.length === 1 ? rigItems[0].id : '' })
   }
-  // `?pr=N`, the link the repo's check comments on each pull request, prefills once the rigs are known.
+  // Legacy `?pr=N` links prefill once the rigs are known. New PRs are submitted on merge.
   const prParam = sp.get('pr')
   useEffect(() => {
     if (mode !== 'create' || !prParam || !rigItems || prAuto) return
@@ -592,7 +592,7 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
                       ))}
                     </ul>
                   ) : (
-                    <p className="mt-1 text-xs text-muted-foreground">Check the numbers, then submit. The pull request is the evidence link.</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Merging this PR submits the result automatically. Avoid submitting the same run twice.</p>
                   )}
                 </div>
                 <Button type="button" variant="ghost" size="sm" className="shrink-0" onClick={clearPr}>

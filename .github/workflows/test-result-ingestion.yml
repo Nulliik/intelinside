@@ -1,0 +1,26 @@
+name: Test result ingestion
+on:
+  pull_request:
+    paths:
+      - 'frontend/scripts/**'
+      - 'frontend/src/lib/pr.ts'
+      - 'frontend/src/lib/api/types.ts'
+      - 'frontend/src/catalog/**'
+      - 'frontend/package*.json'
+      - 'supabase/migrations/**'
+      - '.github/workflows/*result*.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --prefix frontend --ignore-scripts
+      - run: npm --prefix frontend run results:test

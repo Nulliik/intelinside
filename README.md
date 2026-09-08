@@ -28,7 +28,7 @@ Two things grow by pull request, and both are checked automatically when you ope
 
 | You want to | Go to |
 |---|---|
-| Post a benchmark result | [`results/`](results/README.md) — add `results/<your-handle>/<name>.json`, and a bot comments with a link that fills in the submit form |
+| Post a benchmark result | [`results/`](results/README.md) — add `results/<your-handle>/<name>.json`, the check verifies your linked GitHub account, and merging imports the result automatically |
 | Add a GPU, CPU, model, or runtime | [`frontend/src/catalog/`](frontend/src/catalog/README.md) — one file, one entry |
 
 You can also submit a result straight from the site, no git involved. [CONTRIBUTING.md](CONTRIBUTING.md) has

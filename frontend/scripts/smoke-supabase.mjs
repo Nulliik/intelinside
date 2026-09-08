@@ -5,7 +5,7 @@ const env = loadEnv('development', process.cwd(), '')
 const url = env.VITE_SUPABASE_URL
 const key = env.VITE_SUPABASE_PUBLISHABLE_KEY
 
-if (!url || !key) throw new Error('Missing staging Supabase browser credentials.')
+if (!url || !key) throw new Error('Missing Supabase browser credentials.')
 
 const client = createClient(url, key, { auth: { persistSession: false } })
 const expectedMinimums = { models: 4, quants: 14, runtimes: 7, hardware: 40 }

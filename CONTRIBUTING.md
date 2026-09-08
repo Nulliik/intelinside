@@ -20,13 +20,15 @@ what it found. You do not have to get it right the first time.
 1. Sign in on the site once and register the rig you ran on. Results are tied to a rig you own, and the check
    enforces it. Your rig's URL ends in a number — that number goes in the file.
 2. Add `results/<your-github-handle>/<name>.json`. The folder has to match your handle.
-3. Open the pull request. The check validates the file against the catalog and comments with a
-   `/submit?pr=<number>` link.
-4. Open that link. The submit form fills itself in from your file, with the pull request as the evidence link.
-   Check the numbers and submit; the result ranks immediately.
+3. Open the pull request using the GitHub account you signed up with. The **Result ingestion** check
+   verifies your OAuth identity, the catalog, rig ownership, and database constraints. A missing account
+   fails the check with signup instructions; sign in and ask a maintainer to rerun it.
+4. A maintainer merges it. The workflow inserts your results into Supabase automatically and reports
+   the result IDs on the PR. No web submission is needed.
 
-The full format, with a worked example, is in [`results/README.md`](results/README.md). Merging the pull
-request is up to the maintainers and changes nothing on the site — the PR is the public record of the run.
+The full format, archive behavior, and retry instructions are in [`results/README.md`](results/README.md).
+An agent can submit using your authenticated GitHub CLI session. Bot-authored PRs cannot be attributed
+without a linked personal account. Account signup and rig registration remain one-time site steps.
 
 ### What makes a good result
 
@@ -119,7 +121,7 @@ The code has a voice; match the file you are editing rather than a general stand
 
 ### Database changes
 
-Migrations live in `supabase/migrations/` and are applied to staging before production. If your change adds
+Migrations live in `supabase/migrations/`. Validate them with the isolated local tests before a reviewed production deployment; the configured hosted database is production. If your change adds
 catalog rows, regenerate the seed rather than hand-writing SQL:
 
 ```bash
