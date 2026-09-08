@@ -1,5 +1,6 @@
 import { Link, useParams } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PageHeader } from '@/components/PageHeader'
 import { HardwareTypeIcon } from '@/components/HardwareTypeIcon'
@@ -7,17 +8,17 @@ import { VendorMark } from '@/components/VendorMark'
 import { TpsBarChart } from '@/components/TpsBarChart'
 import { ResultsTable } from '@/components/ResultsTable'
 import { RigCard, keySpec } from '@/components/cards'
+import { EmptyBoard } from '@/components/empty'
 import { EmptyState } from '@/components/EmptyState'
 import { ErrorState } from '@/components/ErrorState'
-import { SealedBoard, sealedLabel } from '@/components/launch'
 import { Block, Cell, CellGrid, Framed, Section, inset } from '@/components/frame'
 import { useAsync } from '@/hooks/useAsync'
 import { useCatalog } from '@/hooks/useCatalog'
-import { useSealed } from '@/hooks/useSealed'
 import { usePageTitle } from '@/hooks/usePageTitle'
+import { useSession } from '@/hooks/useSession'
 import { api } from '@/lib/api'
 import type { HardwareDetail as HardwareDetailData, HardwareItem } from '@/lib/api/types'
-import { fmtDate, fmtTps, fmtWeekday, pluralize } from '@/lib/format'
+import { fmtDate, fmtTps, pluralize } from '@/lib/format'
 import { UNIT_LABEL, hostsOf, integratedParts } from '@/lib/hardware'
 import { cn } from '@/lib/utils'
 import { HARDWARE_TYPE_LABEL } from '@/catalog'
@@ -29,7 +30,7 @@ const SPEC_LABEL: Record<string, string> = {
 const SPEC_UNIT: Record<string, string> = { boostGhz: ' GHz', tdpW: ' W', vramGb: ' GB', speedMts: ' MT/s', capacityGb: ' GB' }
 
 /** One compute unit on a chip: the CPU cores (this page) or a part on its package, with its best decode tok/s. */
-function UnitCell({ hardware, unit, current = false, detail, sealed }: { hardware: HardwareItem; unit: string; current?: boolean; detail?: HardwareDetailData; sealed: boolean }) {
+function UnitCell({ hardware, unit, current = false, detail }: { hardware: HardwareItem; unit: string; current?: boolean; detail?: HardwareDetailData }) {
   const best = detail?.results[0]?.decodeTps
   const body = (
     <>
@@ -39,14 +40,12 @@ function UnitCell({ hardware, unit, current = false, detail, sealed }: { hardwar
       </div>
       <div className="mt-2 font-medium">{hardware.name}</div>
       <div className="mt-0.5 text-xs text-muted-foreground">{keySpec(hardware)}</div>
-      {sealed ? null : (
-        <div className="mt-4">
-          <div className="font-mono text-2xl tnum">
-            {best != null ? fmtTps(best) : '—'} <span className="text-sm font-normal text-muted-foreground">tok/s best</span>
-          </div>
-          <div className="mt-0.5 text-xs text-muted-foreground">{detail ? pluralize(detail.resultsCount ?? 0, 'result') : '…'}</div>
+      <div className="mt-4">
+        <div className="font-mono text-2xl tnum">
+          {best != null ? fmtTps(best) : '—'} <span className="text-sm font-normal text-muted-foreground">tok/s best</span>
         </div>
-      )}
+        <div className="mt-0.5 text-xs text-muted-foreground">{detail ? pluralize(detail.resultsCount ?? 0, 'result') : '…'}</div>
+      </div>
     </>
   )
   const classes = 'flex min-w-0 flex-col bg-background p-6 md:p-7'
@@ -63,7 +62,7 @@ export default function HardwareDetail() {
   const { hardwareId = '' } = useParams()
   const item = useAsync(() => api.hardwareItem(hardwareId), [hardwareId])
   const cat = useCatalog()
-  const { sealed, revealAt } = useSealed()
+  const { user, requestSignIn } = useSession()
   usePageTitle(item.data?.name)
   // A CPU with parts on its package shows the units side by side, so the other parts' details load once the CPU is known.
   const integratedIds = (item.data?.integrated ?? []).join(',')
@@ -87,6 +86,11 @@ export default function HardwareDetail() {
   const integrated = integratedParts(h)
   const hosts = hostsOf(h)
   const resultsLabel = integrated.length ? 'Results on the CPU cores' : 'Results on this part'
+  const newRig = user ? (
+    <Button variant="outline" render={<Link to="/rigs/new" />} nativeButton={false}>New rig</Button>
+  ) : (
+    <Button variant="outline" onClick={() => requestSignIn('/rigs/new')}>New rig</Button>
+  )
   return (
     <div>
       <PageHeader
@@ -97,13 +101,7 @@ export default function HardwareDetail() {
           </span>
         }
         title={h.name}
-        description={
-          sealed
-            ? h.releaseDate
-              ? `Released ${fmtDate(h.releaseDate)}`
-              : undefined
-            : `${pluralize(h.resultsCount ?? 0, 'result')} · ${pluralize(h.rigsCount ?? 0, 'rig')}${h.releaseDate ? ` · released ${fmtDate(h.releaseDate)}` : ''}`
-        }
+        description={`${pluralize(h.resultsCount ?? 0, 'result')} · ${pluralize(h.rigsCount ?? 0, 'rig')}${h.releaseDate ? ` · released ${fmtDate(h.releaseDate)}` : ''}`}
         actions={<Badge variant="outline">{h.source === 'seeded' ? 'Seeded' : 'Community added'}</Badge>}
       />
       <Section label="Specifications">
@@ -122,9 +120,9 @@ export default function HardwareDetail() {
       {integrated.length ? (
         <Section label="On the package" action={<span className="text-xs text-muted-foreground">Each unit ranks as its own part</span>}>
           <CellGrid cols={integrated.length >= 2 ? 3 : 2}>
-            <UnitCell hardware={h} unit={UNIT_LABEL.cpu} current detail={h} sealed={sealed} />
+            <UnitCell hardware={h} unit={UNIT_LABEL.cpu} current detail={h} />
             {integrated.map((part) => (
-              <UnitCell key={part.id} hardware={part} unit={UNIT_LABEL[part.type]} detail={units.data?.find((d) => d.id === part.id)} sealed={sealed} />
+              <UnitCell key={part.id} hardware={part} unit={UNIT_LABEL[part.type]} detail={units.data?.find((d) => d.id === part.id)} />
             ))}
           </CellGrid>
         </Section>
@@ -141,44 +139,40 @@ export default function HardwareDetail() {
           </div>
         </Section>
       ) : null}
-      {sealed && revealAt ? (
-        <Section label={resultsLabel} action={sealedLabel(revealAt)}>
-          <SealedBoard
-            revealAt={revealAt}
-            variant="chart"
-            lead={`Results are sealed until ${fmtWeekday(revealAt)}.`}
-            ask="Post what this part does and you're on the board when it goes live."
-            body={`Submissions are open now. A component result names the part and how many of it you used. Everything posted before then ranks the moment the board goes live on ${fmtWeekday(revealAt)}.`}
-          />
+      {h.results.length ? (
+        <Section label={integrated.length ? 'Best decode tok/s per model and quant, on the CPU cores' : 'Best decode tok/s per model and quant'}>
+          <Framed>
+            <TpsBarChart bars={h.chart} runtimes={cat.data.runtimes} />
+          </Framed>
         </Section>
-      ) : (
-        <>
-          <Section label={integrated.length ? 'Best decode tok/s per model and quant, on the CPU cores' : 'Best decode tok/s per model and quant'}>
-            <Framed>
-              <TpsBarChart bars={h.chart} runtimes={cat.data.runtimes} />
-            </Framed>
-          </Section>
-          <Section label={resultsLabel}>
-            {h.results.length ? (
-              <ResultsTable results={h.results} runtimes={cat.data.runtimes} models={cat.data.models} quants={cat.data.quants} />
-            ) : (
-              <EmptyState
-                title={integrated.length ? 'No results on the CPU cores yet' : 'No results name this part yet'}
-                description={integrated.length ? 'Runs on the iGPU or NPU are listed on their own pages. Whole-rig results live on the rig pages.' : 'Component-level results show here. Whole-rig results live on the rig pages.'}
-              />
-            )}
-          </Section>
-        </>
-      )}
+      ) : null}
+      <Section label={resultsLabel}>
+        {h.results.length ? (
+          <ResultsTable results={h.results} runtimes={cat.data.runtimes} models={cat.data.models} quants={cat.data.quants} />
+        ) : (
+          <EmptyBoard
+            variant="chart"
+            lead={integrated.length ? 'No results on the CPU cores yet.' : `No results name the ${h.name} yet.`}
+            ask="Post one that names this part."
+            body={integrated.length
+              ? 'Runs on the iGPU or NPU are listed on their own pages, and whole-rig results live on the rig pages. A result here is the cores alone.'
+              : 'A component result names the part and how many of it you used. Whole-rig results live on the rig pages.'}
+          />
+        )}
+      </Section>
       <Section label="Rigs with this part">
         {h.rigs.length ? (
           <CellGrid cols={3}>
             {h.rigs.map((r) => (
-              <RigCard key={r.id} rig={r} sealed={sealed} />
+              <RigCard key={r.id} rig={r} />
             ))}
           </CellGrid>
         ) : (
-          <EmptyState title="No rigs list this part yet" />
+          <EmptyState
+            title="No rigs list this part yet"
+            description="Register a machine with this part in it and the rig shows up here."
+            action={newRig}
+          />
         )}
       </Section>
     </div>

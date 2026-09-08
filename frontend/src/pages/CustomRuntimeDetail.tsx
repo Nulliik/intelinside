@@ -8,17 +8,15 @@ import { RuntimeBadge } from '@/components/RuntimeBadge'
 import { UserLink } from '@/components/UserLink'
 import { TpsBarChart } from '@/components/TpsBarChart'
 import { ResultsTable } from '@/components/ResultsTable'
-import { EmptyState } from '@/components/EmptyState'
+import { EmptyBoard } from '@/components/empty'
 import { ErrorState } from '@/components/ErrorState'
-import { SealedBoard, sealedLabel } from '@/components/launch'
 import { Block, Cell, CellGrid, Section, inset } from '@/components/frame'
 import { useAsync } from '@/hooks/useAsync'
 import { useCatalog } from '@/hooks/useCatalog'
 import { usePageTitle } from '@/hooks/usePageTitle'
-import { useSealed } from '@/hooks/useSealed'
 import { useSession } from '@/hooks/useSession'
 import { api } from '@/lib/api'
-import { fmtDate, fmtInt, fmtTps, fmtWeekday } from '@/lib/format'
+import { fmtDate, fmtInt, fmtTps } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
 /**
@@ -28,7 +26,6 @@ import { cn } from '@/lib/utils'
 export default function CustomRuntimeDetail() {
   const { customId } = useParams()
   const { user, requestSignIn } = useSession()
-  const { sealed, revealAt } = useSealed()
   const cat = useCatalog()
   const build = useAsync(() => (customId ? api.customRuntime(customId) : Promise.reject(new Error('no custom runtime'))), [customId])
   usePageTitle(build.data?.name ?? 'Custom runtime')
@@ -99,28 +96,16 @@ export default function CustomRuntimeDetail() {
         ) : null}
       </PageHeader>
 
-      {sealed ? null : (
-        <Section>
-          <CellGrid cols={4}>
-            <Stat label="best tok/s" value={b ? fmtTps(b.bestTps) : undefined} />
-            <Stat label="results" value={b ? fmtInt(b.resultsCount ?? 0) : undefined} />
-            <Stat label="rigs it has run on" value={b ? fmtInt(b.rigsCount ?? 0) : undefined} />
-            <Stat label="people posting on it" value={b ? fmtInt(new Set(b.results.map((r) => r.submitterId)).size) : undefined} />
-          </CellGrid>
-        </Section>
-      )}
+      <Section>
+        <CellGrid cols={4}>
+          <Stat label="best tok/s" value={b ? fmtTps(b.bestTps) : undefined} />
+          <Stat label="results" value={b ? fmtInt(b.resultsCount ?? 0) : undefined} />
+          <Stat label="rigs it has run on" value={b ? fmtInt(b.rigsCount ?? 0) : undefined} />
+          <Stat label="people posting on it" value={b ? fmtInt(new Set(b.results.map((r) => r.submitterId)).size) : undefined} />
+        </CellGrid>
+      </Section>
 
-      {sealed && revealAt ? (
-        <Section label="Results on this custom runtime" action={sealedLabel(revealAt)}>
-          <SealedBoard
-            revealAt={revealAt}
-            variant="chart"
-            lead={`Results here are sealed until ${fmtWeekday(revealAt)}.`}
-            ask="Post what it does for you and it is on the board the moment it goes live."
-            submitTo={b ? `/submit?runtime=${b.runtimeId}&custom=${b.id}` : '/submit'}
-          />
-        </Section>
-      ) : b && b.results.length ? (
+      {b && b.results.length ? (
         <>
           <Section label="Tok/s by model">
             <Block>
@@ -133,10 +118,12 @@ export default function CustomRuntimeDetail() {
         </>
       ) : b ? (
         <Section label="Results on this custom runtime">
-          <EmptyState
-            title="Nothing posted on it yet."
-            description="Registering a custom runtime and posting a result are two steps. Run something on it and submit the number."
-            action={submit}
+          <EmptyBoard
+            variant="chart"
+            lead="Nothing posted on it yet."
+            ask="Run something on it and submit the number."
+            body="Registering a custom runtime and posting a result are two steps. This fills in once the second one is done."
+            submitTo={b ? `/submit?runtime=${b.runtimeId}&custom=${b.id}` : '/submit'}
           />
         </Section>
       ) : (

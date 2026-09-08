@@ -5,15 +5,14 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { PageHeader } from '@/components/PageHeader'
 import { RuntimeMark } from '@/components/RuntimeMark'
 import { ResultsTable } from '@/components/ResultsTable'
+import { EmptyBoard } from '@/components/empty'
 import { EmptyState } from '@/components/EmptyState'
 import { ErrorState } from '@/components/ErrorState'
-import { SealedBoard } from '@/components/launch'
 import { Cell, CellGrid, Section } from '@/components/frame'
 import { customRuntimeHref } from '@/components/CustomRuntimeLink'
 import { useAsync } from '@/hooks/useAsync'
 import { useCatalog } from '@/hooks/useCatalog'
 import { usePageTitle } from '@/hooks/usePageTitle'
-import { useSealed } from '@/hooks/useSealed'
 import { useSession } from '@/hooks/useSession'
 import { api } from '@/lib/api'
 import { fmtInt } from '@/lib/format'
@@ -21,13 +20,12 @@ import { fmtInt } from '@/lib/format'
 /** One runtime: what it is, the customRuntimes people have made of it, and the fastest stock runs on it. */
 export default function RuntimeDetail() {
   const { runtimeId } = useParams()
-  const { sealed, revealAt } = useSealed()
   const { user, requestSignIn } = useSession()
   const cat = useCatalog()
   const customRuntimes = useAsync(() => (runtimeId ? api.customRuntimes({ runtime: runtimeId }) : Promise.resolve(null)), [runtimeId])
   const results = useAsync(
-    () => (runtimeId && !sealed ? api.results({ runtime: runtimeId, limit: 10 }) : Promise.resolve(null)),
-    [runtimeId, sealed],
+    () => (runtimeId ? api.results({ runtime: runtimeId, limit: 10 }) : Promise.resolve(null)),
+    [runtimeId],
   )
   const runtime = cat.data?.runtimes.find((r) => r.id === runtimeId)
   usePageTitle(runtime?.name ?? 'Runtime')
@@ -84,7 +82,7 @@ export default function RuntimeDetail() {
                 <p className="mt-2 text-sm text-muted-foreground text-pretty">{b.summary}</p>
                 <div className="mt-2 text-xs text-muted-foreground">
                   {b.owner?.handle ?? 'unknown'}
-                  {sealed ? null : <> · <span className="font-mono tnum">{fmtInt(b.resultsCount ?? 0)}</span> {b.resultsCount === 1 ? 'result' : 'results'}</>}
+                  {' · '}<span className="font-mono tnum">{fmtInt(b.resultsCount ?? 0)}</span> {b.resultsCount === 1 ? 'result' : 'results'}
                 </div>
               </Cell>
             ))}
@@ -103,9 +101,7 @@ export default function RuntimeDetail() {
       </Section>
 
       <Section label="Fastest on this runtime">
-        {sealed && revealAt ? (
-          <SealedBoard revealAt={revealAt} variant="chart" />
-        ) : results.data?.items.length ? (
+        {results.data?.items.length ? (
           <ResultsTable
             results={results.data.items}
             runtimes={cat.data?.runtimes ?? []}
@@ -115,7 +111,12 @@ export default function RuntimeDetail() {
         ) : results.loading ? (
           <CellGrid cols={1}><Cell><Skeleton className="h-32" /></Cell></CellGrid>
         ) : (
-          <EmptyState title="No results on it yet." description="Be the first to post a number from this runtime." />
+          <EmptyBoard
+            variant="chart"
+            lead={`No results on ${runtime?.name ?? 'this runtime'} yet.`}
+            ask="Run something on it and post what you get."
+            submitTo={`/submit?runtime=${runtimeId}`}
+          />
         )}
       </Section>
     </div>

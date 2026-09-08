@@ -8,10 +8,10 @@ import { ModelLogo } from '@/components/ModelLogo'
 import { VendorMark } from '@/components/VendorMark'
 import type { HardwareItem, ModelSummary, RigSummary, Runtime } from '@/lib/api/types'
 import { RuntimeMark } from '@/components/RuntimeMark'
-import { GhostList } from '@/components/launch'
+import { GhostList } from '@/components/empty'
 import { HARDWARE_TYPE_LABEL, QUANT_BY_ID, quantHint } from '@/catalog'
 import { UNIT_LABEL, integratedParts } from '@/lib/hardware'
-import { fmtInstant, fmtTps, pluralize } from '@/lib/format'
+import { fmtTps, pluralize } from '@/lib/format'
 import { rigShareTarget } from '@/lib/share'
 import { cn } from '@/lib/utils'
 
@@ -28,11 +28,10 @@ function More({ children }: { children: string }) {
 }
 
 /**
- * `sealed` hides the result count and best tok/s, for launch week while results are sealed.
  * The share icon sits over the photo as a sibling of the link, not inside it, so its modal never triggers navigation.
  * It shows on hover and keyboard focus, and always on touch screens.
  */
-export function RigCard({ rig, sealed = false }: { rig: RigSummary; sealed?: boolean }) {
+export function RigCard({ rig }: { rig: RigSummary }) {
   return (
     <div className="group relative flex min-w-0 bg-background">
     <Link to={`/rigs/${rig.id}`} className={cn(cell, 'flex-1')}>
@@ -43,23 +42,19 @@ export function RigCard({ rig, sealed = false }: { rig: RigSummary; sealed?: boo
         <span className="inline-flex items-center gap-2">
           <UserAvatar user={rig.owner} size="sm" /> {rig.owner?.handle}
         </span>
-        <span>{sealed ? null : pluralize(rig.resultsCount, 'result')}</span>
+        <span>{pluralize(rig.resultsCount, 'result')}</span>
       </div>
       <div>
         <h3 className="text-lg font-semibold">{rig.name}</h3>
         <p className="mt-1 text-sm text-muted-foreground">{rig.summary}</p>
       </div>
       <div className="mt-auto flex items-center justify-between pt-2">
-        {sealed ? (
-          <span className="text-sm text-muted-foreground">Results sealed</span>
-        ) : (
-          <span className="font-mono text-sm tnum">{rig.bestTps != null ? `${fmtTps(rig.bestTps)} tok/s` : 'No results yet'}</span>
-        )}
+        <span className="font-mono text-sm tnum">{rig.bestTps != null ? `${fmtTps(rig.bestTps)} tok/s` : 'No results yet'}</span>
         <More>View rig</More>
       </div>
     </Link>
     <ShareIconButton
-      target={rigShareTarget(rig, !sealed && rig.bestTps != null ? { tps: rig.bestTps } : undefined)}
+      target={rigShareTarget(rig, rig.bestTps != null ? { tps: rig.bestTps } : undefined)}
       className="absolute top-8 right-8 size-7 rounded-md bg-background/80 opacity-0 backdrop-blur-xs transition-opacity group-hover:opacity-100 focus-visible:opacity-100 aria-expanded:opacity-100 md:top-9 md:right-9 [@media(hover:none)]:opacity-100 [&_svg:not([class*='size-'])]:size-3.5"
     />
     </div>
@@ -122,10 +117,10 @@ export function HardwareCard({ hardware, counts = true }: { hardware: HardwareIt
   )
 }
 
-/** `sealedUntil` hides result counts and shows a silhouette in place of the top three, with a submit link, for launch week. */
-export function ModelBoardCard({ summary, runtimes, sealedUntil }: { summary: ModelSummary; runtimes: Record<string, Runtime>; sealedUntil?: Date | null }) {
+/** An empty board keeps its shape and asks for the first result rather than hiding. */
+export function ModelBoardCard({ summary, runtimes }: { summary: ModelSummary; runtimes: Record<string, Runtime> }) {
   const { model, board, top } = summary
-  const sealed = sealedUntil != null
+  const empty = top.length === 0
   const total = Object.values(model.resultCounts ?? {}).reduce((a, b) => a + b, 0)
   const boardHref = `/models/${model.id}/${board.quant}`
   return (
@@ -136,7 +131,7 @@ export function ModelBoardCard({ summary, runtimes, sealedUntil }: { summary: Mo
           <div className="text-sm text-muted-foreground">
             {model.family} · {model.params}
             {model.architecture === 'moe' ? ` · MoE, ${model.activeParams} active` : ''}
-            {sealed ? '' : ` · ${pluralize(total, 'result')}`}
+            {` · ${pluralize(total, 'result')}`}
           </div>
           <h3 className="mt-0.5 text-lg font-semibold">
             <Link to={boardHref} className="hover:underline underline-offset-4">
@@ -152,23 +147,24 @@ export function ModelBoardCard({ summary, runtimes, sealedUntil }: { summary: Mo
           <Link
             key={q}
             to={`/models/${model.id}/${q}`}
-            title={sealed ? quantHint(q) : `${quantHint(q)} · ${model.resultCounts?.[q] ?? 0} results`}
+            title={`${quantHint(q)} · ${model.resultCounts?.[q] ?? 0} results`}
             className={cn(
               'rounded-md border px-2 py-1 font-mono text-xs transition-colors hover:border-foreground/30 hover:text-foreground',
               q === board.quant ? 'border-foreground/30 text-foreground' : 'text-muted-foreground',
             )}
           >
             {QUANT_BY_ID[q]?.label ?? q}
-            {sealed ? null : <span className="opacity-60"> {model.resultCounts?.[q] ?? 0}</span>}
+            <span className="opacity-60"> {model.resultCounts?.[q] ?? 0}</span>
           </Link>
         ))}
         </div>
       </div>
       <div>
         <div className="text-xs font-medium uppercase tracking-label text-muted-foreground">
-          <span className="font-mono normal-case tracking-normal">{QUANT_BY_ID[board.quant]?.label ?? board.quant}</span> · rigs · {sealedUntil ? `results will be shown on ${fmtInstant(sealedUntil)}` : `${board.total} ranked`}
+          <span className="font-mono normal-case tracking-normal">{QUANT_BY_ID[board.quant]?.label ?? board.quant}</span> · rigs · {`${board.total} ranked`}
         </div>
-        {sealed ? (
+        {/* An empty tile keeps the shape of the three rows it will hold rather than collapsing to one grey line. */}
+        {empty ? (
           <GhostList />
         ) : (
           <ol className="mt-1 divide-y">
@@ -182,19 +178,19 @@ export function ModelBoardCard({ summary, runtimes, sealedUntil }: { summary: Mo
                 <span className="font-mono tnum">{fmtTps(row.result.decodeTps)}</span>
               </li>
             ))}
-            {top.length === 0 ? <li className="py-2.5 text-sm text-muted-foreground">No results yet.</li> : null}
           </ol>
         )}
       </div>
       <div className="mt-auto flex items-center justify-between gap-3 pt-1">
-        {sealed ? (
+        {/* An empty board leads with the way to fill it; a live one leads with the board itself. */}
+        {empty ? (
           <Link to={`/submit?model=${model.id}&quant=${board.quant}`} className="group/link inline-flex items-center gap-1 text-sm font-medium text-foreground hover:underline underline-offset-4">
             Submit a result <ChevronRight className="size-3.5 transition-transform group-hover/link:translate-x-0.5" />
           </Link>
         ) : null}
         <Link
           to={boardHref}
-          className={cn('group/link inline-flex items-center gap-1 text-sm font-medium hover:underline underline-offset-4', sealed ? 'text-muted-foreground hover:text-foreground' : 'text-foreground')}
+          className={cn('group/link inline-flex items-center gap-1 text-sm font-medium hover:underline underline-offset-4', empty ? 'text-muted-foreground hover:text-foreground' : 'text-foreground')}
         >
           Full board <ChevronRight className="size-3.5 transition-transform group-hover/link:translate-x-0.5" />
         </Link>

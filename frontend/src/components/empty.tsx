@@ -3,25 +3,20 @@ import { Link } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { GitHubMark } from '@/components/GitHubMark'
-import { Cell, CellGrid, inset } from '@/components/frame'
-import type { Countdown } from '@/hooks/useCountdown'
+import { CellGrid, inset } from '@/components/frame'
 import { useSession } from '@/hooks/useSession'
-import { fmtInstant, fmtWeekday } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
 /*
-  Launch week. While VITE_REVEAL_AT is in the future, pages swap their ranked views for
-  these: a silhouette of what will live there with a message in a clearing on top, and on the home page a countdown
-  to the moment the board goes live. Nothing here shows a number that depends on how many people have taken part.
-  RigSilhouette doubles as the ordinary home page's empty state when there are no rigs.
+  Empty states for the ranked surfaces. A board with nothing on it keeps its shape — a silhouette of the podium,
+  chart, table, or rig cells that will live there — with the message sitting in a clearing masked out of the middle.
+  The shape is the point: it says what this place is for, which a line of centred grey text cannot.
+
+  EmptyState is the plain version, for smaller and secondary spots. These are for the surfaces a visitor comes to
+  the site to read.
 */
 
-/** The section-label action while sealed: the go-live instant in the viewer's zone. */
-export function sealedLabel(revealAt: Date): string {
-  return `Results will be shown on ${fmtInstant(revealAt)}`
-}
-
-/** One bar of a silhouette. Static, unlike Skeleton: nothing is loading. */
+/** One bar of a silhouette. Static, unlike Skeleton: nothing is loading, this is what is missing. */
 function Bone({ className, style }: { className?: string; style?: CSSProperties }) {
   return <div className={cn('h-2.5 rounded-sm bg-foreground/[7%]', className)} style={style} />
 }
@@ -186,18 +181,16 @@ export function GhostList() {
 }
 
 /**
- * A ranked view while the board is sealed. `podium` is the home page's shape, `chart` the board and hardware pages'.
- * The copy defaults to the home page's; pages name their subject with `lead` and prefill the form with `submitTo`.
+ * A ranked view with nothing ranked on it. `podium` is the home page's shape, `chart` the board, rig, hardware and
+ * runtime pages'. Pages name their subject with `lead` and prefill the form with `submitTo`.
  */
-export function SealedBoard({
-  revealAt,
+export function EmptyBoard({
   variant = 'podium',
-  lead,
-  ask = "Post now and you're on it when it goes live.",
+  lead = 'No results yet.',
+  ask = 'Post the first and it ranks right away.',
   body,
   submitTo = '/submit',
 }: {
-  revealAt: Date
   variant?: 'podium' | 'chart'
   lead?: string
   ask?: string
@@ -205,7 +198,6 @@ export function SealedBoard({
   submitTo?: string
 }) {
   const { user, requestSignIn } = useSession()
-  const day = fmtWeekday(revealAt)
   return (
     <Clearing
       silhouette={
@@ -227,7 +219,7 @@ export function SealedBoard({
       }
     >
       <Message
-        lead={lead ?? `The board is sealed until ${day}.`}
+        lead={lead}
         ask={ask}
         actions={
           <>
@@ -246,25 +238,20 @@ export function SealedBoard({
           </>
         }
       >
-        {body ?? (
-          <>
-            Submissions are open now. Everything posted before then ranks the moment the board goes live on {day}, and from then on every new result ranks as soon as it is posted.
-          </>
-        )}
+        {body ?? 'Every result is one model, one runtime, and one machine. Submit yours and this fills in — it ranks the moment it is in.'}
       </Message>
     </Clearing>
   )
 }
 
-/** The rig section with no rigs to show. With `revealAt` it is the launch-week version; without, the ordinary empty state. */
-export function RigSilhouette({ revealAt }: { revealAt?: Date | null }) {
+/** The rig section with no rigs to show. */
+export function EmptyRigs() {
   const { user, requestSignIn } = useSession()
-  const day = revealAt ? fmtWeekday(revealAt) : null
   return (
     <Clearing silhouette={<GhostRigs />}>
       <Message
-        lead={day ? 'Rigs are not sealed.' : 'No rigs yet.'}
-        ask={day ? 'Register yours and show it off today.' : 'Register yours and show it off.'}
+        lead="No rigs yet."
+        ask="Register yours and show it off."
         actions={
           user ? (
             <Button size="lg" render={<Link to="/rigs/new" />} nativeButton={false}>
@@ -277,30 +264,8 @@ export function RigSilhouette({ revealAt }: { revealAt?: Date | null }) {
           )
         }
       >
-        Name the machine, pick its parts from the catalog, add a photo. It goes up the moment you save it{day ? `, and your results from it rank on ${day}.` : '.'}
+        Name the machine, pick its parts from the catalog, add a photo. It goes up the moment you save it, ready to carry results.
       </Message>
     </Clearing>
-  )
-}
-
-/** Four cells in the stat strip's form. Hidden from assistive tech: the section's label row carries the date. */
-export function CountdownStrip({ countdown }: { countdown: Countdown }) {
-  const cells: [string, number][] = [
-    ['days', countdown.days],
-    ['hours', countdown.hours],
-    ['minutes', countdown.minutes],
-    ['seconds', countdown.seconds],
-  ]
-  return (
-    <div aria-hidden>
-      <CellGrid cols="2/4">
-        {cells.map(([label, n]) => (
-          <Cell key={label}>
-            <div className="font-mono text-4xl font-semibold tnum md:text-5xl">{String(n).padStart(2, '0')}</div>
-            <div className="mt-1 text-sm text-muted-foreground">{label}</div>
-          </Cell>
-        ))}
-      </CellGrid>
-    </div>
   )
 }

@@ -12,7 +12,6 @@ import { EmptyState } from '@/components/EmptyState'
 import { ErrorState } from '@/components/ErrorState'
 import { Block, Cell, CellGrid, Section, Toolbar } from '@/components/frame'
 import { useAsync } from '@/hooks/useAsync'
-import { useSealed } from '@/hooks/useSealed'
 import { usePageTitle } from '@/hooks/usePageTitle'
 import { api } from '@/lib/api'
 import type { HardwareType } from '@/lib/api/types'
@@ -25,7 +24,6 @@ const vendorItems = [{ value: ALL, label: 'All vendors' }, ...VENDORS.map((v) =>
 
 export default function Hardware() {
   usePageTitle(PAGE_SEO.hardware.title, PAGE_SEO.hardware.description)
-  const { sealed } = useSealed()
   const [type, setType] = useState<string[]>([])
   const [vendor, setVendor] = useState(ALL)
   const [q, setQ] = useState('')
@@ -82,7 +80,7 @@ export default function Hardware() {
         ) : list.data?.items.length ? (
           <CellGrid cols={4}>
             {list.data.items.map((h) => (
-              <HardwareCard key={h.id} hardware={h} counts={!sealed} />
+              <HardwareCard key={h.id} hardware={h} />
             ))}
           </CellGrid>
         ) : (
