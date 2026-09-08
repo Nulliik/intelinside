@@ -89,5 +89,14 @@ Deployed on Vercel; the Open Graph cards are rendered by edge functions with Sat
 
 ## License
 
-Not yet licensed. Until a LICENSE file lands, this code is under exclusive copyright by Community Labs — you
-can read it, but not use, modify, or redistribute it.
+[MIT](LICENSE), for the code and the data in this repository. Fork it, ship it, build on it — keep the
+copyright notice.
+
+Two things the licence does not cover. The brand assets in `frontend/public/logos/` — the Intelinside lockup
+and the Cascadia wordmark — are not licensed for reuse, so a fork needs its own name and mark. The vendor
+logos beside them, and every hardware, model, and runtime name in the catalog, are trademarks of their
+owners, used here only to identify what a result ran on.
+
+Intelinside is an independent community project. Intel, Arc, Core Ultra, Xeon, and Gaudi are trademarks of
+Intel Corporation. We are not affiliated with, endorsed by, or sponsored by Intel Corporation, or by any
+other vendor or project named here.

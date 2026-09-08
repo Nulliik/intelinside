@@ -18,7 +18,7 @@
     "supabase:db:push:prod:dry-run": "supabase --workdir .. db push --project-ref xnzhdnudmgquuwdpuisy --dry-run",
     "supabase:db:reset:staging": "bash scripts/reset-staging.sh"
   },
-  "license": "UNLICENSED",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "dependencies": {

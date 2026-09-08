@@ -140,3 +140,13 @@ moderation threshold is for. Bugs, missing hardware, and everything else go in
 
 Found a security issue? Do not open a public issue. Use GitHub's private vulnerability reporting on the
 [Security tab](https://github.com/labscommunity/intelinside/security/advisories/new).
+
+---
+
+## Licensing your contribution
+
+The project is [MIT](LICENSE). Open a pull request — code, a catalog entry, or a result — and you are
+offering that work under the same licence, and confirming it is yours to give. There is nothing to sign.
+
+The brand assets are the exception. The Intelinside lockup and the Cascadia wordmark in
+`frontend/public/logos/` are not covered by the licence, and neither are the vendor logos beside them.
