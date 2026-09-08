@@ -26,8 +26,8 @@ const STEPS: Record<Path, { title: string; hint: string }[]> = {
   ],
   agent: [
     { title: 'Copy the prompt', hint: 'Built for your handle and your rig.' },
-    { title: 'Your agent opens the pull request', hint: 'It writes the result file for you.' },
-    { title: 'Open the link it comments', hint: 'Check the numbers, then submit.' },
+    { title: 'Your agent opens the pull request', hint: 'As you, from your own GitHub account.' },
+    { title: 'Merging puts it on the board', hint: 'Nothing to fill in afterwards.' },
   ],
 }
 

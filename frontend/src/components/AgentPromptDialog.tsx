@@ -15,8 +15,8 @@ import type { RigSummary } from '@/lib/api/types'
 
 /*
   Hand the run to a coding agent instead of typing it in. The dialog only produces text: the agent opens the pull
-  request, the repo's check comments the `/submit?pr=N` link, and that link brings the person back to this form with
-  the file read in. Nothing here talks to GitHub.
+  request from the person's own GitHub account, the ingestion check verifies it, and merging inserts the result.
+  Nothing here talks to GitHub, and there is no form to come back to afterwards.
 
   The prompt names the rig, so it needs one; someone with no rigs is sent to the form to register it first.
 */
@@ -31,9 +31,9 @@ type Props = {
 }
 
 const STEPS = [
-  'Your agent opens the pull request.',
-  'The check validates it and comments a link.',
-  'You open the link, check the numbers, and submit.',
+  'Your agent opens the pull request as you.',
+  'A check verifies the file, your account, and the rig.',
+  'A maintainer merges it and the result is on the board.',
 ]
 
 export function AgentPromptDialog({ open, onOpenChange, handle, rigs, rigId, onRigChange }: Props) {
@@ -44,8 +44,8 @@ export function AgentPromptDialog({ open, onOpenChange, handle, rigs, rigId, onR
       Your agent writes the result file and opens a pull request on{' '}
       <a href={REPO_URL} target="_blank" rel="noreferrer">
         {REPO}
-      </a>
-      . The check validates it and comments with a link that finishes the submission here.
+      </a>{' '}
+      from your own account. Merging it puts the result on the board — nothing to fill in here afterwards.
     </>
   )
   const body = <AgentPromptBody handle={handle} rigs={rigs} rigId={rigId} onRigChange={onRigChange} phone={phone} />

@@ -3,19 +3,23 @@ import { RESULTS_DIR } from '@/lib/pr'
 
 /*
   The prompt someone hands to their coding agent so it submits for them. The agent writes
-  `results/<handle>/<name>.json` and opens a pull request; the repo's check validates the file and comments the
-  `/submit?pr=N` link that finishes the submission on this page — the same pipeline a hand-written file goes through.
+  `results/<handle>/<name>.json` and opens a pull request from their own account; the ingestion check verifies the
+  file, the account, and rig ownership, and merging inserts the result. There is no form to come back to.
 
-  Everything the site knows is substituted here: the handle decides the folder, and the rig is named by the id the
-  file format expects. The wording itself belongs to the agent pipeline, so this is the one string to edit when it
-  lands; nothing in the dialog reads it apart from the copy button.
+  The account is why the prompt insists on the person's own GitHub session: a bot-authored pull request cannot be
+  attributed to them, and the check will refuse it. Everything else the site knows is substituted here — the handle
+  decides the folder, and the rig is named by the id the file format expects. The wording itself belongs to the
+  agent pipeline, so this is the one string to edit when it lands.
 */
 export function agentPrompt({ handle, rigId, rigName }: { handle: string; rigId: string; rigName: string }): string {
   const path = `${RESULTS_DIR}/${handle}/<name>.json`
   return `Submit my benchmark result to the Intelinside leaderboard.
 
 Repo: https://github.com/${REPO}
-Add one file at ${path} and open a pull request from my account.
+Add one file at ${path} and open a pull request against main.
+
+Open it with my own GitHub CLI session, as me. A pull request authored by a bot
+cannot be attributed to my account and the check will refuse it.
 
 The rig is already registered on the site, so name it as it is: "rig": "${rigId}" — my ${rigName}.
 Read ${RESULTS_DIR}/README.md in that repo for the field list, and frontend/src/catalog/ for the model, quant
@@ -25,5 +29,8 @@ required; promptTps, ttftMs, contextLength, batchSize and runtimeFlags if the lo
 Validate before you push:
   npm --prefix frontend run results:validate -- ${path}
 
-Do not invent numbers. If a value is not in the log, ask me for it.`
+Do not invent numbers. If a value is not in the log, ask me for it.
+
+Once the pull request is open you are done: a maintainer merges it and the
+result is inserted automatically. Do not submit anything on the website.`
 }
