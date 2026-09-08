@@ -2,10 +2,9 @@ import { REVISION_MAX, RUNTIME_FLAGS_MAX, type Result, type ResultInput } from '
 import { REPO } from '@/lib/brand'
 import { HARDWARE_BY_ID, MODEL_BY_ID, QUANT_BY_ID, RUNTIME_BY_ID } from '@/catalog'
 
-// Submitting by pull request. A contributor adds `results/<handle>/<name>.json` to the site's repo and opens a PR;
-// the repo's check validates the file with `parseResultFile` (the same code, run by frontend/scripts/validate-results.mjs)
-// and comments with a link to /submit?pr=N. The submit form reads the PR through GitHub's public API, fills itself
-// in, and uses the PR as the evidence link. Nothing here writes to GitHub: the browser only reads public data.
+// PR results are validated by trusted CI and inserted into Supabase on merge.
+// This parser also supports the legacy browser prefill and exporting existing results as archive files.
+// The browser only reads GitHub; privileged ingestion lives in frontend/scripts/pr-results.mjs.
 
 export const RESULTS_DIR = 'results'
 const API = 'https://api.github.com'
