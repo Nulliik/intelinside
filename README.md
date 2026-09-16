@@ -1,7 +1,7 @@
 # Intelinside
 
 **A community leaderboard of AI inference on Intel hardware.** How fast do local models actually run on Arc
-cards, Core Ultra chips, Xeon, and Gaudi? Not in a vendor's slide deck — on machines people own.
+cards, Core Ultra chips, Xeon, and Gaudi? Not in a vendor's slide deck.
 
 People sign in with GitHub, register the rigs they run models on, and post the decode tokens per second they
 get for a model at a given quantization on a given runtime. Results are self-reported and confirmed by the
@@ -89,12 +89,12 @@ Deployed on Vercel; the Open Graph cards are rendered by edge functions with Sat
 
 ## License
 
-[MIT](LICENSE), for the code and the data in this repository. Fork it, ship it, build on it — keep the
-copyright notice.
+[MIT](LICENSE), for the code and the data in this repository.
 
-Two things the licence does not cover. The brand assets in `frontend/public/logos/` — the Intelinside lockup
-and the Cascadia wordmark — are not licensed for reuse, so a fork needs its own name and mark. The vendor
-logos beside them, and every hardware, model, and runtime name in the catalog, are trademarks of their
+Two things the licence does not cover. The brand assets in `frontend/public/logos/` (the Intelinside lockup
+and the Cascadia wordmark) are not licensed for reuse, so a fork needs its own name and mark.
+
+The vendor logos beside them, and every hardware, model, and runtime name in the catalog, are trademarks of their
 owners, used here only to identify what a result ran on.
 
 Intelinside is an independent community project. Intel, Arc, Core Ultra, Xeon, and Gaudi are trademarks of
