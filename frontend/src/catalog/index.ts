@@ -48,6 +48,66 @@ export const MODELS: Model[] = [
     id: 'gemma-3-12b', name: 'Gemma 3 12B IT', family: 'Gemma 3', params: '12B', architecture: 'dense',
     sourceUrl: 'https://huggingface.co/google/gemma-3-12b-it', logoUrl: '/logos/models/gemma.svg', brandColor: '#6dc799', quants: ['int4', 'q4_k_m', 'q8_0'],
   },
+  {
+    id: 'qwen3-8-27b', name: 'Qwen3.8-27B', family: 'Qwen3.8', params: '27B', architecture: 'dense',
+    sourceUrl: 'https://huggingface.co/Qwen/Qwen3.8-27B', logoUrl: '/logos/models/qwen.svg', brandColor: '#b699eb', quants: ['int4', 'int8', 'q4_k_m', 'q8_0'],
+  },
+  {
+    id: 'qwen3-4b-instruct-2507', name: 'Qwen3-4B-Instruct-2507', family: 'Qwen3', params: '4B', architecture: 'dense',
+    sourceUrl: 'https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507', logoUrl: '/logos/models/qwen.svg', brandColor: '#b699eb', quants: ['int4', 'int8', 'q4_k_m', 'q8_0', 'fp16'],
+  },
+  {
+    id: 'qwen3-next-80b-a3b', name: 'Qwen3-Next-80B-A3B-Instruct', family: 'Qwen3-Next', params: '80B', architecture: 'moe', activeParams: '3B',
+    sourceUrl: 'https://huggingface.co/Qwen/Qwen3-Next-80B-A3B-Instruct', logoUrl: '/logos/models/qwen.svg', brandColor: '#b699eb', quants: ['int4', 'q4_k_m', 'q8_0'],
+  },
+  {
+    id: 'qwen3-coder-next', name: 'Qwen3-Coder-Next', family: 'Qwen3-Next', params: '80B', architecture: 'moe', activeParams: '3B',
+    sourceUrl: 'https://huggingface.co/Qwen/Qwen3-Coder-Next', logoUrl: '/logos/models/qwen.svg', brandColor: '#b699eb', quants: ['int4', 'q4_k_m', 'q8_0'],
+  },
+  {
+    id: 'gemma-4-12b', name: 'Gemma 4 12B IT', family: 'Gemma 4', params: '12B', architecture: 'dense',
+    sourceUrl: 'https://huggingface.co/google/gemma-4-12B-it', logoUrl: '/logos/models/gemma.svg', brandColor: '#6dc799', quants: ['int4', 'q4_k_m', 'q8_0'],
+  },
+  {
+    id: 'gemma-4-26b-a4b', name: 'Gemma 4 26B A4B IT', family: 'Gemma 4', params: '26B', architecture: 'moe', activeParams: '4B',
+    sourceUrl: 'https://huggingface.co/google/gemma-4-26B-A4B-it', logoUrl: '/logos/models/gemma.svg', brandColor: '#6dc799', quants: ['int4', 'q4_0', 'q4_k_m', 'q8_0'],
+  },
+  {
+    id: 'gpt-oss-20b', name: 'gpt-oss-20b', family: 'gpt-oss', params: '21B', architecture: 'moe', activeParams: '3.6B',
+    sourceUrl: 'https://huggingface.co/openai/gpt-oss-20b', brandColor: '#a3b8cf', quants: ['mxfp4', 'int4', 'q4_k_m', 'q8_0'],
+  },
+  {
+    id: 'mistral-small-3-2-24b', name: 'Mistral Small 3.2 24B Instruct', family: 'Mistral Small 3.2', params: '24B', architecture: 'dense',
+    sourceUrl: 'https://huggingface.co/mistralai/Mistral-Small-3.2-24B-Instruct-2506', brandColor: '#eba36d', quants: ['int4', 'q4_k_m', 'q8_0'],
+  },
+  {
+    id: 'granite-4-2-8b', name: 'Granite 4.2 8B', family: 'Granite 4.2', params: '8B', architecture: 'dense',
+    sourceUrl: 'https://huggingface.co/ibm-granite/granite-4.2-8b', brandColor: '#8fa8d8', quants: ['int4', 'q4_k_m', 'q8_0', 'fp16'],
+  },
+  {
+    id: 'granite-4-2-30b', name: 'Granite 4.2 30B', family: 'Granite 4.2', params: '30B', architecture: 'dense',
+    sourceUrl: 'https://huggingface.co/ibm-granite/granite-4.2-30b', brandColor: '#8fa8d8', quants: ['int4', 'q4_k_m', 'q8_0'],
+  },
+  {
+    id: 'nemotron-3-5-lightning-30b-a3b', name: 'Nemotron 3.5 Lightning 30B A3B', family: 'Nemotron 3.5', params: '30B', architecture: 'moe', activeParams: '3B',
+    sourceUrl: 'https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16', brandColor: '#8fc25c', quants: ['q4_k_m', 'q8_0', 'bf16'],
+  },
+  {
+    id: 'lfm2-5-2-6b', name: 'LFM2.5-2.6B', family: 'LFM2.5', params: '2.6B', architecture: 'dense',
+    sourceUrl: 'https://huggingface.co/LiquidAI/LFM2.5-2.6B', brandColor: '#6fc3d6', quants: ['int4', 'int8', 'q4_k_m', 'q8_0', 'fp16'],
+  },
+  {
+    id: 'lfm2-5-8b-a1b', name: 'LFM2.5-8B-A1B', family: 'LFM2.5', params: '8B', architecture: 'moe', activeParams: '1B',
+    sourceUrl: 'https://huggingface.co/LiquidAI/LFM2.5-8B-A1B', brandColor: '#6fc3d6', quants: ['int4', 'q4_k_m', 'q8_0'],
+  },
+  {
+    id: 'minicpm5-2b', name: 'MiniCPM5-2B', family: 'MiniCPM5', params: '2.5B', architecture: 'dense',
+    sourceUrl: 'https://huggingface.co/openbmb/MiniCPM5-2B', brandColor: '#e5a3c2', quants: ['int4', 'q4_k_m', 'q8_0', 'fp16'],
+  },
+  {
+    id: 'glm-5-3-flash', name: 'GLM-5.3-Flash', family: 'GLM-5.3', params: '320B', architecture: 'moe', activeParams: '18B',
+    sourceUrl: 'https://huggingface.co/zai-org/GLM-5.3-Flash', brandColor: '#7fa9d9', quants: ['int4', 'q4_k_m'],
+  },
 ]
 
 /** One-line explanation of a quant for tooltips. */
