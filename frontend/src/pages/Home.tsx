@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ChevronRight, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { GitHubMark } from '@/components/GitHubMark'
 import { LeaderboardTable } from '@/components/LeaderboardTable'
@@ -24,6 +25,9 @@ import { cn } from '@/lib/utils'
 
 const quietLink = 'font-normal text-muted-foreground hover:text-foreground'
 
+// Keep a small, curated mix of local models up front as the catalog grows.
+const FEATURED_MODEL_IDS = ['qwen3-5-9b', 'gemma-4-12b', 'gpt-oss-20b', 'qwen3-6-35b-a3b']
+
 export default function Home() {
   usePageTitle(PAGE_SEO.home.title, PAGE_SEO.home.description, PAGE_SEO.home.brandFirst)
   // Launch week. Flips to the ordinary page in place at zero.
@@ -32,6 +36,14 @@ export default function Home() {
   const { user, requestSignIn } = useSession()
   const [model, setModel] = useState('')
   const top = useAsync(() => api.topResults({ model: model || undefined, limit: 10 }), [model])
+  const models = cat.data?.models ?? []
+  const featuredModels = [
+    ...FEATURED_MODEL_IDS.flatMap((id) => models.filter((m) => m.id === id)),
+    ...models.filter((m) => !FEATURED_MODEL_IDS.includes(m.id)),
+  ].slice(0, 4)
+  const moreModels = models.filter((m) => !featuredModels.some((featured) => featured.id === m.id))
+  const moreModelItems = moreModels.map((m) => ({ value: m.id, label: m.name }))
+  const selectedMoreModel = moreModels.some((m) => m.id === model) ? model : null
   // Six parts across the kinds for the catalog section, so it shows the breadth of the database rather than the first six CPUs.
   const parts = useAsync(async () => {
     const [gpu, cpu, igpu, npu] = await Promise.all([
@@ -87,8 +99,18 @@ export default function Home() {
               className="-ml-3"
               value={model}
               onChange={setModel}
-              items={[{ value: '', label: 'All models' }, ...(cat.data?.models ?? []).map((m) => ({ value: m.id, label: m.name }))]}
+              items={[{ value: '', label: 'All models' }, ...featuredModels.map((m) => ({ value: m.id, label: m.name }))]}
             />
+            {moreModels.length > 0 ? (
+              <Select value={selectedMoreModel} onValueChange={(value) => { if (value != null) setModel(value) }} items={moreModelItems}>
+                <SelectTrigger aria-label="More models" className={cn('max-w-full', selectedMoreModel && 'border-foreground/40')}>
+                  <SelectValue placeholder="More models" />
+                </SelectTrigger>
+                <SelectContent align="start" alignItemWithTrigger={false} className="max-h-72 w-max max-w-[calc(100vw-2.5rem)]">
+                  {moreModelItems.map((item) => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            ) : null}
             <span className="ml-auto text-xs text-muted-foreground">Best entry per rig or part, model, and quant · decode tok/s</span>
           </Toolbar>
           {top.data && cat.data ? (
