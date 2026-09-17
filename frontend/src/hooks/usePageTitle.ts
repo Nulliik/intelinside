@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { SITE_DESCRIPTION, pageTitle } from '@/lib/seo'
 
 /**
- * Sets the tab title ("Rigs | Intelinside", or brand first when asked) and, when given, the page's meta
+ * Sets the tab title ("Rigs | Intelinside.ai", or brand first when asked) and, when given, the page's meta
  * description; otherwise the site-wide one.
  */
 export function usePageTitle(title?: string, description?: string, brandFirst = false) {
