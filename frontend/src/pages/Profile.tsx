@@ -1,4 +1,4 @@
-import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { ExternalLink, GitFork } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { UserAvatar } from '@/components/UserAvatar'
@@ -33,11 +33,17 @@ export default function Profile() {
   const [sp, setSp] = useSearchParams()
   const tab = (sp.get('tab') as Tab) || 'rigs'
   const cat = useCatalog()
+  // Handles are stored lowercase, but profile URLs are often typed or shared with
+  // GitHub's casing (e.g. /u/SergiioB). Resolve against the lowercase handle and
+  // canonicalize the address bar without dropping the tab query.
+  const canonical = handle.toLowerCase()
   const data = useAsync(
-    () => Promise.all([api.user(handle), api.userRigs(handle), api.userResults(handle), api.customRuntimes({ owner: handle })]),
-    [handle],
+    () => Promise.all([api.user(canonical), api.userRigs(canonical), api.userResults(canonical), api.customRuntimes({ owner: canonical })]),
+    [canonical],
   )
-  usePageTitle(handle ? `@${handle}` : 'Profile')
+  usePageTitle(canonical ? `@${canonical}` : 'Profile')
+  if (canonical !== handle)
+    return <Navigate to={{ pathname: `/u/${canonical}`, search: sp.toString() }} replace />
   if (data.error)
     return (
       <Block>
