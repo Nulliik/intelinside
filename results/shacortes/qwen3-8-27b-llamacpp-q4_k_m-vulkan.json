@@ -1,0 +1,16 @@
+{
+  "$schema": "https://raw.githubusercontent.com/labscommunity/intelinside/main/results/schema.json",
+  "rig": "3",
+  "component": "intel-arc-pro-b70",
+  "componentQuantity": 1,
+  "model": "qwen3-8-27b",
+  "quant": "q4_k_m",
+  "runtime": "llamacpp",
+  "runtimeVersion": "b11026 (b49650adb)",
+  "runtimeFlags": "vulkan backend, -ngl 99 -fa 1 -p 512 -n 256 -r 5, single request",
+  "decodeTps": 14.810784,
+  "promptTps": 679.554036,
+  "batchSize": 1,
+  "runDate": "2026-09-17",
+  "notes": "Stock upstream ggml-org/llama.cpp at b49650adb, clean tree, vulkan backend. Weights unsloth/Qwen3.8-27B-GGUF. decodeTps is tg256 averaged over 5 runs, one request at a time."
+}
