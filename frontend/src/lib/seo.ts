@@ -1,14 +1,14 @@
 // Titles and descriptions for the pages that matter to search, in one place. The app sets them on the document,
 // the Vite plugin bakes the home page's into index.html, and the middleware serves them to crawlers, which never
 // run the app. Relative imports only: this also runs at the edge and in the Vite config.
-import { BRAND_NAME } from './brand.js'
+const TITLE_BRAND = 'Intelinside.ai'
 
 export const TITLE_SEPARATOR = ' | '
 
-/** "Models | Intelinside", or brand first for the home page: "Intelinside | Local LLM Benchmarks on Intel Hardware". */
+/** "Models | Intelinside.ai", or brand first for the home page: "Intelinside.ai | Local LLM Benchmarks on Intel Hardware". */
 export function pageTitle(title?: string, brandFirst = false): string {
-  if (!title) return BRAND_NAME
-  return brandFirst ? `${BRAND_NAME}${TITLE_SEPARATOR}${title}` : `${title}${TITLE_SEPARATOR}${BRAND_NAME}`
+  if (!title) return TITLE_BRAND
+  return brandFirst ? `${TITLE_BRAND}${TITLE_SEPARATOR}${title}` : `${title}${TITLE_SEPARATOR}${TITLE_BRAND}`
 }
 
 /** The site-wide description, used wherever a page has nothing more specific to say. */
