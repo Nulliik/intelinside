@@ -1,0 +1,16 @@
+{
+  "rig": "6",
+  "component": "intel-arc-pro-b70",
+  "componentQuantity": 1,
+  "model": "qwen3-8-27b",
+  "quant": "int4",
+  "runtime": "vllm",
+  "runtimeVersion": "0.27.2rc1.dev77+gac7509e2b",
+  "runtimeFlags": "MTP4 (Draft INT4 S+M1); prefix cache on; XPU graphs on; v5 scheduler patch",
+  "decodeTps": 106.7,
+  "ttftMs": 335,
+  "contextLength": 131072,
+  "batchSize": 1,
+  "runDate": "2026-09-14",
+  "notes": "Dense 27B hybrid-attention (GDN). C1 decode with calibrated realistic Pi prompts, client post-first-token rate, median of n=5 (spread 103.2-111.3), MTP acceptance 89-96%. Prefix cache enabled. Single card of a 2x B70 rig. Configured cap 230 W (not measured draw). Checkpoint SergiioB/Qwen3.8-27B-GPTQ-Int4-sym-G128-MTP-BF16 (GPTQ-INT4 G128) with the separate INT4 draft head (S+M1); recommended-model-card sampling regimes kept separate from greedy diagnostics. Measured through the LocalMaxxing short-prompt harness against our pinned server (record cmt03mj040eh8ms01trjvhm75). Correctness: coherent-output smoke. Evidence: cookbook docs/qwen38-27b/QWEN38-VLLM-XPU.md current-stack C1 table. Self-reported, E2."
+}
