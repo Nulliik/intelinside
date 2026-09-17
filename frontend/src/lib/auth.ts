@@ -26,7 +26,10 @@ function metadataString(user: SupabaseUser, ...keys: string[]): string | undefin
 }
 
 export function toAppUser(user: SupabaseUser): User {
-  const handle = metadataString(user, 'user_name', 'preferred_username') ?? user.email?.split('@')[0] ?? user.id
+  // The auth trigger stores profile handles lowercase (profiles_handle_format), while GitHub's
+  // user_name keeps its original casing. Handles are compared exactly everywhere (profile routes,
+  // owner filters), so the session handle must be derived the same way the trigger does.
+  const handle = (metadataString(user, 'user_name', 'preferred_username') ?? user.email?.split('@')[0] ?? user.id).toLowerCase()
 
   return {
     id: user.id,
