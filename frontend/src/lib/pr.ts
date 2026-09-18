@@ -1,6 +1,7 @@
 import { REVISION_MAX, RUNTIME_FLAGS_MAX, type Result, type ResultInput } from '@/lib/api/types'
 import { REPO } from '@/lib/brand'
 import { HARDWARE_BY_ID, MODEL_BY_ID, QUANT_BY_ID, RUNTIME_BY_ID } from '@/catalog'
+import { isEvidenceUrl } from '@/lib/evidence'
 
 // PR results are validated by trusted CI and inserted into Supabase on merge.
 // This parser also supports the legacy browser prefill and exporting existing results as archive files.
@@ -34,6 +35,8 @@ export type ResultFile = {
   /** YYYY-MM-DD */
   runDate: string
   notes?: string
+  /** Optional HTTPS link to logs, scripts, a gist, a report, or a repository. */
+  evidenceUrl?: string
   /** The result's URL on the site once it has been submitted, so the archive entry and the live entry point at each other. */
   result?: string
 }
@@ -120,6 +123,8 @@ export function parseResultFile(raw: unknown): { file: Partial<ResultFile>; prob
     file.runDate = undefined
   }
   file.notes = str('notes')
+  file.evidenceUrl = str('evidenceUrl')
+  if (file.evidenceUrl && !isEvidenceUrl(file.evidenceUrl)) problems.push('"evidenceUrl" must be a full HTTPS URL.')
   file.result = str('result')
   return { file, problems }
 }
@@ -188,6 +193,7 @@ export function resultFileFor(r: Result | ResultInput, resultUrl?: string): Resu
     ...(r.batchSize != null ? { batchSize: r.batchSize } : {}),
     runDate: r.runDate.slice(0, 10),
     ...(r.notes ? { notes: r.notes } : {}),
+    ...(r.repoUrl?.trim() ? { evidenceUrl: r.repoUrl.trim() } : {}),
     ...(resultUrl ? { result: resultUrl } : {}),
   }
 }

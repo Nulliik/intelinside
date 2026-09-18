@@ -38,7 +38,9 @@ without a linked personal account. Account signup and rig registration remain on
   reports the total across concurrent requests, which is a larger and different number from what one
   person sees waiting for one answer. If that is what you measured, say so in the flags and set the
   batch size.
-- Report the runtime version, and link the repo you ran in — yours or the runtime's.
+- Report the runtime version. An evidence link is optional: benchmark logs, scripts, a gist, a report,
+  or a repository can help others check your result. Any full HTTPS URL works; no separate repository
+  is required. In PR JSON, use `evidenceUrl`. The submission PR is recorded separately.
 - Note the flags and settings that moved the number — backend, flash attention, KV cache precision. The same
   card on the same runtime can differ twofold on these.
 - Say whether it ran on a stock runtime or a custom runtime. Stock means the released runtime, however you configured

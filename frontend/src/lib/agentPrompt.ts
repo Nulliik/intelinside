@@ -25,6 +25,8 @@ The rig is already registered on the site, so name it as it is: "rig": "${rigId}
 Read ${RESULTS_DIR}/README.md in that repo for the field list, and frontend/src/catalog/ for the model, quant
 and runtime ids. Fill the file from my run: model, quant, runtime, runtimeVersion, decodeTps and runDate are
 required; promptTps, ttftMs, contextLength, batchSize and runtimeFlags if the log has them.
+If I have a published log, script, gist, report, or repository for the run, include its full HTTPS URL as
+evidenceUrl. This is optional; omit it if unavailable. The submission PR is linked automatically.
 
 Validate before you push:
   npm --prefix frontend run results:validate -- ${path}

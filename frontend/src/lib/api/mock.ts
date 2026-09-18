@@ -5,7 +5,7 @@ import type {
   CustomRuntime, CustomRuntimeInput,
 } from './types'
 import { ApiError, BUILD_SUMMARY_MAX } from './types'
-import { isGitHubUrl } from '@/lib/github'
+import { isEvidenceUrl } from '@/lib/evidence'
 import { hostIn } from '@/lib/hardware'
 import { HARDWARE_BY_ID, MODELS, MODEL_BY_ID, QUANTS, QUANT_BY_ID, RUNTIMES, RUNTIME_BY_ID, VISIBLE_HARDWARE } from '@/catalog'
 import { createSeed, rigSummaryLine, type SeedDb } from '@/mocks/seed'
@@ -269,13 +269,12 @@ function validateResult(input: Partial<ResultInput>, forCreate: boolean): Record
   need('runtimeId', 'Pick a runtime.')
   need('runtimeVersion', 'Enter the runtime version.')
   need('rigId', 'Pick a rig.')
-  need('repoUrl', 'Link the repo you ran in.')
   need('runDate', 'Enter the run date.')
   if (input.modelId && !MODEL_BY_ID[input.modelId]) errors.modelId = 'Unknown model.'
   if (input.modelId && input.quant && MODEL_BY_ID[input.modelId] && !MODEL_BY_ID[input.modelId].quants.includes(input.quant)) errors.quant = 'That quant has no board for this model.'
   if (input.decodeTps != null && !(input.decodeTps > 0)) errors.decodeTps = 'Decode tok/s must be above zero.'
   if (forCreate && input.decodeTps == null) errors.decodeTps = 'Enter decode tok/s.'
-  if (input.repoUrl && !isGitHubUrl(input.repoUrl)) errors.repoUrl = 'Enter a GitHub URL.'
+  if (input.repoUrl?.trim() && !isEvidenceUrl(input.repoUrl.trim())) errors.repoUrl = 'Enter a full HTTPS URL.'
   if (input.runDate && new Date(input.runDate).getTime() > Date.now() + 86400000) errors.runDate = 'Run date cannot be in the future.'
   if (input.rigId) {
     const rig = db.rigs.find((r) => r.id === input.rigId)
@@ -506,6 +505,7 @@ export const mockApi: Api = {
     if (Object.keys(errors).length) return fail('validation', 'Fix the highlighted fields.', 400, errors)
     const r: Result = {
       ...input, id: newId('res'), submitterId: u.id,
+      repoUrl: input.repoUrl?.trim() || undefined,
       componentQuantity: input.componentId ? input.componentQuantity ?? 1 : undefined,
       execution: input.customRuntimeId ? 'modified' : 'stock',
       verification: { status: 'self_reported', confirmations: 0 }, moderation: { flags: 0, hidden: false },
@@ -522,6 +522,7 @@ export const mockApi: Api = {
     const errors = validateResult({ ...r, ...input }, false)
     if (Object.keys(errors).length) return fail('validation', 'Fix the highlighted fields.', 400, errors)
     Object.assign(r, input, { updatedAt: nowIso() })
+    if ('repoUrl' in input) r.repoUrl = input.repoUrl?.trim() || undefined
     // Any edit resets verification.
     db.confirmations.set(r.id, new Set())
     recomputeVerification(r)

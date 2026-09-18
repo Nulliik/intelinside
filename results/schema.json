@@ -101,6 +101,12 @@
       "type": "string",
       "maxLength": 2000
     },
+    "evidenceUrl": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^[Hh][Tt][Tt][Pp][Ss]://\\S+$",
+      "description": "Optional HTTPS link to benchmark logs, scripts, a gist, a report, or a repository. The submission PR is recorded separately."
+    },
     "result": {
       "type": "string",
       "format": "uri",

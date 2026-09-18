@@ -32,7 +32,21 @@ Every result on the site can also live here as a file, and a file here can becom
    rebuilt it. Leave `component` out for a whole-rig result. Ids come from [the catalog](../frontend/src/catalog/); the site's hardware pages show each part's id in the URL. Missing a part? [Add it](../frontend/src/catalog/README.md) first and have a maintainer deploy the catalog to the site and database before submitting your result.
 
 3. Open a pull request against `main`. The **Result ingestion** check validates the JSON, matches the PR author’s numeric GitHub ID to their GitHub OAuth identity, and checks rig ownership and database constraints. If no linked account exists, the check asks you to sign up with that GitHub account and rerun it.
-4. A maintainer merges the PR. The workflow reads the merged files and inserts all new results into Supabase in one transaction, attributed to your account with the PR as evidence. No submit form is needed. The PR comment reports the result IDs or the error to fix.
+4. A maintainer merges the PR. The workflow reads the merged files and inserts all new results into Supabase in one transaction, attributed to your account with a link to the submission PR. No submit form is needed. The PR comment reports the result IDs or the error to fix.
+
+### Optional evidence link
+
+You can submit without an evidence link. If you have published benchmark logs, scripts, a gist, a report,
+or a repository, add `evidenceUrl` to help others check the run:
+
+```json
+{
+  "evidenceUrl": "https://example.com/benchmarks/my-run"
+}
+```
+
+Use a full HTTPS URL; it does not have to be hosted on GitHub. Omit the field when you have no link.
+The site keeps the submission PR link separately, whether or not you include `evidenceUrl`.
 
 ### Stock or a custom runtime
 
@@ -62,11 +76,11 @@ The pull request stays as the public record of the run. Closing without merging 
 
 If ingestion fails after merge, no partial batch is committed. Fix the missing account, rig, or catalog configuration, then ask a maintainer to rerun **Validate and ingest result files**, or run it manually with the PR number. Retries read the original merge commit, not the current branch contents. A correction to invalid merged JSON requires a new result file in a new PR.
 
-The legacy form can still prefill from a PR. Do not also submit it there: merge now submits it for you. If you already submitted through that form, add a `result` URL to the JSON to make it an archive.
+The legacy form can still preview a PR, including its optional evidence link. Submission is disabled while previewing a PR: merge submits it for you. Make changes in the PR's JSON file. If you already submitted through the old form, add a `result` URL to the JSON to make it an archive.
 
 ## Write the file from a result
 
-Every freshly submitted result offers **Add to the results repo**, which opens GitHub's new-file page with the JSON filled in, path and all. GitHub forks the repo for you if you cannot push to it. The file then carries a `result` link back to the live entry. Files with this field are archives and do not create or update database rows on merge.
+Every freshly submitted result offers **Add to the results repo**, which opens GitHub's new-file page with the JSON filled in, path and all, including `evidenceUrl` when provided. GitHub forks the repo for you if you cannot push to it. The file then carries a `result` link back to the live entry. Files with this field are archives and do not create or update database rows on merge.
 
 ## Rules
 

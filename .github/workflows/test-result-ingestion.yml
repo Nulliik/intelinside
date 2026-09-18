@@ -4,7 +4,8 @@ on:
     paths:
       - 'frontend/scripts/**'
       - 'frontend/src/lib/pr.ts'
-      - 'frontend/src/lib/api/types.ts'
+      - 'frontend/src/lib/evidence.ts'
+      - 'frontend/src/lib/api/**'
       - 'frontend/src/catalog/**'
       - 'frontend/package*.json'
       - 'supabase/migrations/**'
