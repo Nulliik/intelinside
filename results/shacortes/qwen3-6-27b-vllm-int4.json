@@ -1,0 +1,17 @@
+{
+  "$schema": "https://raw.githubusercontent.com/labscommunity/intelinside/main/results/schema.json",
+  "rig": "3",
+  "component": "intel-arc-pro-b70",
+  "componentQuantity": 1,
+  "model": "qwen3-6-27b",
+  "quant": "int4",
+  "runtime": "vllm",
+  "runtimeVersion": "0.29.0 (v0.29.0 98dff2a81)",
+  "runtimeFlags": "FLASH_ATTN v2, chunked prefill on, prefix caching on, fp16, kv cache auto, --max-num-seqs 1 --gpu-memory-utilization 0.92 --max-model-len 4096, single request",
+  "decodeTps": 27.96,
+  "ttftMs": 98.07,
+  "contextLength": 4096,
+  "batchSize": 1,
+  "runDate": "2026-09-17",
+  "notes": "Stock upstream vllm-project/vllm v0.29.0 (98dff2a81), clean checkout in its own venv, vllm_xpu_kernels from PyPI, plugins disabled. Weights cyankiwi/Qwen3.6-27B-AWQ-INT4. 8 prompts of 64 tokens, 256 tokens out each, one request at a time. decodeTps = 1000/mean_tpot_ms (35.77 ms), matching llama.cpp tg256; vLLM output_throughput over total wall time was 27.77 tok/s."
+}
