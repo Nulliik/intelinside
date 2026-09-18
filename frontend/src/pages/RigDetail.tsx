@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { ImagePlus, Pencil, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -131,7 +131,16 @@ export default function RigDetail() {
           </Cell>
           <Cell>
             <div className="aspect-[16/10] overflow-hidden rounded-xl">
-              <RigPhoto id={r.id} photoUrl={r.photoUrl} alt={r.name} />
+              {/* The placeholder carries the only ask, and only the owner sees it. */}
+              <RigPhoto id={r.id} photoUrl={r.photoUrl} alt={r.name} components={r.components}>
+                {isOwner ? (
+                  <div className="absolute inset-x-0 bottom-4 flex justify-center">
+                    <Button variant="outline" size="sm" className="shadow-lg shadow-black/40" render={<Link to={`/rigs/${r.id}/edit#rig-photo`} />} nativeButton={false}>
+                      <ImagePlus data-icon="inline-start" /> Add a photo
+                    </Button>
+                  </div>
+                ) : null}
+              </RigPhoto>
             </div>
           </Cell>
         </div>

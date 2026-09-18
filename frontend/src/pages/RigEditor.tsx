@@ -1,4 +1,5 @@
-import { useNavigate, useParams } from 'react-router-dom'
+import { useEffect } from 'react'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PageHeader } from '@/components/PageHeader'
 import { RigForm } from '@/components/RigForm'
@@ -16,6 +17,15 @@ export default function RigEditor() {
   const { user, loading } = useSession()
   const existing = useAsync(() => (rigId ? api.rig(rigId) : Promise.resolve(null)), [rigId])
   usePageTitle(rigId ? 'Edit rig' : 'New rig')
+  // The rig page's Add a photo button lands on #rig-photo; the router does not scroll to hashes, so do it once the form is up.
+  const { hash } = useLocation()
+  const ready = !loading && !!user && (!rigId || !!existing.data)
+  useEffect(() => {
+    if (!ready || hash !== '#rig-photo') return
+    const input = document.getElementById('rig-photo')
+    input?.scrollIntoView({ block: 'center' })
+    input?.focus()
+  }, [ready, hash])
 
   if (loading || (rigId && existing.loading))
     return (

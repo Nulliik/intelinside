@@ -26,7 +26,7 @@ The front end talks to the network only through `src/lib/api.ts`, whose function
 |---|---|---|
 | GET | `/api/models` | `Model[]` with per-quant result counts |
 | GET | `/api/models/:modelId` | `Model` |
-| GET | `/api/models/summary` | `ModelSummary[]`: for each model, the quant with the most results as `board` and that board's top three rig rows as `top`. Route this before `/api/models/:modelId` |
+| GET | `/api/models/summary` | `ModelSummary[]`: for each model, the quant with the most results as `board`, that board's top three rig rows as `top`, and the single best rig row across all of its boards as `best`. Route this before `/api/models/:modelId` |
 | GET | `/api/runtimes` | `Runtime[]` |
 | GET | `/api/quants` | `Quant[]` |
 | GET | `/api/hardware?type=&vendor=&q=&limit=&cursor=` | `HardwareItem[]` with `resultsCount` and `rigsCount` |
@@ -105,6 +105,7 @@ export type Quant = { id: string; label: string; bits: number; format: string };
 
 export type Model = {
   id: string; name: string; family: string; params: string;
+  brand: string; // the family at the logo level (Qwen, Gemma); the Models page groups by it. Catalog-only, not stored
   architecture: "dense" | "moe"; activeParams?: string; sourceUrl: string;
   logoUrl?: string; brandColor?: string; // logo is a catalog asset; brandColor drives the monogram fallback
   quants: string[]; resultCounts?: Record<string, number>;
@@ -139,7 +140,7 @@ export type Rig = {
   summary: string; createdAt: string; updatedAt: string;
 };
 export type RigSummary = Pick<Rig, "id" | "name" | "photoUrl" | "summary" | "owner"> &
-  { resultsCount: number; bestTps?: number };
+  { resultsCount: number; bestTps?: number; components?: { hardwareId: string; quantity: number }[] }; // components draw the placeholder when there is no photo
 export type RigInput = Pick<Rig, "name" | "os" | "photoUrl" | "notes"> & { components: { hardwareId: string; quantity: number }[] };
 
 export type Verification = { status: "self_reported" | "community_verified"; confirmations: number; confirmedByMe?: boolean };
@@ -164,6 +165,6 @@ export type BoardRow = {
 };
 export type ChartBar = { label: string; tps: number; runtimeId: string; href: string };
 export type TopResultsResponse = { items: BoardRow[]; chart: ChartBar[]; total: number };
-export type ModelSummary = { model: Model; board: BoardMeta; top: BoardRow[] };
+export type ModelSummary = { model: Model; board: BoardMeta; top: BoardRow[]; best?: BoardRow }; // best: the top rig row across every quant board
 
 ```

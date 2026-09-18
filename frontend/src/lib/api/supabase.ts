@@ -267,6 +267,7 @@ function view(snapshot: Snapshot) {
       photoUrl: rigPhotoUrl(row.photo_path),
       summary: summaryLine(componentsByRig.get(id) ?? []),
       owner: owner ? publicUser(owner) : undefined,
+      components: (componentsByRig.get(id) ?? []).map((component) => ({ hardwareId: component.hardware_id, quantity: component.quantity })),
       resultsCount: matching.length,
       bestTps: matching.length ? Math.max(...matching.map((result) => numberValue(result.decode_tps))) : undefined,
     }
@@ -477,7 +478,8 @@ export const supabaseApi: Api = {
     return models.map((model): ModelSummary => {
       const quant = [...model.quants].sort((a, b) => (model.resultCounts?.[b] ?? 0) - (model.resultCounts?.[a] ?? 0))[0]
       const items = boardRows(hydrated, model.id, quant, { kind: 'rigs' })
-      return { model, board: { modelId: model.id, quant, kind: 'rigs', total: items.length }, top: items.slice(0, 3) }
+      const best = model.quants.map((q) => boardRows(hydrated, model.id, q, { kind: 'rigs' })[0]).filter(Boolean).sort((a, b) => b.result.decodeTps - a.result.decodeTps)[0]
+      return { model, board: { modelId: model.id, quant, kind: 'rigs', total: items.length }, top: items.slice(0, 3), best }
     })
   },
   async runtimes() { return RUNTIMES },

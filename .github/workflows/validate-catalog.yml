@@ -7,6 +7,7 @@ on:
     paths:
       - 'frontend/src/catalog/**'
       - 'frontend/src/lib/api/types.ts'
+      - 'frontend/src/lib/schematic.ts'
       - 'frontend/scripts/validate-catalog.mjs'
 
 permissions:

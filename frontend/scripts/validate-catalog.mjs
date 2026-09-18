@@ -1,6 +1,6 @@
 // Checks the catalog in src/catalog/index.ts: ids unique and well formed, cross-references resolved, required
-// fields present. Runs on every pull request that touches the catalog, so a contributor sees the problem on
-// their own PR instead of in review.
+// fields present, and every part's placeholder drawing laid out without a clash. Runs on every pull request that
+// touches the catalog, so a contributor sees the problem on their own PR instead of in review.
 //   node frontend/scripts/validate-catalog.mjs [--report <markdown-file>]
 import { writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
@@ -40,6 +40,7 @@ const server = await createServer({
 })
 try {
   const { HARDWARE, MODELS, QUANTS, RUNTIMES } = await server.ssrLoadModule('/src/catalog/index.ts')
+  const { checkHardware } = await server.ssrLoadModule('/src/lib/schematic.ts')
 
   checkIds('hardware', HARDWARE)
   checkIds('model', MODELS)
@@ -65,10 +66,15 @@ try {
     if (h.integrated?.length && h.type !== 'cpu') fail(`${where} is a ${h.type} but lists integrated parts; only a CPU carries them.`)
   }
 
+  // The parts schematic that stands in for a rig photo is drawn from these specs. It fits the printed model number
+  // before it places anything else and reports what it could not fit, so nobody has to eyeball a new part.
+  for (const clash of checkHardware(HARDWARE)) fail(`The placeholder drawing for ${clash}.`)
+
   for (const m of MODELS) {
     const where = `model "${m.id}"`
     if (!m.name) fail(`${where} has no name.`)
     if (!m.family) fail(`${where} has no family.`)
+    if (!m.brand) fail(`${where} has no brand, the family at the logo level the Models page groups by.`)
     if (!m.params) fail(`${where} has no params.`)
     if (m.architecture !== 'dense' && m.architecture !== 'moe') fail(`${where} has architecture "${m.architecture}"; use "dense" or "moe".`)
     if (m.architecture === 'moe' && !m.activeParams) fail(`${where} is a mixture of experts, so it needs activeParams.`)

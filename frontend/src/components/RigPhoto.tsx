@@ -1,7 +1,12 @@
+import type { ReactNode } from 'react'
+import { RigSchematic } from '@/components/RigSchematic'
 import { cn } from '@/lib/utils'
 
-/** The rig photo, or a flat placeholder with a faint grid when there is none. */
-export function RigPhoto({ id, photoUrl, alt, className }: { id: string; photoUrl?: string; alt: string; className?: string }) {
+/**
+ * The rig photo, or, when there is none, a schematic of its parts on a faint grid so every rig still looks like
+ * itself. `children` overlays the placeholder only: the owner's Add a photo button lives there.
+ */
+export function RigPhoto({ id, photoUrl, alt, components, className, children }: { id: string; photoUrl?: string; alt: string; components?: { hardwareId: string; quantity: number }[]; className?: string; children?: ReactNode }) {
   if (photoUrl) return <img src={photoUrl} alt={alt} className={cn('h-full w-full object-cover', className)} />
   return (
     <div role="img" aria-label={alt} className={cn('relative h-full w-full overflow-hidden bg-card', className)}>
@@ -13,6 +18,8 @@ export function RigPhoto({ id, photoUrl, alt, className }: { id: string; photoUr
         </defs>
         <rect width="100%" height="100%" fill={`url(#grid-${id})`} />
       </svg>
+      {components?.length ? <RigSchematic components={components} className={children ? 'top-[7%] h-[66%]' : undefined} /> : null}
+      {children}
     </div>
   )
 }
