@@ -12,5 +12,5 @@
   "promptTps": 513.393873,
   "batchSize": 1,
   "runDate": "2026-09-18",
-  "notes": "Measured with llama-bench on 1x Intel Arc Pro B60 24GB (part of Rig 4: Maxsun Dual 48G). Weights unsloth/Qwen3.8-27B-UD-Q4_K_M.gguf. Vulkan backend, -ngl 99, flash attention on, KV cache q8_0. decodeTps is tg128 averaged over 3 runs (15.34 t/s). promptTps is pp512 (513.39 t/s)."
+  "notes": "Measured with llama-bench on 1x Intel Arc Pro B60 24GB (part of Rig 4: Maxsun Dual 48G). Weights unsloth/Qwen3.8-27B-UD-Q4_K_M.gguf. Vulkan backend, -ngl 99, flash attention on, KV cache q8_0. decodeTps is tg128 averaged over 3 runs (15.34 t/s). promptTps is pp512 (513.39 t/s, moving to 472.43 t/s at p2048 and 95.10 t/s at p65536)."
 }
