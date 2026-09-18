@@ -26,7 +26,7 @@ The front end talks to the network only through `src/lib/api.ts`, whose function
 |---|---|---|
 | GET | `/api/models` | `Model[]` with per-quant result counts |
 | GET | `/api/models/:modelId` | `Model` |
-| GET | `/api/models/summary` | `ModelSummary[]`: for each model, the quant with the most results as `board`, that board's top three rig rows as `top`, and the single best rig row across all of its boards as `best`. Route this before `/api/models/:modelId` |
+| GET | `/api/models/summary` | `ModelSummary[]`: for each model, the quant with the most results as `board` — its rigs board, or its components board when the rigs board is empty, since most results name a part — that board's top three rows as `top`, and the single best row across all of its boards, both kinds, as `best`. Route this before `/api/models/:modelId` |
 | GET | `/api/runtimes` | `Runtime[]` |
 | GET | `/api/quants` | `Quant[]` |
 | GET | `/api/hardware?type=&vendor=&q=&limit=&cursor=` | `HardwareItem[]` with `resultsCount` and `rigsCount` |
@@ -165,6 +165,6 @@ export type BoardRow = {
 };
 export type ChartBar = { label: string; tps: number; runtimeId: string; href: string };
 export type TopResultsResponse = { items: BoardRow[]; chart: ChartBar[]; total: number };
-export type ModelSummary = { model: Model; board: BoardMeta; top: BoardRow[]; best?: BoardRow }; // best: the top rig row across every quant board
+export type ModelSummary = { model: Model; board: BoardMeta; top: BoardRow[]; best?: BoardRow }; // board.kind says which board `top` is from; best: the top row across every quant board of either kind
 
 ```

@@ -477,9 +477,16 @@ export const supabaseApi: Api = {
     const models = await supabaseApi.models()
     return models.map((model): ModelSummary => {
       const quant = [...model.quants].sort((a, b) => (model.resultCounts?.[b] ?? 0) - (model.resultCounts?.[a] ?? 0))[0]
-      const items = boardRows(hydrated, model.id, quant, { kind: 'rigs' })
-      const best = model.quants.map((q) => boardRows(hydrated, model.id, q, { kind: 'rigs' })[0]).filter(Boolean).sort((a, b) => b.result.decodeTps - a.result.decodeTps)[0]
-      return { model, board: { modelId: model.id, quant, kind: 'rigs', total: items.length }, top: items.slice(0, 3), best }
+      // Most results name a part rather than a whole rig, so a quant's rigs board can be empty while its components
+      // board is full: the tile shows whichever has rows, rigs first.
+      const rigs = boardRows(hydrated, model.id, quant, { kind: 'rigs' })
+      const components = rigs.length ? [] : boardRows(hydrated, model.id, quant, { kind: 'components' })
+      const [kind, items]: [BoardKind, BoardRow[]] = rigs.length || !components.length ? ['rigs', rigs] : ['components', components]
+      const best = model.quants
+        .flatMap((q) => [boardRows(hydrated, model.id, q, { kind: 'rigs' })[0], boardRows(hydrated, model.id, q, { kind: 'components' })[0]])
+        .filter(Boolean)
+        .sort((a, b) => b.result.decodeTps - a.result.decodeTps)[0]
+      return { model, board: { modelId: model.id, quant, kind, total: items.length }, top: items.slice(0, 3), best }
     })
   },
   async runtimes() { return RUNTIMES },

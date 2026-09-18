@@ -244,8 +244,9 @@ export type HomeResponse = {
   topRigs: RigSummary[]
 }
 /**
- * One entry per model: the quant with the most results and that board's top three rigs, plus the single best
- * rig row across every quant board, which is what a list row shows.
+ * One entry per model: the quant with the most results and that board's top three rows — its rigs board, or its
+ * components board when no result names a whole rig (`board.kind` says which) — plus the single best row across
+ * every quant board of either kind, which is what a list row shows.
  */
 export type ModelSummary = { model: Model; board: BoardMeta; top: BoardRow[]; best?: BoardRow }
 /** Site-wide top results: best entry per rig-or-part, model, and quant, ranked by decode tok/s. */
