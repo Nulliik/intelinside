@@ -1,0 +1,16 @@
+{
+  "$schema": "https://raw.githubusercontent.com/labscommunity/intelinside/main/results/schema.json",
+  "rig": "4",
+  "component": "intel-arc-pro-b60",
+  "componentQuantity": 1,
+  "model": "qwen3-8-27b",
+  "quant": "q4_k_m",
+  "runtime": "llamacpp",
+  "runtimeVersion": "b10452 (b94041a98)",
+  "runtimeFlags": "vulkan backend, -ngl 99 -fa 1, KV q8_0, single Intel Arc Pro B60",
+  "decodeTps": 15.34212,
+  "promptTps": 513.393873,
+  "batchSize": 1,
+  "runDate": "2026-09-18",
+  "notes": "Measured with llama-bench on 1x Intel Arc Pro B60 24GB (part of Rig 4: Maxsun Dual 48G). Weights unsloth/Qwen3.8-27B-UD-Q4_K_M.gguf. Vulkan backend, -ngl 99, flash attention on, KV cache q8_0. decodeTps is tg128 averaged over 3 runs (15.34 t/s). promptTps is pp512 (513.39 t/s)."
+}

@@ -1,6 +1,8 @@
 {
   "$schema": "https://raw.githubusercontent.com/labscommunity/intelinside/main/results/schema.json",
   "rig": "4",
+  "component": "intel-arc-pro-b60",
+  "componentQuantity": 2,
   "model": "qwen3-8-27b",
   "quant": "q4_k_m",
   "runtime": "llamacpp",
