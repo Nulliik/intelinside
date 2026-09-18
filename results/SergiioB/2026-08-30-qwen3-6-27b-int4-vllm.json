@@ -1,0 +1,16 @@
+{
+  "rig": "1",
+  "component": "intel-arc-pro-b70",
+  "componentQuantity": 1,
+  "model": "qwen3-6-27b",
+  "quant": "int4",
+  "runtime": "vllm",
+  "runtimeVersion": "0.26.1rc1.dev457+gc810e5ee9.xpu (vllm-xpu-kernels 0.1.12)",
+  "runtimeFlags": "native MTP4 spec decode; fp8 KV (required at 128K); prefix cache on; scheduler 8192; gpu-memory-utilization 0.88",
+  "decodeTps": 69.3,
+  "promptTps": 1755,
+  "contextLength": 131072,
+  "batchSize": 1,
+  "runDate": "2026-08-30",
+  "notes": "Dense 27B. C1 decode at p512/g128, client post-first-token rate, median of n=5 after one same-output same-shape warmup; prefix cache enabled with unique entropy-first cold prefixes and zero cache-hit delta. promptTps is the cold-input rate at p2048 for the same MTP4 mode (actual input tokens / client TTFT), not isolated engine prefill. Single card of a 2x B70 rig. Configured cap 230 W (not measured draw). Checkpoint llmfan46/Qwen3.6-27B-uncensored-heretic-v2-Native-MTP-Preserved-GPTQ-Int4 (GPTQ-INT4 G128, native MTP head preserved), served from image vllm/vllm-openai-xpu@sha256:2c427ef477da092eb6f2cdbbbd24950b5fa171565b916db69d4c7bb10e68ca97 with patch_mtp_nightly.py + patch_mtp_boundary.py. Correctness: coherent-output smoke. Evidence: cookbook docs/qwen36-27/QWEN36-DENSE-VLLM-XPU.md, evidence commit a4ba8754; runDate is that evidence-record date. Self-reported, E2."
+}

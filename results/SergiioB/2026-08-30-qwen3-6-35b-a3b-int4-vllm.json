@@ -1,0 +1,16 @@
+{
+  "rig": "1",
+  "component": "intel-arc-pro-b70",
+  "componentQuantity": 1,
+  "model": "qwen3-6-35b-a3b",
+  "quant": "int4",
+  "runtime": "vllm",
+  "runtimeVersion": "0.26.1rc1.dev457+gc810e5ee9.xpu (vllm-xpu-kernels 0.1.12)",
+  "runtimeFlags": "native MTP4 spec decode; prefix cache on; scheduler 8192",
+  "decodeTps": 170.91,
+  "promptTps": 4532,
+  "contextLength": 131072,
+  "batchSize": 1,
+  "runDate": "2026-08-30",
+  "notes": "MoE (35B total, 3B active). C1 decode, client post-first-token rate, median of n=5 after one same-output same-shape warmup; prefix cache enabled with unique entropy-first cold prefixes and zero cache-hit delta; scheduler 8192; context 131072; C1. promptTps is the cold-input rate at p512 for the same MTP4 mode (actual input tokens / client TTFT), not isolated engine prefill. Single card of a 2x B70 rig. Configured cap 165 W (not measured draw). Checkpoint llmfan46/Qwen3.6-35B-A3B-uncensored-heretic-Native-MTP-Preserved-GPTQ-Int4 (GPTQ-INT4 G128, native MTP head preserved), served from image vllm/vllm-openai-xpu@sha256:2c427ef477da092eb6f2cdbbbd24950b5fa171565b916db69d4c7bb10e68ca97. Correctness: coherent-output smoke. Evidence: cookbook docs/qwen36-35a3/QWEN36-MOE-VLLM-XPU.md section 2, evidence commit a4ba8754; runDate is that evidence-record date. Self-reported, E2."
+}

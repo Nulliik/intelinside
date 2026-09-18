@@ -1,0 +1,16 @@
+{
+  "rig": "1",
+  "component": "intel-arc-pro-b70",
+  "componentQuantity": 1,
+  "model": "qwen3-8-27b",
+  "quant": "int8",
+  "runtime": "openvino-genai",
+  "runtimeVersion": "OpenVINO GenAI 2026.5 nightly (VLMPipeline)",
+  "runtimeFlags": "MTP nat5; KV f16; greedy; PERFORMANCE_HINT=LATENCY; INFERENCE_PRECISION=f16",
+  "decodeTps": 62.07,
+  "promptTps": 1536.5,
+  "ttftMs": 353.4,
+  "batchSize": 1,
+  "runDate": "2026-09-14",
+  "notes": "Dense 27B hybrid-attention (GDN). Short-context cell of the 2026-09-14 cross-engine sweep: p512 prompt (543 actual input tokens), g128 requested with ignore_eos, C1, client post-first-token rate, median of n=5. Greedy synthetic counting task - MTP acceptance and rate on natural text differ. KV f16 is clean to 48K context; long-context ceilings measured separately (u8/u4 paths, 128K full-protocol best). promptTps is the cold-input rate (actual input tokens / TTFT), not isolated engine prefill. Single card of a 2x B70 rig. Configured cap 230 W; measured 202 W mean card draw (energy1_input counter over the measured interval). Weights 25.8 GB; 4.0 GiB VRAM free after load. Checkpoint OpenVINO/Qwen3.8-27B-int8-ov (int8-ov VL split IR). Correctness: coherent-output smoke. Evidence: raw ctx-sweep-openvino.json in the 2026-09-14 sweep; published in cookbook docs/qwen38-27b/ENGINE-COMPARISON-CTX-20260914.md. Self-reported, E2."
+}

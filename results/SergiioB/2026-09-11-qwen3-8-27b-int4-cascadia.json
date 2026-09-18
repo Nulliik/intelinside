@@ -1,0 +1,15 @@
+{
+  "rig": "1",
+  "component": "intel-arc-pro-b70",
+  "componentQuantity": 1,
+  "model": "qwen3-8-27b",
+  "quant": "int4",
+  "runtime": "cascadia",
+  "runtimeVersion": "Cascadia 0.2.3 qwen35 backend (OpenVINO 2026.3.1)",
+  "runtimeFlags": "no speculative decode; OV LATENCY hint; INFERENCE_PRECISION=f16; prefix cache 1 GB",
+  "decodeTps": 4.97,
+  "contextLength": 131072,
+  "batchSize": 1,
+  "runDate": "2026-09-11",
+  "notes": "Dense 27B hybrid-attention (GDN). Wall tok/s over 128 generated tokens including prefill, p128/g128, C1, median of n=5 - wall-based, so it slightly understates steady decode. No speculative decode. Research engine: one-stage qwen35 backend over OpenVINO 2026.3.1; OpenVINO GenAI on the same IR measured 15.79 tok/s pre-MTP and 79.5 tok/s with a grafted MTP5 head (n=3 screen, not submitted here), so this number reflects the Cascadia backend, not the weights. Single card of a 2x B70 rig. Configured cap 230 W; measured 101.9 W mean draw, 65 C max temp (card is not power-bound here). Coherent-output quality PASS on all five samples. Checkpoint IR: SergiioB/Qwen3.8-27B-int4-gdn8-ov (INT4 with GDN kept in float). Evidence: raw n5-cascadia-int4-gdn8-230w.json (2026-09-11); published in cookbook docs/qwen38-27b/OPENVINO-CASCADIA-REPORT.md. Self-reported, E2."
+}
