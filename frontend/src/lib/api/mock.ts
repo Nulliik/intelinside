@@ -581,9 +581,15 @@ export const mockApi: Api = {
     const models = await mockApi.models()
     const out: ModelSummary[] = models.map((m) => {
       const quant = m.quants.map((q) => ({ q, n: vis.filter((r) => r.modelId === m.id && r.quant === q).length })).sort((a, b) => b.n - a.n)[0].q
-      const rows = boardRows(m.id, quant, { kind: 'rigs' })
-      const best = m.quants.map((q) => boardRows(m.id, q, { kind: 'rigs' })[0]).filter(Boolean).sort((a, b) => b.result.decodeTps - a.result.decodeTps)[0]
-      return { model: m, board: { modelId: m.id, quant, kind: 'rigs' as const, total: rows.length }, top: rows.slice(0, 3), best }
+      // The rigs board when it has rows, else the components board: most results name a part, not a whole rig.
+      const rigs = boardRows(m.id, quant, { kind: 'rigs' })
+      const components = rigs.length ? [] : boardRows(m.id, quant, { kind: 'components' })
+      const [kind, rows]: [BoardKind, BoardRow[]] = rigs.length || !components.length ? ['rigs', rigs] : ['components', components]
+      const best = m.quants
+        .flatMap((q) => [boardRows(m.id, q, { kind: 'rigs' })[0], boardRows(m.id, q, { kind: 'components' })[0]])
+        .filter(Boolean)
+        .sort((a, b) => b.result.decodeTps - a.result.decodeTps)[0]
+      return { model: m, board: { modelId: m.id, quant, kind, total: rows.length }, top: rows.slice(0, 3), best }
     })
     return delay(out)
   },

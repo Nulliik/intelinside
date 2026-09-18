@@ -6,7 +6,7 @@ import { UserAvatar } from '@/components/UserAvatar'
 import { HardwareTypeIcon } from '@/components/HardwareTypeIcon'
 import { ModelLogo } from '@/components/ModelLogo'
 import { VendorMark } from '@/components/VendorMark'
-import type { HardwareItem, Model, ModelSummary, RigSummary, Runtime } from '@/lib/api/types'
+import type { BoardMeta, HardwareItem, Model, ModelSummary, RigSummary, Runtime } from '@/lib/api/types'
 import { RuntimeMark } from '@/components/RuntimeMark'
 import { GhostList } from '@/components/empty'
 import { HARDWARE_TYPE_LABEL, QUANT_BY_ID, quantHint } from '@/catalog'
@@ -117,6 +117,9 @@ export function HardwareCard({ hardware, counts = true }: { hardware: HardwareIt
   )
 }
 
+/** The board page for a summary's board: the rigs board is the page's default, the components board is a query. */
+export const boardPath = (board: Pick<BoardMeta, 'modelId' | 'quant' | 'kind'>) => `/models/${board.modelId}/${board.quant}${board.kind === 'components' ? '?kind=components' : ''}`
+
 /** One chip per quant, each the link into that board with its result count. `lit` picks the chips drawn in full ink. */
 export function QuantChips({ model, lit, className }: { model: Model; lit: (quant: string) => boolean; className?: string }) {
   return (
@@ -144,7 +147,7 @@ export function ModelBoardCard({ summary, runtimes }: { summary: ModelSummary; r
   const { model, board, top } = summary
   const empty = top.length === 0
   const total = Object.values(model.resultCounts ?? {}).reduce((a, b) => a + b, 0)
-  const boardHref = `/models/${model.id}/${board.quant}`
+  const boardHref = boardPath(board)
   return (
     <div className={cn(cell, 'hover:bg-background')}>
       <div className="flex items-start gap-3">
@@ -168,7 +171,7 @@ export function ModelBoardCard({ summary, runtimes }: { summary: ModelSummary; r
       </div>
       <div>
         <div className="text-xs font-medium uppercase tracking-label text-muted-foreground">
-          <span className="font-mono normal-case tracking-normal">{QUANT_BY_ID[board.quant]?.label ?? board.quant}</span> · rigs · {`${board.total} ranked`}
+          <span className="font-mono normal-case tracking-normal">{QUANT_BY_ID[board.quant]?.label ?? board.quant}</span> · {board.kind} · {`${board.total} ranked`}
         </div>
         {/* An empty tile keeps the shape of the three rows it will hold rather than collapsing to one grey line. */}
         {empty ? (

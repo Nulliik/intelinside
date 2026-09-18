@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { PageHeader } from '@/components/PageHeader'
-import { ModelBoardCard, QuantChips } from '@/components/cards'
+import { ModelBoardCard, QuantChips, boardPath } from '@/components/cards'
 import { ModelLogo } from '@/components/ModelLogo'
 import { RuntimeMark } from '@/components/RuntimeMark'
 import { ErrorState } from '@/components/ErrorState'
@@ -135,7 +135,7 @@ function Best({ summary, runtimes, className }: { summary: ModelSummary; runtime
 function ModelRow({ summary, runtimes }: { summary: ModelSummary; runtimes: Record<string, Runtime> }) {
   const { model, board } = summary
   const total = resultsOf(summary)
-  const boardHref = `/models/${model.id}/${board.quant}`
+  const boardHref = boardPath(board)
   return (
     <div className={cn('grid gap-x-6 gap-y-2.5 border-b py-3 transition-colors hover:bg-card md:items-center', columns, inset)}>
       <div className="min-w-0">
