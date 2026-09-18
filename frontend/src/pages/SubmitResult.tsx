@@ -24,7 +24,7 @@ import { usePageTitle } from '@/hooks/usePageTitle'
 import { useSession } from '@/hooks/useSession'
 import { api } from '@/lib/api'
 import { REPO } from '@/lib/brand'
-import { isGitHubUrl } from '@/lib/github'
+import { isEvidenceUrl } from '@/lib/evidence'
 import { PrError, fetchPrResults, newResultFileUrl, parsePrRef, resultFileFor, type PrResults, type ResultFile } from '@/lib/pr'
 import { UNIT_LABEL, hasDiscreteGpu, hostIn, integratedParts, nestParts, unitLabel } from '@/lib/hardware'
 import { ApiError, REVISION_MAX, RUNTIME_FLAGS_MAX, type CustomRuntime, type Result, type ResultInput, type ResultRank, type RigSummary } from '@/lib/api/types'
@@ -99,7 +99,7 @@ function validate(f: Form, quantsFor: string[]): Record<string, string> {
     const v = num(f[k])
     if (v != null && (Number.isNaN(v) || v < 0)) e[k] = 'Must be zero or more.'
   }
-  if (!isGitHubUrl(f.repoUrl.trim())) e.repoUrl = 'Enter a GitHub URL, starting with https://github.com/.'
+  if (f.repoUrl.trim() && !isEvidenceUrl(f.repoUrl.trim())) e.repoUrl = 'Enter a full URL, starting with https://.'
   if (!f.runDate) e.runDate = 'Enter the run date.'
   else if (f.runDate > today()) e.runDate = 'Run date cannot be in the future.'
   return e
@@ -130,7 +130,7 @@ function toInput(f: Form): ResultInput {
 }
 
 /** Fills the form from a result file. Ids the catalog does not know stay blank and are reported, so the rest still lands. */
-function formFromFile(file: Partial<ResultFile>, rigs: RigSummary[], customRuntimes: CustomRuntime[], evidenceUrl: string, prev: Form): { form: Form; problems: string[] } {
+function formFromFile(file: Partial<ResultFile>, rigs: RigSummary[], customRuntimes: CustomRuntime[], prev: Form): { form: Form; problems: string[] } {
   const problems: string[] = []
   const wanted = file.rig?.toLowerCase()
   const rig = wanted ? rigs.find((r) => r.id.toLowerCase() === wanted) ?? rigs.find((r) => r.name.toLowerCase() === wanted) : undefined
@@ -156,7 +156,7 @@ function formFromFile(file: Partial<ResultFile>, rigs: RigSummary[], customRunti
       ttftMs: text(file.ttftMs),
       contextLength: text(file.contextLength),
       batchSize: text(file.batchSize),
-      repoUrl: evidenceUrl,
+      repoUrl: file.evidenceUrl ?? '',
       runDate: file.runDate ?? prev.runDate,
       notes: file.notes ?? '',
     },
@@ -243,7 +243,7 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
       runtimeFlags: r.runtimeFlags ?? '', customId: r.customRuntimeId ?? '', revision: r.revision ?? '',
       decodeTps: String(r.decodeTps), promptTps: r.promptTps?.toString() ?? '', ttftMs: r.ttftMs?.toString() ?? '',
       contextLength: r.contextLength?.toString() ?? '', batchSize: r.batchSize?.toString() ?? '',
-      repoUrl: r.repoUrl, runDate: r.runDate.slice(0, 10), notes: r.notes ?? '',
+      repoUrl: r.repoUrl ?? '', runDate: r.runDate.slice(0, 10), notes: r.notes ?? '',
     })
     setInitialized(true)
   }, [mode, existing.data, initialized])
@@ -256,10 +256,10 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
     else if (rigItems.length === 1) setForm((f) => (f.rigId ? f : { ...f, rigId: rigItems[0].id }))
   }, [rigItems])
 
-  // Prefill from a pull request on the site's repo: read its result files, fill what the catalog knows, keep the PR as evidence.
+  // Preview PR files with their optional evidence; submission happens through merge.
   const applyPrFile = (results: PrResults, index: number) => {
     const chosen = results.files[index]
-    const filled = formFromFile(chosen.file, rigItems ?? [], customRuntimes, results.pr.url, form)
+    const filled = formFromFile(chosen.file, rigItems ?? [], customRuntimes, form)
     setForm(filled.form)
     setPrFile(index)
     setPrProblems([...chosen.problems, ...filled.problems])
@@ -387,7 +387,8 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
     contextLength: num(form.contextLength),
     batchSize: num(form.batchSize),
     notes: form.notes.trim() || undefined,
-    repoUrl: form.repoUrl.trim(),
+    repoUrl: form.repoUrl.trim() || undefined,
+    sourcePrUrl: existing.data?.sourcePrUrl ?? pr?.pr.url,
     runDate: form.runDate ? isoAtNoon(form.runDate) : '',
     verification: existing.data?.verification ?? { status: 'self_reported', confirmations: 0 },
     moderation: existing.data?.moderation ?? { flags: 0, hidden: false },
@@ -397,6 +398,10 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
 
   const onSubmit = async (ev: FormEvent) => {
     ev.preventDefault()
+    if (mode === 'create' && pr) {
+      toast.info('PR results are submitted automatically on merge. Update the JSON in the PR to make changes.')
+      return
+    }
     setAttempted(true)
     const e = validate(form, quantsFor)
     setErrors(e)
@@ -592,7 +597,7 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
                       ))}
                     </ul>
                   ) : (
-                    <p className="mt-1 text-xs text-muted-foreground">Merging this PR submits the result automatically. Avoid submitting the same run twice.</p>
+                    <p className="mt-1 text-xs text-muted-foreground">This is a preview. Merging the PR submits the result automatically; make any changes in its JSON file.</p>
                   )}
                 </div>
                 <Button type="button" variant="ghost" size="sm" className="shrink-0" onClick={clearPr}>
@@ -822,10 +827,10 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
               </div>
             </Step>
 
-            <Step n={6} title="Evidence" hint="Link the repo you ran in, yours or the runtime's, so others can reproduce it.">
+            <Step n={6} title="Evidence" hint="An evidence link is optional. Logs, scripts, a gist, a report, or a repository can help others check your result.">
               <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_200px]">
-                <Field id="repoUrl" label="Repo link" error={errors.repoUrl}>
-                  <Input {...inputProps('repoUrl')} type="url" placeholder="https://github.com/you/bench" />
+                <Field id="repoUrl" label="Evidence link (optional)" error={errors.repoUrl}>
+                  <Input {...inputProps('repoUrl')} type="url" placeholder="https://example.com/benchmark-report" />
                 </Field>
                 <Field id="runDate" label="Run date" error={errors.runDate}>
                   <Input {...inputProps('runDate')} type="date" max={today()} />
@@ -837,8 +842,8 @@ export default function SubmitResult({ mode = 'create' }: { mode?: 'create' | 'e
             </Step>
 
             <div className={cn('flex flex-wrap items-center gap-2 py-5', inset)}>
-              <Button type="submit" size="lg" disabled={busy}>
-                {busy ? 'Submitting…' : mode === 'edit' ? 'Save changes' : 'Submit result'}
+              <Button type="submit" size="lg" disabled={busy || (mode === 'create' && !!pr)}>
+                {busy ? 'Submitting…' : mode === 'edit' ? 'Save changes' : pr ? 'Submitted on PR merge' : 'Submit result'}
               </Button>
               {mode === 'edit' && resultId ? (
                 <Button variant="ghost" render={<Link to={`/results/${resultId}`} />} nativeButton={false}>

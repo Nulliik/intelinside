@@ -152,10 +152,10 @@ export type Result = {
   rigId: string; rig?: RigSummary; componentId?: string; componentQuantity?: number; component?: HardwareItem;
   componentHost?: HardwareItem; // when the part is an iGPU or NPU: the CPU in the rig whose package carries it
   decodeTps: number; promptTps?: number; ttftMs?: number; contextLength?: number; batchSize?: number;
-  notes?: string; repoUrl: string; runDate: string;
+  notes?: string; repoUrl?: string; sourcePrUrl?: string; runDate: string;
   verification: Verification; moderation: Moderation; createdAt: string; updatedAt: string;
 };
-export type ResultInput = Omit<Result, "id" | "submitterId" | "submitter" | "rig" | "component" | "verification" | "moderation" | "createdAt" | "updatedAt">;
+export type ResultInput = Omit<Result, "id" | "submitterId" | "submitter" | "rig" | "component" | "verification" | "moderation" | "createdAt" | "updatedAt" | "sourcePrUrl">;
 
 export type BoardMeta = { modelId: string; quant: string; kind: "rigs" | "components"; total: number };
 export type BoardRow = {

@@ -118,14 +118,18 @@ export function ResultCard({ result: r, models, quants, runtimes, rank, eyebrow 
         <Field label="Run date">{r.runDate ? fmtDate(r.runDate) : '—'}</Field>
         <Field label="Submitted by"><UserLink user={r.submitter} /></Field>
         <Field label="Evidence">
-          {r.repoUrl ? (
+          {r.repoUrl && r.repoUrl !== r.sourcePrUrl ? (
             <a href={r.repoUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 break-all hover:underline underline-offset-4">
               {r.repoUrl.replace(/^https?:\/\//, '').slice(0, 40)}
               <ExternalLink className="size-3 shrink-0" />
             </a>
-          ) : (
-            <span className="text-muted-foreground">—</span>
-          )}
+          ) : null}
+          {r.sourcePrUrl ? (
+            <a href={r.sourcePrUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-muted-foreground hover:underline underline-offset-4">
+              Submission PR <ExternalLink className="size-3 shrink-0" />
+            </a>
+          ) : null}
+          {!r.repoUrl && !r.sourcePrUrl ? <span className="text-muted-foreground">—</span> : null}
         </Field>
       </CellGrid>
       {r.notes ? <p className={cn('border-t py-5 text-sm text-pretty', inset)}>{r.notes}</p> : null}

@@ -98,6 +98,14 @@ Different PRs or changed payloads cannot overwrite an imported path. JSON contai
 `result` is an archive and never writes a result row. File removal does not delete
 live rows. Previously submitted legacy PR evidence is detected to avoid reimporting it.
 
+Result evidence is optional. `results.repo_url` retains its storage name but accepts
+any full HTTPS URL or NULL. The web/API field is `repoUrl`; PR JSON uses `evidenceUrl`.
+PR ingestion stores the submission link separately in `source_pr_url`, which browser
+roles can read but cannot write. The optional-evidence migration backfills that link
+from existing import receipts without changing evidence, verification, or edit timestamps.
+Apply `20260918090000_optional_result_evidence.sql` before deploying the updated frontend
+and PR parser. An omitted link on create is stored as NULL; clearing it on edit sends NULL.
+
 Rig registration and custom-runtime registration remain site operations. Referenced
 catalog entries must already exist in both the trusted default-branch catalog and
 the target database; merge/deploy catalog additions before submitting runs that use them.

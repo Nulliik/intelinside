@@ -20,7 +20,7 @@ export function Guidelines() {
           <ul>
             <li>Generate at least 256 tokens from a short prompt and average over a few runs.</li>
             <li>Measure one request at a time. A throughput configuration — OpenVINO's <code>PERFORMANCE_HINT=THROUGHPUT</code>, vLLM serving many sequences at once, llama.cpp with parallel slots — reports the total across concurrent requests, which is a larger and different number from what one person sees waiting for one answer. If that is what you measured, say so in the flags and set the batch size.</li>
-            <li>Report the runtime version you used and link the repo you ran in, yours or the runtime's.</li>
+            <li>Report the runtime version you used. An evidence link is optional: logs, scripts, a gist, a report, or a repository can help others check your result. Any full HTTPS URL works.</li>
             <li>Note the flags and settings that moved the number: the backend you compiled in, flash attention, KV cache precision. The same card on the same runtime can differ twofold on these.</li>
             <li>If you ran on one card out of several, submit it as a component result and set the quantity you used.</li>
             <li>A Core Ultra chip carries CPU cores, an iGPU, and an NPU, and each is its own part. Submit the unit the model ran on; a result on the CPU part means its cores. Use whole rig when the run spanned more than one unit.</li>
@@ -35,7 +35,7 @@ export function Guidelines() {
           <h2>Flags</h2>
           <p>Flag numbers that look implausible, wrong hardware, duplicates, or spam. Past a few flags an entry is hidden until the team reviews it.</p>
           <h2 id="by-pr">Submitting by pull request</h2>
-          <p>Prefer git? Add a JSON file under <code>results/your-handle/</code> in <a href={REPO_URL} target="_blank" rel="noreferrer">{REPO}</a> and open a pull request. A check verifies the result, your linked GitHub account, and rig ownership. Merging submits it automatically, with the pull request as evidence; no web form is needed. The format is in the repo's <a href={`${REPO_URL}/tree/main/results`} target="_blank" rel="noreferrer">results folder</a>. Going the other way, every freshly submitted result offers "Add to the results repo", which writes the file for you.</p>
+          <p>Prefer git? Add a JSON file under <code>results/your-handle/</code> in <a href={REPO_URL} target="_blank" rel="noreferrer">{REPO}</a> and open a pull request. A check verifies the result, your linked GitHub account, and rig ownership. Merging submits it automatically and keeps a link to the submission PR; no web form is needed. You can include an optional <code>evidenceUrl</code> alongside that link. The format is in the repo's <a href={`${REPO_URL}/tree/main/results`} target="_blank" rel="noreferrer">results folder</a>. Going the other way, every freshly submitted result offers "Add to the results repo", which writes the file for you.</p>
           <h2>Adding hardware or models</h2>
           <p>The catalog of hardware, models, runtimes, and quantizations lives in the same repo, in <a href={CATALOG_DIR_URL} target="_blank" rel="noreferrer">frontend/src/catalog</a>. Add the part or model there, open a pull request, and it appears on the site with the next deploy. The folder's README shows the shape of each entry.</p>
         </Block>
@@ -77,4 +77,3 @@ export function NotFound() {
     </Block>
   )
 }
-

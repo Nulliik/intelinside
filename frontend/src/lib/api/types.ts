@@ -157,7 +157,10 @@ export type Result = {
   contextLength?: number
   batchSize?: number
   notes?: string
-  repoUrl: string
+  /** Optional HTTPS evidence link. The legacy name is retained for API compatibility. */
+  repoUrl?: string
+  /** Submission provenance, set by PR ingestion and independent of the evidence link. */
+  sourcePrUrl?: string
   runDate: string
   verification: Verification
   moderation: Moderation
@@ -169,7 +172,7 @@ export type Result = {
 export type ResultInput = Omit<
   Result,
   | 'id' | 'submitterId' | 'submitter' | 'rig' | 'component' | 'verification' | 'moderation' | 'createdAt' | 'updatedAt'
-  | 'execution' | 'customRuntime' | 'componentHost'
+  | 'execution' | 'customRuntime' | 'componentHost' | 'sourcePrUrl'
 >
 
 export type BoardKind = 'rigs' | 'components'

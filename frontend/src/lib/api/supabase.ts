@@ -48,7 +48,8 @@ type ResultRow = {
   context_length: number | null
   batch_size: number | null
   notes: string | null
-  repo_url: string
+  repo_url: string | null
+  source_pr_url: string | null
   run_date: string
   verification_status: 'self_reported' | 'community_verified'
   confirmations_count: number
@@ -167,6 +168,7 @@ function resultPayload(input: Partial<ResultInput>, create = false): Record<stri
   for (const [source, target] of map) {
     if (create || source in input) payload[target] = input[source] ?? null
   }
+  if ('repo_url' in payload) payload.repo_url = input.repoUrl?.trim() || null
   if (payload.component_id == null) payload.component_quantity = null
   // A stock run carries no revision, whatever the form sent.
   if (payload.custom_runtime_id == null && 'revision' in payload) payload.revision = null
@@ -325,7 +327,8 @@ function view(snapshot: Snapshot) {
       contextLength: optional(row.context_length),
       batchSize: optional(row.batch_size),
       notes: optional(row.notes),
-      repoUrl: row.repo_url,
+      repoUrl: optional(row.repo_url),
+      sourcePrUrl: optional(row.source_pr_url),
       runDate: row.run_date,
       verification: {
         status: row.verification_status,
