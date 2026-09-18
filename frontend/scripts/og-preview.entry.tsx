@@ -90,6 +90,14 @@ await write(
   <ResultCardImage data={{ ...result, model: 'Llama 3.1 8B Instruct', quant: 'Q4_K_M', runtime: 'OpenVINO GenAI', runtimeId: 'openvino-genai', runtimeLogo: undefined, runtimeVersion: '2026.1.0', hardware: 'NUC charlie', inRig: undefined, verified: false, rank: { position: 17, size: 41, kind: 'rigs' } }} assets={{ ...resultAssets, runtimeLogo: undefined }} />,
   fonts,
 )
+// Real build strings people submit: a dev version with a hash and a kernels suffix (result 43), one with no spaces
+// to break, and one too long for two lines.
+const vllm = RUNTIMES.find((r) => r.id === 'vllm')!
+const vllmAssets = await loadCardAssets(disk, 'dots-result.svg', { runtimeLogo: runtimeLogoAsset(vllm.logoUrl || undefined) })
+const onVllm = { ...result, decodeTps: 171, model: 'Qwen3.6-35B-A3B', runtime: vllm.name, runtimeId: vllm.id, runtimeLogo: vllm.logoUrl || undefined, runtimeColor: vllm.color, hardware: '1× Intel Arc Pro B70', inRig: 'Desktop Workstation', rank: { position: 1, size: 1, kind: 'components' as const }, owner: { handle: 'sergiiob', initials: 'SE' } }
+await write('result-version-long', <ResultCardImage data={{ ...onVllm, runtimeVersion: '0.26.1rc1.dev457+gc810e5ee9.xpu (vllm-xpu-kernels 0.1.11)' }} assets={vllmAssets} />, fonts)
+await write('result-version-nospace', <ResultCardImage data={{ ...onVllm, runtimeVersion: '0.26.1rc1.dev457+gc810e5ee9.xpu+vllm-xpu-kernels-0.1.11+oneapi-2026.1.0-ubuntu24' }} assets={vllmAssets} />, fonts)
+await write('result-version-overlong', <ResultCardImage data={{ ...onVllm, runtimeVersion: 'build 0.26.1rc1.dev457+gc810e5ee9.xpu with vllm-xpu-kernels 0.1.11, oneAPI 2026.1.0, Level Zero 1.21, PyTorch 2.9.0+xpu on Ubuntu 24.04 LTS kernel 6.14' }} assets={vllmAssets} />, fonts)
 await write('rig-long', <RigCardImage data={{ ...rig, name: 'The absurdly long name of a workstation that never ends', best: undefined, resultsCount: 0 }} assets={rigAssets} />, fonts)
 
 // One result card per runtime, so every mark can be checked against the leaderboard's.
