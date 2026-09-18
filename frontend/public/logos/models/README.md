@@ -19,6 +19,8 @@ The package declares an MIT license; the logos remain their owners' trademarks.
 | mistral.svg | mistral-color.svg | Original color mark |
 | nemotron.svg | nvidia-color.svg | Original color mark |
 
+`llama.svg` is Meta's mark, shared by the Llama and Muse model families.
+
 MiniCPM is not in that package. `minicpm.svg` uses the symbol (first path) from
 [ModelBest's official MiniCPM SVG](https://www.modelbest.cn/modelbest/minicpm-en.aZf632Pf.svg),
 linked by [its website](https://www.modelbest.cn/en/) and retrieved on 2026-09-17.
