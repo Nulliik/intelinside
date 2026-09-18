@@ -90,7 +90,7 @@ function ColumnHeader() {
     <div className={cn('sticky top-14 z-10 hidden gap-x-6 border-b bg-background py-2 md:grid', columns, inset)}>
       <span className={label}>Model</span>
       <span className={label}>Quantization</span>
-      <span className={cn(label, 'text-right')}>Results</span>
+      <span className={label}>Results</span>
       <span className={label}>Best decode</span>
       <span />
     </div>
@@ -147,7 +147,7 @@ function ModelRow({ summary, runtimes }: { summary: ModelSummary; runtimes: Reco
         </div>
       </div>
       <QuantChips model={model} lit={(q) => (model.resultCounts?.[q] ?? 0) > 0} />
-      <span className={cn('hidden font-mono text-sm tnum md:block md:text-right', !total && 'text-muted-foreground/60')}>{total}</span>
+      <span className={cn('hidden font-mono text-sm tnum md:block', !total && 'text-muted-foreground/60')}>{total}</span>
       <Best summary={summary} runtimes={runtimes} className="hidden md:flex" />
       <Link to={boardHref} aria-label={`${model.name} board`} className="hidden text-muted-foreground hover:text-foreground md:block">
         <ChevronRight className="size-4" />
