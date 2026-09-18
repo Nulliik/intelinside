@@ -55,6 +55,11 @@ const rig: RigCardData = {
     { quantity: 4, name: 'Intel Arc Pro B70', detail: '32 GB' },
     { quantity: 4, name: 'DDR5-6000 32 GB' },
   ],
+  components: [
+    { hardwareId: 'intel-core-ultra-9-285k', quantity: 1 },
+    { hardwareId: 'intel-arc-pro-b70', quantity: 4 },
+    { hardwareId: 'ddr5-6000-32gb', quantity: 4 },
+  ],
   best: { tps: 84.6, model: 'Qwen3-8B', quant: 'INT4', runtime: 'Cascadia' },
   resultsCount: 12,
   owner,
@@ -90,6 +95,18 @@ await write(
   <ResultCardImage data={{ ...result, model: 'Llama 3.1 8B Instruct', quant: 'Q4_K_M', runtime: 'OpenVINO GenAI', runtimeId: 'openvino-genai', runtimeLogo: undefined, runtimeVersion: '2026.1.0', hardware: 'NUC charlie', inRig: undefined, verified: false, rank: { position: 17, size: 41, kind: 'rigs' } }} assets={{ ...resultAssets, runtimeLogo: undefined }} />,
   fonts,
 )
+// Real build strings people submit: a dev version with a hash and a kernels suffix (result 43), one with no spaces
+// to break, and one too long for two lines.
+const vllm = RUNTIMES.find((r) => r.id === 'vllm')!
+const vllmAssets = await loadCardAssets(disk, 'dots-result.svg', { runtimeLogo: runtimeLogoAsset(vllm.logoUrl || undefined) })
+const onVllm = { ...result, decodeTps: 171, model: 'Qwen3.6-35B-A3B', runtime: vllm.name, runtimeId: vllm.id, runtimeLogo: vllm.logoUrl || undefined, runtimeColor: vllm.color, hardware: '1× Intel Arc Pro B70', inRig: 'Desktop Workstation', rank: { position: 1, size: 1, kind: 'components' as const }, owner: { handle: 'sergiiob', initials: 'SE' } }
+await write('result-version-long', <ResultCardImage data={{ ...onVllm, runtimeVersion: '0.26.1rc1.dev457+gc810e5ee9.xpu (vllm-xpu-kernels 0.1.11)' }} assets={vllmAssets} />, fonts)
+await write('result-version-nospace', <ResultCardImage data={{ ...onVllm, runtimeVersion: '0.26.1rc1.dev457+gc810e5ee9.xpu+vllm-xpu-kernels-0.1.11+oneapi-2026.1.0-ubuntu24' }} assets={vllmAssets} />, fonts)
+await write('result-version-overlong', <ResultCardImage data={{ ...onVllm, runtimeVersion: 'build 0.26.1rc1.dev457+gc810e5ee9.xpu with vllm-xpu-kernels 0.1.11, oneAPI 2026.1.0, Level Zero 1.21, PyTorch 2.9.0+xpu on Ubuntu 24.04 LTS kernel 6.14' }} assets={vllmAssets} />, fonts)
+// Rig 1 on production: a long best line beside the photo.
+await write('rig-best-long', <RigCardImage data={{ ...rig, name: 'Desktop Workstation', os: 'Ubuntu 26.04', parts: [{ quantity: 2, name: 'Intel Arc Pro B70', detail: '32 GB' }], components: [{ hardwareId: 'intel-arc-pro-b70', quantity: 2 }], best: { tps: 187, model: 'Nemotron 3.5 Lightning 30B A3B', quant: 'GPTQ 4-bit', runtime: 'vLLM' }, resultsCount: 8, owner: { handle: 'sergiiob', initials: 'SE' } }} assets={{ ...rigAssets, photo: samplePhoto() }} />, fonts)
+await write('rig-no-photo-single', <RigCardImage data={{ ...rig, name: 'Intel arc B580', os: '', parts: [{ quantity: 1, name: 'Intel Arc B580', detail: '12 GB' }], components: [{ hardwareId: 'intel-arc-b580', quantity: 1 }], best: undefined, resultsCount: 0 }} assets={rigAssets} />, fonts)
+await write('rig-no-photo-dual', <RigCardImage data={{ ...rig, name: 'Maxsun ARC Pro B60 Dual 48G Turbo', parts: [{ quantity: 1, name: 'Intel Core i7-14700K' }, { quantity: 2, name: 'Intel Arc Pro B60', detail: '24 GB' }], components: [{ hardwareId: 'intel-core-i7-14700k', quantity: 1 }, { hardwareId: 'intel-arc-pro-b60', quantity: 2 }], best: { tps: 15.3, model: 'Qwen3.8-27B', quant: 'Q4_K_M', runtime: 'llama.cpp' }, resultsCount: 2 }} assets={rigAssets} />, fonts)
 await write('rig-long', <RigCardImage data={{ ...rig, name: 'The absurdly long name of a workstation that never ends', best: undefined, resultsCount: 0 }} assets={rigAssets} />, fonts)
 
 // One result card per runtime, so every mark can be checked against the leaderboard's.

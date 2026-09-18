@@ -49,14 +49,16 @@ becomes its own leaderboard, so list only the ones people actually run.
 
 ```ts
 {
-  id: 'qwen3-8b', name: 'Qwen3-8B', family: 'Qwen3', params: '8B', architecture: 'dense',
+  id: 'qwen3-8b', name: 'Qwen3-8B', family: 'Qwen3', brand: 'Qwen', params: '8B', architecture: 'dense',
   sourceUrl: 'https://huggingface.co/Qwen/Qwen3-8B', logoUrl: '/logos/models/qwen.svg', brandColor: '#b699eb',
   quants: ['int4', 'q4_k_m', 'q8_0', 'fp16'],
 }
 ```
 
-A mixture-of-experts model sets `architecture: 'moe'` and `activeParams`. `logoUrl` points at an SVG in
-`frontend/public/logos/models/`; leave it out and the UI draws a monogram tile in `brandColor`.
+`family` is the generation (`Qwen3.5`, `Gemma 4`); `brand` is the family at the logo level (`Qwen`, `Gemma`),
+which the Models page groups by — every model that shares a logo shares a brand. A mixture-of-experts model
+sets `architecture: 'moe'` and `activeParams`. `logoUrl` points at an SVG in `frontend/public/logos/models/`;
+leave it out and the UI draws a monogram tile in `brandColor`.
 
 ## Add a quantization or a runtime
 
@@ -76,8 +78,10 @@ npm --prefix frontend run catalog:validate
 ```
 
 It checks that ids are unique and well formed, that `integrated` and `quants` resolve, and that the required
-fields are there. `npm --prefix frontend run typecheck` catches shape errors. Both run on your pull request,
-and the catalog check comments the result on it.
+fields are there. It also lays out the part's placeholder drawing — the schematic that stands in for a rig photo
+is drawn from `specs` and `series` (`frontend/src/lib/schematic.ts`) — and fails if the printed model number
+cannot fit, which usually means the `name` needs a shorter model token. `npm --prefix frontend run typecheck`
+catches shape errors. Both run on your pull request, and the catalog check comments the result on it.
 
 Nothing else is needed from you. A maintainer regenerates the seed migration with `npm --prefix frontend run
 catalog:seed`, and the entry is live with the next deploy.

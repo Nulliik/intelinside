@@ -7,7 +7,9 @@
 // Built with createElement rather than JSX so this stays a .ts file: Vercel's function tracer resolves a `.js`
 // import to a `.ts` source but not to `.tsx`, and a missing module here took the card route down in production.
 import { createElement as h, type CSSProperties, type ReactElement, type ReactNode } from 'react'
+import { HARDWARE_BY_ID } from '../catalog/index.js'
 import { RUNTIME_MARKS } from '../components/runtimeMarks.generated.js'
+import { drawRig, type Prim } from '../lib/schematic.js'
 import { BRAND_NAME, SITE_DOMAIN } from '../lib/brand.js'
 import { fmtDate, fmtTps } from '../lib/format.js'
 import type { CardAssets } from './assets.js'
@@ -103,24 +105,39 @@ function runtimeMark(data: ResultCardData, assets: CardAssets, size: number): Re
   )
 }
 
+/** The text column: the dots start at x=780 with a feather, so nothing on the left may run past 700px from the margin. */
+const COLUMN = 700
+/** A wrapped build string fills its lines, so it stops short of the column to stay clear of the feathered dots. */
+const VERSION_COLUMN = 660
+
+/** Roughly how wide `text` renders at `size`: 0.56 em per character for Red Hat Text and Display, 0.6 for the mono. */
+const textWidth = (text: string, size: number, mono = false) => text.length * (mono ? 0.6 : 0.56) * size
+
 export function ResultCardImage({ data, assets }: { data: ResultCardData; assets: CardAssets }): ReactElement {
   // The mark takes about the width of two characters, so it counts for two when the line is sized to fit.
-  const modelSize = fitSize(`${data.model} ${data.quant} on ${data.runtime} ${data.runtimeVersion}  `, 700, 38, 26)
+  const headline = `${data.model} ${data.quant} on ${data.runtime}  `
+  const modelSize = fitSize(headline, COLUMN, 38, 26)
   const lineHeight = Math.round(modelSize * 1.2)
   const versionSize = Math.round(modelSize * 0.68)
+  // A short version rides on the model line, as the Figma frame has it. A long build string — a dev version with a
+  // hash and a kernels suffix — drops to its own line under it, wraps inside the column, and is cut at two lines,
+  // so it never reaches the dots. The column tightens its rhythm to make room for the extra line.
+  const versionInline = textWidth(headline, modelSize) + 10 + textWidth(data.runtimeVersion, versionSize, true) <= COLUMN
+  const compact = !versionInline
   const hardwareLine = `${data.hardware}${data.inRig ? ` in ${data.inRig}` : ''}`
-  const hardwareSize = fitSize(hardwareLine, 700, 26, 18)
+  const hardwareSize = fitSize(hardwareLine, COLUMN, 26, 18)
+  const version = span({ fontFamily: MONO, fontWeight: 500, fontSize: versionSize, lineHeight: `${Math.round(versionSize * 1.3)}px`, color: MUTED, paddingBottom: 2 }, data.runtimeVersion)
   return frame(
     assets,
     div(
-      flex({ position: 'absolute', left: 80, top: 176, flexDirection: 'column', alignItems: 'flex-start' }),
+      flex({ position: 'absolute', left: 80, top: compact ? 168 : 176, width: COLUMN, flexDirection: 'column', alignItems: 'flex-start' }),
       div(
         flex({ alignItems: 'flex-end', gap: 20 }),
-        span({ fontFamily: MONO, fontSize: 150, lineHeight: '150px', fontWeight: 600, letterSpacing: -3, color: FG }, fmtTps(data.decodeTps)),
-        span({ fontSize: 44, lineHeight: '48px', paddingBottom: 14, color: MUTED }, 'tok/s'),
+        span({ fontFamily: MONO, fontSize: 150, lineHeight: compact ? '142px' : '150px', fontWeight: 600, letterSpacing: -3, color: FG }, fmtTps(data.decodeTps)),
+        span({ fontSize: 44, lineHeight: '48px', paddingBottom: compact ? 10 : 14, color: MUTED }, 'tok/s'),
       ),
       div(
-        flex({ marginTop: 18, alignItems: 'flex-end', gap: 10, fontFamily: DISPLAY, fontSize: modelSize, lineHeight: `${lineHeight}px`, fontWeight: 600, color: FG }),
+        flex({ marginTop: compact ? 14 : 18, flexWrap: 'wrap', alignItems: 'flex-end', gap: 10, fontFamily: DISPLAY, fontSize: modelSize, lineHeight: `${lineHeight}px`, fontWeight: 600, color: FG }),
         span({}, data.model),
         span({ fontFamily: MONO, fontWeight: 500, color: MUTED }, data.quant),
         span({ fontFamily: TEXT, fontWeight: 400, color: MUTED }, 'on'),
@@ -129,17 +146,25 @@ export function ResultCardImage({ data, assets }: { data: ResultCardData; assets
           runtimeMark(data, assets, Math.round(modelSize * 1.1)),
           span({ fontFamily: TEXT, fontWeight: 500 }, data.runtime),
         ),
-        span({ fontFamily: MONO, fontWeight: 500, fontSize: versionSize, lineHeight: `${Math.round(versionSize * 1.3)}px`, color: MUTED, paddingBottom: 2 }, data.runtimeVersion),
+        ...(versionInline ? [version] : []),
       ),
+      ...(versionInline
+        ? []
+        : [
+            div(
+              flex({ marginTop: 2, width: VERSION_COLUMN }),
+              h('span', { style: { display: 'block', width: VERSION_COLUMN, fontFamily: MONO, fontWeight: 500, fontSize: 22, lineHeight: '26px', color: MUTED, wordBreak: 'break-word', lineClamp: 2 } }, data.runtimeVersion),
+            ),
+          ]),
       div(
-        flex({ marginTop: 8, gap: 7, fontSize: hardwareSize, lineHeight: `${Math.round(hardwareSize * 1.3)}px`, color: MUTED }),
+        flex({ marginTop: compact ? 4 : 8, gap: 7, fontSize: hardwareSize, lineHeight: `${Math.round(hardwareSize * 1.3)}px`, color: MUTED }),
         span({}, data.hardware),
         ...(data.inRig ? [span({ color: '#71717a' }, 'in'), span({}, data.inRig)] : []),
       ),
       ...(data.rank
         ? [
             div(
-              flex({ marginTop: 28, gap: 12 }),
+              flex({ marginTop: compact ? 16 : 28, gap: 12 }),
               pill(FG, 'rgba(255,255,255,0.16)', span({ fontFamily: MONO }, `#${data.rank.position}`), span({ color: MUTED, fontWeight: 400 }, `of ${data.rank.size} on the ${data.rank.kind} board`)),
             ),
           ]
@@ -149,19 +174,77 @@ export function ResultCardImage({ data, assets }: { data: ResultCardData; assets
   )
 }
 
+const PANEL = { right: 80, top: 140, width: 480, height: 340 }
+const panelStyle = (): CSSProperties => flex({ position: 'absolute', right: PANEL.right, top: PANEL.top, width: PANEL.width, height: PANEL.height, borderRadius: 24, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.14)', backgroundColor: '#0f0f11' })
+
+// The schematic's inks, as RigSchematic paints them on the site.
+const SCHEMATIC_INK = { strong: 'rgba(244,244,245,0.62)', soft: 'rgba(244,244,245,0.34)', label: 'rgba(161,161,170,0.9)' } as const
+const SCHEMATIC_FILL = 'rgba(244,244,245,0.035)'
+
+/**
+ * The rig's parts schematic in the photo panel, for rigs without a photo: the same drawing the site shows, on the same
+ * faint grid. Shapes go through one inline SVG; the printed model numbers are laid as text by Satori itself, since the
+ * rasteriser that turns an inline SVG into pixels has none of the card's fonts.
+ */
+function schematicPanel(components: RigCardData['components']): ReactElement {
+  const { viewBox, prims } = drawRig(components, HARDWARE_BY_ID)
+  const [, , vw, vh] = viewBox.split(' ').map(Number)
+  const area = { x: 48, y: 41, w: 384, h: 258 }
+  const scale = Math.min(area.w / vw, area.h / vh)
+  const dw = vw * scale, dh = vh * scale
+  const ox = area.x + (area.w - dw) / 2, oy = area.y + (area.h - dh) / 2
+  const shapes = prims
+    .filter((p) => p.kind !== 'text')
+    .map((p, index) => {
+      const stroke = SCHEMATIC_INK[p.ink]
+      switch (p.kind) {
+        case 'rect':
+          return p.fill === 'stroke'
+            ? h('rect', { key: index, x: p.x, y: p.y, width: p.w, height: p.h, rx: p.rx, fill: stroke, opacity: p.opacity })
+            : h('rect', { key: index, x: p.x, y: p.y, width: p.w, height: p.h, rx: p.rx, fill: SCHEMATIC_FILL, stroke, strokeWidth: 1 / scale })
+        case 'circle':
+          return h('circle', { key: index, cx: p.cx, cy: p.cy, r: p.r, fill: SCHEMATIC_FILL, stroke, strokeWidth: 1 / scale })
+        case 'path':
+          return h('path', { key: index, d: p.d, fill: 'none', stroke, strokeWidth: 1 / scale })
+        default:
+          return null
+      }
+    })
+  const labels = prims
+    .filter((p): p is Extract<Prim, { kind: 'text' }> => p.kind === 'text')
+    .map((p) => {
+      const size = p.size * scale
+      const width = textWidth(p.text, size, true) + 4
+      const left = ox + p.x * scale - (p.anchor === 'middle' ? width / 2 : 0)
+      return div(
+        flex({ position: 'absolute', left, top: oy + p.y * scale - size * 0.78, width, height: size, justifyContent: p.anchor === 'middle' ? 'center' : 'flex-start' }),
+        span({ fontFamily: MONO, fontWeight: 500, fontSize: size, lineHeight: `${size}px`, color: SCHEMATIC_INK[p.ink], whiteSpace: 'nowrap' }, p.text),
+      )
+    })
+  // The site's grid ground: 24px lines at 16% white, at 40%.
+  let grid = ''
+  for (let x = 0; x <= PANEL.width; x += 24) grid += `M${x} 0V${PANEL.height}`
+  for (let y = 0; y <= PANEL.height; y += 24) grid += `M0 ${y}H${PANEL.width}`
+  return div(
+    panelStyle(),
+    h('svg', { viewBox: `0 0 ${PANEL.width} ${PANEL.height}`, width: PANEL.width, height: PANEL.height, style: { position: 'absolute', left: 0, top: 0 } }, h('path', { d: grid, fill: 'none', stroke: 'white', strokeOpacity: 0.064, strokeWidth: 0.5 })),
+    h('svg', { viewBox, width: dw, height: dh, style: { position: 'absolute', left: ox, top: oy } }, ...shapes),
+    ...labels,
+  )
+}
+
 export function RigCardImage({ data, assets }: { data: RigCardData; assets: CardAssets }): ReactElement {
   const hasPhoto = Boolean(assets.photo)
-  const columnWidth = hasPhoto ? 540 : 620
-  const nameSize = fitSize(data.name, columnWidth, hasPhoto ? 52 : 54, 30)
+  // Without a photo the panel shows the parts schematic instead, so the two cards share one layout.
+  const hasPanel = hasPhoto || data.components.length > 0
+  const columnWidth = hasPanel ? 540 : 620
+  const nameSize = fitSize(data.name, columnWidth, hasPanel ? 52 : 54, 30)
   const eyebrow = `Rig${data.os ? ` · ${data.os}` : ''}`
   const photo = hasPhoto
-    ? [
-        div(
-          flex({ position: 'absolute', right: 80, top: 140, width: 480, height: 340, borderRadius: 24, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.14)', backgroundColor: '#0f0f11' }),
-          h('img', { src: assets.photo, width: 480, height: 340, style: { objectFit: 'cover' } }),
-        ),
-      ]
-    : []
+    ? [div(panelStyle(), h('img', { src: assets.photo, width: PANEL.width, height: PANEL.height, style: { objectFit: 'cover' } }))]
+    : hasPanel
+      ? [schematicPanel(data.components)]
+      : []
   const parts = data.parts.map((part, index) =>
     h(
       'div',
@@ -171,12 +254,27 @@ export function RigCardImage({ data, assets }: { data: RigCardData; assets: Card
       ...(part.detail ? [span({ color: MUTED }, part.detail)] : []),
     ),
   )
+  // The best line stays inside the column. A description that fits sits on the figure's baseline as the frame has
+  // it. A longer one splits: "187 tok/s best" keeps the row, and the model, quant, and runtime take a line of their
+  // own under it at the column's full width: shrunk a little to stay on one line, wrapped to a second past that.
+  const bestLead = 'tok/s best'
+  const bestWhat = data.best ? `${data.best.model} ${data.best.quant} on ${data.best.runtime}` : ''
+  const bestText = `${bestLead} · ${bestWhat}`
+  const bestWraps = textWidth(bestText, 22) > columnWidth - 130
+  const whatSize = fitSize(bestWhat, columnWidth, 22, 18)
+  const figure = span({ fontFamily: MONO, fontSize: 44, lineHeight: '44px', fontWeight: 600, color: FG }, data.best ? fmtTps(data.best.tps) : '')
   const best = data.best
-    ? div(
-        flex({ marginTop: 30, alignItems: 'flex-end', gap: 12 }),
-        span({ fontFamily: MONO, fontSize: 44, lineHeight: '44px', fontWeight: 600, color: FG }, fmtTps(data.best.tps)),
-        span({ fontSize: 22, lineHeight: '28px', paddingBottom: 6, color: MUTED }, `tok/s best · ${data.best.model} ${data.best.quant} on ${data.best.runtime}`),
-      )
+    ? bestWraps
+      ? div(
+          flex({ marginTop: 26, flexDirection: 'column', width: columnWidth }),
+          div(flex({ alignItems: 'flex-end', gap: 12 }), figure, span({ fontSize: 22, lineHeight: '28px', paddingBottom: 6, color: MUTED }, bestLead)),
+          h('span', { style: { display: 'block', width: columnWidth, marginTop: 4, fontSize: whatSize, lineHeight: '28px', color: MUTED, wordBreak: 'break-word', lineClamp: 2 } }, bestWhat),
+        )
+      : div(
+          flex({ marginTop: 30, alignItems: 'flex-end', gap: 12, width: columnWidth }),
+          figure,
+          span({ fontSize: 22, lineHeight: '28px', paddingBottom: 6, color: MUTED }, bestText),
+        )
     : div(flex({ marginTop: 30 }), span({ fontSize: 22, lineHeight: '28px', color: MUTED }, 'No results yet'))
   return frame(
     assets,

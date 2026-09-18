@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { ImagePlus, Pencil, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { PageHeader } from '@/components/PageHeader'
 import { IconAction } from '@/components/IconAction'
 import { ShareIconButton } from '@/components/ShareIconButton'
+import { PhotoLightbox } from '@/components/PhotoLightbox'
 import { RigPhoto } from '@/components/RigPhoto'
 import { UserLink } from '@/components/UserLink'
 import { HardwareLink } from '@/components/HardwareLink'
@@ -130,9 +131,30 @@ export default function RigDetail() {
             </ul>
           </Cell>
           <Cell>
-            <div className="aspect-[16/10] overflow-hidden rounded-xl">
-              <RigPhoto id={r.id} photoUrl={r.photoUrl} alt={r.name} />
-            </div>
+            {/* The tile opens full size; the placeholder carries the only ask, and only the owner sees it. */}
+            <PhotoLightbox
+              title={r.name}
+              className="aspect-[16/10]"
+              tile={<RigPhoto id={r.id} photoUrl={r.photoUrl} alt={r.name} components={r.components} />}
+              picture={
+                r.photoUrl ? (
+                  <img src={r.photoUrl} alt={r.name} className="max-h-[calc(100vh-8rem)] max-w-full rounded-xl object-contain" />
+                ) : (
+                  <div className="aspect-[16/10] w-[min(1400px,calc(100vw-2rem),calc((100vh-8rem)*1.6))] overflow-hidden rounded-xl">
+                    <RigPhoto id={`${r.id}-full`} photoUrl={undefined} alt={r.name} components={r.components} />
+                  </div>
+                )
+              }
+              overlay={
+                isOwner && !r.photoUrl ? (
+                  <div className="absolute inset-x-0 bottom-4 flex justify-center">
+                    <Button variant="outline" size="sm" className="shadow-lg shadow-black/40" render={<Link to={`/rigs/${r.id}/edit#rig-photo`} />} nativeButton={false}>
+                      <ImagePlus data-icon="inline-start" /> Add a photo
+                    </Button>
+                  </div>
+                ) : undefined
+              }
+            />
           </Cell>
         </div>
       </Section>

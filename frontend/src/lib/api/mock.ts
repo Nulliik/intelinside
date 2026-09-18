@@ -88,6 +88,7 @@ function rigSummary(rig: Rig): RigSummary {
   return {
     id: rig.id, name: rig.name, photoUrl: rig.photoUrl, summary: rig.summary,
     owner: publicUser(userById(rig.ownerId)!),
+    components: rig.components.map(({ hardwareId, quantity }) => ({ hardwareId, quantity })),
     resultsCount: rs.length,
     bestTps: rs.length ? Math.max(...rs.map((r) => r.decodeTps)) : undefined,
   }
@@ -581,7 +582,8 @@ export const mockApi: Api = {
     const out: ModelSummary[] = models.map((m) => {
       const quant = m.quants.map((q) => ({ q, n: vis.filter((r) => r.modelId === m.id && r.quant === q).length })).sort((a, b) => b.n - a.n)[0].q
       const rows = boardRows(m.id, quant, { kind: 'rigs' })
-      return { model: m, board: { modelId: m.id, quant, kind: 'rigs' as const, total: rows.length }, top: rows.slice(0, 3) }
+      const best = m.quants.map((q) => boardRows(m.id, q, { kind: 'rigs' })[0]).filter(Boolean).sort((a, b) => b.result.decodeTps - a.result.decodeTps)[0]
+      return { model: m, board: { modelId: m.id, quant, kind: 'rigs' as const, total: rows.length }, top: rows.slice(0, 3), best }
     })
     return delay(out)
   },

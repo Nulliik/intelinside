@@ -5,7 +5,10 @@ export type Quant = { id: string; label: string; bits: number; format: string }
 export type Model = {
   id: string
   name: string
+  /** The generation: Qwen3.5, Gemma 4. */
   family: string
+  /** The family at the logo level — Qwen, Gemma, Granite — which the Models page groups by. Front-end only. */
+  brand: string
   params: string
   architecture: 'dense' | 'moe'
   activeParams?: string
@@ -76,6 +79,8 @@ export type Rig = {
 export type RigSummary = Pick<Rig, 'id' | 'name' | 'photoUrl' | 'summary' | 'owner'> & {
   resultsCount: number
   bestTps?: number
+  /** Ids and quantities only: enough to draw the parts schematic that stands in for a missing photo. */
+  components?: { hardwareId: string; quantity: number }[]
 }
 
 export type RigInput = Pick<Rig, 'name' | 'os' | 'photoUrl' | 'notes'> & {
@@ -238,8 +243,11 @@ export type HomeResponse = {
   stats: { results: number; rigs: number; hardware: number; members: number }
   topRigs: RigSummary[]
 }
-/** One tile per model: the quant with the most results and that board's top three rigs. */
-export type ModelSummary = { model: Model; board: BoardMeta; top: BoardRow[] }
+/**
+ * One entry per model: the quant with the most results and that board's top three rigs, plus the single best
+ * rig row across every quant board, which is what a list row shows.
+ */
+export type ModelSummary = { model: Model; board: BoardMeta; top: BoardRow[]; best?: BoardRow }
 /** Site-wide top results: best entry per rig-or-part, model, and quant, ranked by decode tok/s. */
 export type TopResultsParams = { model?: string; quant?: string; limit?: number }
 export type TopResultsResponse = { items: BoardRow[]; chart: ChartBar[]; total: number }

@@ -6,7 +6,7 @@ import { UserAvatar } from '@/components/UserAvatar'
 import { HardwareTypeIcon } from '@/components/HardwareTypeIcon'
 import { ModelLogo } from '@/components/ModelLogo'
 import { VendorMark } from '@/components/VendorMark'
-import type { HardwareItem, ModelSummary, RigSummary, Runtime } from '@/lib/api/types'
+import type { HardwareItem, Model, ModelSummary, RigSummary, Runtime } from '@/lib/api/types'
 import { RuntimeMark } from '@/components/RuntimeMark'
 import { GhostList } from '@/components/empty'
 import { HARDWARE_TYPE_LABEL, QUANT_BY_ID, quantHint } from '@/catalog'
@@ -36,7 +36,7 @@ export function RigCard({ rig }: { rig: RigSummary }) {
     <div className="group relative flex min-w-0 bg-background">
     <Link to={`/rigs/${rig.id}`} className={cn(cell, 'flex-1')}>
       <div className="aspect-[16/10] overflow-hidden rounded-xl">
-        <RigPhoto id={rig.id} photoUrl={rig.photoUrl} alt={rig.name} />
+        <RigPhoto id={rig.id} photoUrl={rig.photoUrl} alt={rig.name} components={rig.components} />
       </div>
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <span className="inline-flex items-center gap-2">
@@ -117,6 +117,28 @@ export function HardwareCard({ hardware, counts = true }: { hardware: HardwareIt
   )
 }
 
+/** One chip per quant, each the link into that board with its result count. `lit` picks the chips drawn in full ink. */
+export function QuantChips({ model, lit, className }: { model: Model; lit: (quant: string) => boolean; className?: string }) {
+  return (
+    <div className={cn('flex flex-wrap gap-1.5', className)}>
+      {model.quants.map((q) => (
+        <Link
+          key={q}
+          to={`/models/${model.id}/${q}`}
+          title={`${quantHint(q)} · ${model.resultCounts?.[q] ?? 0} results`}
+          className={cn(
+            'rounded-md border px-2 py-1 font-mono text-xs whitespace-nowrap transition-colors hover:border-foreground/30 hover:text-foreground',
+            lit(q) ? 'border-foreground/30 text-foreground' : 'text-muted-foreground',
+          )}
+        >
+          {QUANT_BY_ID[q]?.label ?? q}
+          <span className="opacity-60"> {model.resultCounts?.[q] ?? 0}</span>
+        </Link>
+      ))}
+    </div>
+  )
+}
+
 /** An empty board keeps its shape and asks for the first result rather than hiding. */
 export function ModelBoardCard({ summary, runtimes }: { summary: ModelSummary; runtimes: Record<string, Runtime> }) {
   const { model, board, top } = summary
@@ -142,22 +164,7 @@ export function ModelBoardCard({ summary, runtimes }: { summary: ModelSummary; r
       </div>
       <div>
         <div className="mb-1.5 text-xs font-medium uppercase tracking-label text-muted-foreground">Quantization</div>
-        <div className="flex flex-wrap gap-1.5">
-        {model.quants.map((q) => (
-          <Link
-            key={q}
-            to={`/models/${model.id}/${q}`}
-            title={`${quantHint(q)} · ${model.resultCounts?.[q] ?? 0} results`}
-            className={cn(
-              'rounded-md border px-2 py-1 font-mono text-xs transition-colors hover:border-foreground/30 hover:text-foreground',
-              q === board.quant ? 'border-foreground/30 text-foreground' : 'text-muted-foreground',
-            )}
-          >
-            {QUANT_BY_ID[q]?.label ?? q}
-            <span className="opacity-60"> {model.resultCounts?.[q] ?? 0}</span>
-          </Link>
-        ))}
-        </div>
+        <QuantChips model={model} lit={(q) => q === board.quant} />
       </div>
       <div>
         <div className="text-xs font-medium uppercase tracking-label text-muted-foreground">
