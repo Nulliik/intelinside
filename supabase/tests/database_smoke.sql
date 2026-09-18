@@ -81,13 +81,22 @@ select public.update_rig(
 
 insert into public.results (
   submitter_id, model_id, quant_id, runtime_id, runtime_version, rig_id,
-  component_id, component_quantity, decode_tps, repo_url, run_date
+  component_id, component_quantity, decode_tps, repo_url, run_date,
+  runtime_flags, custom_runtime_id, revision
 )
 select
   current_setting('test.owner_id')::uuid, 'qwen3-8b', 'int4', 'cascadia', 'smoke', id,
-  'intel-core-ultra-9-285k', 1, 42, 'https://github.com/labscommunity/cascadia', current_date
+  'intel-core-ultra-9-285k', 1, 42, 'https://github.com/labscommunity/cascadia', current_date,
+  null, null, null
 from public.rigs
 where owner_id = current_setting('test.owner_id')::uuid and name = '__rls_smoke_rig__';
+
+-- The browser sends these columns for stock results too, including nulls.
+update public.results
+set runtime_flags = 'smoke flags', custom_runtime_id = null, revision = null
+where submitter_id = current_setting('test.owner_id')::uuid
+  and runtime_version = 'smoke'
+  and rig_id = (select id from public.rigs where name = '__rls_smoke_rig__');
 
 do $$
 begin
