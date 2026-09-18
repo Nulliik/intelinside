@@ -254,21 +254,26 @@ export function RigCardImage({ data, assets }: { data: RigCardData; assets: Card
       ...(part.detail ? [span({ color: MUTED }, part.detail)] : []),
     ),
   )
-  // The best line stays inside the column: its description wraps beside the figure, up to two lines, shrinking a
-  // little first when a long model name needs it, and is cut only past that. The first line sits where the
-  // single-line version always did, so short descriptions look as before and a second line simply hangs below.
+  // The best line stays inside the column. A description that fits sits on the figure's baseline as the frame has
+  // it; a longer one wraps beside the figure, up to two lines, shrinking a little first when a long model name
+  // needs it, with the figure centred on the block so the two read as one unit. Past two lines it is cut.
   const bestText = data.best ? `tok/s best · ${data.best.model} ${data.best.quant} on ${data.best.runtime}` : ''
   const bestWidth = columnWidth - 130
   const bestSize = fitSize(bestText, bestWidth * 2, 22, 18)
+  const bestWraps = textWidth(bestText, bestSize) > bestWidth
+  const figure = span({ fontFamily: MONO, fontSize: 44, lineHeight: '44px', fontWeight: 600, color: FG }, data.best ? fmtTps(data.best.tps) : '')
   const best = data.best
-    ? div(
-        flex({ marginTop: 30, alignItems: 'flex-start', gap: 12, width: columnWidth }),
-        span({ fontFamily: MONO, fontSize: 44, lineHeight: '44px', fontWeight: 600, color: FG }, fmtTps(data.best.tps)),
-        div(
-          flex({ width: bestWidth, paddingTop: 10 }),
-          h('span', { style: { display: 'block', width: bestWidth, fontSize: bestSize, lineHeight: '28px', color: MUTED, wordBreak: 'break-word', lineClamp: 2 } }, bestText),
-        ),
-      )
+    ? bestWraps
+      ? div(
+          flex({ marginTop: 26, alignItems: 'center', gap: 12, width: columnWidth }),
+          figure,
+          div(flex({ width: bestWidth }), h('span', { style: { display: 'block', width: bestWidth, fontSize: bestSize, lineHeight: '28px', color: MUTED, wordBreak: 'break-word', lineClamp: 2 } }, bestText)),
+        )
+      : div(
+          flex({ marginTop: 30, alignItems: 'flex-end', gap: 12, width: columnWidth }),
+          figure,
+          span({ fontSize: bestSize, lineHeight: '28px', paddingBottom: 6, color: MUTED }, bestText),
+        )
     : div(flex({ marginTop: 30 }), span({ fontSize: 22, lineHeight: '28px', color: MUTED }, 'No results yet'))
   return frame(
     assets,
