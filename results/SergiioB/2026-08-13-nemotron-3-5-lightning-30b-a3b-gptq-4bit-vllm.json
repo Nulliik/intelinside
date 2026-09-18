@@ -1,0 +1,16 @@
+{
+  "rig": "1",
+  "component": "intel-arc-pro-b70",
+  "componentQuantity": 1,
+  "model": "nemotron-3-5-lightning-30b-a3b",
+  "quant": "gptq-4bit",
+  "runtime": "vllm",
+  "runtimeVersion": "0.26.1rc1.dev668+g3ee2df303",
+  "runtimeFlags": "DFlash n7; --no-enable-prefix-caching; XPU graphs on; --async-scheduling; --quantization gptq --dtype float16; gpu-mem-util 0.90",
+  "decodeTps": 186.61,
+  "promptTps": 7160,
+  "contextLength": 16384,
+  "batchSize": 1,
+  "runDate": "2026-08-13",
+  "notes": "MoE (30B total, 3B active) with hybrid Mamba2/attention layers. Representative cell p2048/g128: client post-first-token decode rate, median of n=5 (range 174.60-201.83), C1 (max_num_seqs=1). Prefix cache explicitly off (--no-enable-prefix-caching, zero prefix_cache_hits delta). promptTps is the p8192/g1 n=5 median COLD-INPUT rate from client TTFT - includes scheduling and first-token work, not isolated engine prefill. DFlash n_spec=7 speculative decoding, window acceptance 52.0%. Honesty caveats: the target is a LOCAL symmetric GPTQ INT4 G64 conversion of the BF16 repo (not an official HF quant), and the draft is a LOCAL NVFP4-to-BF16 reconstruction of NVIDIA DFlash (not a published BF16 draft). Single card of a 2x B70 rig. Configured cap 150 W; measured cell-window averages ~149-160 W, peak interval-average 179.3 W, package max 68.0 C. Served from image vllm/vllm-openai-xpu@sha256:1da0a95485455f08588c11080b9718992fd7d434c6a965d74654903a9d999c57 plus local deterministic patches. Correctness: deterministic raw-completion replay exact_match (smoke scope only). Other cells on the same warm server: p512/g128 median 194.61 (wide family spread, not representative); p8192/g128 median 157.92. Evidence: raw results root 2026-08-13 (n=5 with per-rep artifacts); published in cookbook docs/nemotron35-30a3/NEMOTRON-DFLASH-B70.md (commit a4ba8754). Self-reported, E2."
+}

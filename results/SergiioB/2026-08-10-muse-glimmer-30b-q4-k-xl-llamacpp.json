@@ -1,0 +1,16 @@
+{
+  "rig": "1",
+  "component": "intel-arc-pro-b70",
+  "componentQuantity": 1,
+  "model": "muse-glimmer-30b",
+  "quant": "q4_k_xl",
+  "runtime": "llamacpp",
+  "runtimeVersion": "SYCL d2f83055d (GGML_SYCL_F16=ON)",
+  "runtimeFlags": "DFlash draft n_max=2; multimodal projector (mmproj); cold prefix",
+  "decodeTps": 26.8,
+  "ttftMs": 1100,
+  "contextLength": 131072,
+  "batchSize": 1,
+  "runDate": "2026-08-10",
+  "notes": "Dense 30B multimodal. C1 decode at p512/g128: engine-reported predicted-token rate from the llama.cpp server response timings (not client-observed streaming), median of the fresh n=5 confirmation set (max 28.9), beating no-spec (22.5) and DFlash n1/n3 in the recorded sweep. DFlash n_max=2 speculative decoding; Q4_K_XL target weights (UD-Q4_K_XL, 15.88 GB) with the mmproj projector; build requires GGML_SYCL_F16=ON. Single card of a 2x B70 rig. Configured cap 230 W (not measured draw). Correctness: text, vision, and reasoning-channel coherent-output smokes at the tested DFlash depths; no BF16 parity run. Historical measurement: local GGUF/draft artifacts were removed in a later storage cleanup, so this records a completed run, not current launch availability. Evidence: raw muse-dflash-sweep-manual-20260810T164735 (FINAL-TABLE.md); published in cookbook docs/muse-glimmer/MUSE-GLIMMER-B70.md (commit a4ba8754). Self-reported, E2."
+}
