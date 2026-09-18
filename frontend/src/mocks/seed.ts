@@ -35,10 +35,16 @@ const USER_SEED: { handle: string; name: string; bio: string }[] = [
   { handle: 'pantherlake', name: 'Ada Kowalski', bio: 'Dev kit reviewer. Xe3 curious.' },
 ]
 
-type RigSeed = { id: string; owner: string; name: string; os: string; notes?: string; components: [string, number][] }
+type RigSeed = { id: string; owner: string; name: string; os: string; notes?: string; photo?: boolean; components: [string, number][] }
+
+/** A stand-in rig photo, so the photo layouts (cards, the rig page, its lightbox) are reachable in mock mode. */
+function photoDataUri(): string {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2a2a33"/><stop offset="1" stop-color="#121216"/></linearGradient></defs><rect width="1600" height="1000" fill="url(#g)"/><rect x="200" y="290" width="1200" height="420" rx="32" fill="#1c1c22" stroke="#3a3a44" stroke-width="4"/><rect x="200" y="290" width="1200" height="20" rx="10" fill="#5438ff"/><circle cx="550" cy="500" r="150" fill="#121215" stroke="#3a3a44" stroke-width="4"/><circle cx="1050" cy="500" r="150" fill="#121215" stroke="#3a3a44" stroke-width="4"/></svg>`
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
+}
 
 const RIG_SEED: RigSeed[] = [
-  { id: 'rig-quad-b70', owner: 'tatef', name: 'Quad B70 workstation', os: 'Ubuntu 24.04', notes: 'Four Arc Pro B70s on a 285K. Most runs use one card unless noted.', components: [['intel-core-ultra-9-285k', 1], ['intel-graphics-arrow-lake-s', 1], ['intel-ai-boost-arrow-lake', 1], ['intel-arc-pro-b70', 4], ['ddr5-6000-32gb', 4]] },
+  { id: 'rig-quad-b70', owner: 'tatef', name: 'Quad B70 workstation', os: 'Ubuntu 24.04', notes: 'Four Arc Pro B70s on a 285K. Most runs use one card unless noted.', photo: true, components: [['intel-core-ultra-9-285k', 1], ['intel-graphics-arrow-lake-s', 1], ['intel-ai-boost-arrow-lake', 1], ['intel-arc-pro-b70', 4], ['ddr5-6000-32gb', 4]] },
   { id: 'rig-nuc-charlie', owner: 'jacksmith', name: 'NUC charlie', os: 'Windows 11', notes: 'Panther Lake NUC. iGPU runs via OpenVINO unless noted.', components: [['intel-core-ultra-x7-358h', 1], ['intel-arc-b390', 1], ['intel-ai-boost-npu-5', 1], ['ddr5-5600-16gb-sodimm', 2]] },
   { id: 'rig-lunar-ultrabook', owner: 'lunarlaker', name: 'Lunar Lake ultrabook', os: 'Windows 11', notes: 'Plugged in, performance mode.', components: [['intel-core-ultra-9-288v', 1], ['intel-arc-140v', 1], ['intel-ai-boost-npu-4', 1], ['lpddr5x-8533-16gb', 2]] },
   { id: 'rig-b580-gaming', owner: 'arcpilot', name: 'B580 gaming box', os: 'Windows 11', components: [['intel-core-i7-14700k', 1], ['intel-uhd-770', 1], ['intel-arc-b580', 1], ['ddr5-6000-32gb', 2]] },
@@ -127,7 +133,7 @@ export function createSeed(): SeedDb {
     const components = r.components.map(([hardwareId, quantity]) => ({ hardwareId, quantity }))
     const created = daysAgo(90 - i * 4)
     return {
-      id: r.id, ownerId: userByHandle[r.owner].id, name: r.name, os: r.os, notes: r.notes,
+      id: r.id, ownerId: userByHandle[r.owner].id, name: r.name, os: r.os, notes: r.notes, photoUrl: r.photo ? photoDataUri() : undefined,
       components, summary: rigSummaryLine(components), createdAt: created, updatedAt: created,
     }
   })
