@@ -43,6 +43,8 @@ export type RigCardData = {
   name: string
   os: string
   parts: { quantity: number; name: string; detail?: string }[]
+  /** Every part with its quantity: the schematic that stands in for a missing photo is drawn from these. */
+  components: { hardwareId: string; quantity: number }[]
   best?: { tps: number; model: string; quant: string; runtime: string }
   resultsCount: number
   owner: Owner
@@ -189,6 +191,7 @@ export async function loadRigCard(id: string, env: OgEnv): Promise<RigCardData |
     name: rig.name,
     os: rig.os,
     parts: cardParts(components),
+    components: components.map((c) => ({ hardwareId: c.hardware_id, quantity: c.quantity })),
     best: bestRow
       ? {
           tps: Number(bestRow.decode_tps),

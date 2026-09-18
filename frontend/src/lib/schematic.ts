@@ -1,4 +1,4 @@
-import type { HardwareItem } from '@/lib/api/types'
+import type { HardwareItem } from './api/types.js'
 
 /*
   The parts schematic that stands in for a rig photo, drawn from the catalog. Nothing is drawn per SKU: each spec
