@@ -1,0 +1,14 @@
+{
+  "$schema": "https://raw.githubusercontent.com/labscommunity/intelinside/main/results/schema.json",
+  "rig": "1",
+  "model": "qwen3-8-27b",
+  "quant": "int4",
+  "runtime": "cascadia",
+  "runtimeVersion": "Cascadia 0.2.3 source + shim fix a005232 (OV GenAI 2026.5.0.0 beta1)",
+  "runtimeFlags": "2-stage pipeline (qwen35), GPU.0 + GPU.1, multi-rank relay",
+  "decodeTps": 18.9,
+  "batchSize": 1,
+  "runDate": "2026-09-19",
+  "evidenceUrl": "https://github.com/labscommunity/cascadia/pull/161",
+  "notes": "Dense 27B hybrid-attention (GDN), whole-rig distributed run on 2x Arc Pro B70: cascadia shard --num-stages 2 (layers 0-31 / 32-63) + cascadia worker rank 0 GPU.0 -> rank 1 GPU.1. Wall decode 85-93 tokens via /v1/chat/completions, client wall time incl. prefill tail (engine-reported 20.8 tok/s). Multi-GPU overhead vs single-GPU 22.7 tok/s = -16% (llama.cpp RPC layer-split measured -48% same rig). Requires cascadia PR #160 (OV 2026.5 beta1) + #161 (tokenizer extension registration on Core)."
+}
