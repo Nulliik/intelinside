@@ -20,6 +20,7 @@ export const QUANTS: Quant[] = [
   { id: 'fp8', label: 'FP8', bits: 8, format: 'FP8 e4m3' },
   { id: 'fp16', label: 'FP16', bits: 16, format: 'Half precision, the unquantized weights' },
   { id: 'bf16', label: 'BF16', bits: 16, format: 'Brain float' },
+  { id: 'q2_0', label: 'Q2_0', bits: 2, format: 'GGUF' },
   { id: 'q4_k_m', label: 'Q4_K_M', bits: 4, format: 'GGUF, used by llama.cpp and Ollama' },
   { id: 'q4_k_xl', label: 'Q4_K_XL', bits: 4, format: 'GGUF, Unsloth Dynamic Q4_K_XL' },
   { id: 'q4_0', label: 'Q4_0', bits: 4, format: 'GGUF' },
@@ -159,7 +160,7 @@ export const MODELS: Model[] = [
   },
   {
     id: 'qwen3-8-flash-next', name: 'Qwen3.8-Flash-Next', family: 'Qwen3.8', brand: 'Qwen', params: '125B', architecture: 'moe', activeParams: '6B',
-    sourceUrl: 'https://huggingface.co/Qwen/Qwen3.8-Flash-Next', logoUrl: '/logos/models/qwen.svg', brandColor: '#b699eb', quants: ['fp8', 'q4_k_m', 'q8_0'],
+    sourceUrl: 'https://huggingface.co/Qwen/Qwen3.8-Flash-Next', logoUrl: '/logos/models/qwen.svg', brandColor: '#b699eb', quants: ['fp8', 'q2_0', 'q4_k_m', 'q8_0'],
   },
 ]
 
