@@ -1,0 +1,15 @@
+{
+  "$schema": "https://raw.githubusercontent.com/labscommunity/intelinside/main/results/schema.json",
+  "rig": "1",
+  "component": "intel-arc-pro-b70",
+  "componentQuantity": 1,
+  "model": "qwen3-6-35b-a3b",
+  "quant": "int4",
+  "runtime": "openvino-genai",
+  "runtimeVersion": "OpenVINO GenAI 2026.4 (VLMPipeline)",
+  "runtimeFlags": "official Intel VLM IR; INT4; GPU",
+  "decodeTps": 45.2,
+  "batchSize": 1,
+  "runDate": "2026-09-18",
+  "notes": "MoE 35B-A3B. 1x Arc Pro B70, official Intel VLM IR (Qwen3.6-35B-A3B int4-ov, 19G). Load 15.5s. Wall decode 45.2 tok/s over 128 tokens incl. prefill tail; ~2k prompt 2.37s. Same rig/model: llama.cpp SYCL Q4 measured 76.1 tok/s (see same-date submission), vLLM INT4 171 tok/s (2026-08-30)."
+}

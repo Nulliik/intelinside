@@ -1,0 +1,16 @@
+{
+  "$schema": "https://raw.githubusercontent.com/labscommunity/intelinside/main/results/schema.json",
+  "rig": "1",
+  "component": "intel-arc-pro-b70",
+  "componentQuantity": 1,
+  "model": "gemma-4-26b-a4b",
+  "quant": "int4",
+  "runtime": "openvino-genai",
+  "runtimeVersion": "OpenVINO GenAI 2026.4 (VLMPipeline)",
+  "runtimeFlags": "official Intel VLM IR; INT4; GPU",
+  "decodeTps": 95.3,
+  "promptTps": 1536,
+  "batchSize": 1,
+  "runDate": "2026-09-18",
+  "notes": "MoE 26B-A4B. 1x Arc Pro B70, official Intel VLM IR (gemma-4-26b-a4b-int4-ov, 14G on NVMe). Load 19.3s. Steady-state decode 95.3 tok/s over 200 tokens; 69.0 tok/s wall over 128 incl. prefill tail. ~2k prompt: 0.98s. Best single-card OpenVINO result measured on this rig."
+}
