@@ -1,0 +1,15 @@
+{
+  "$schema": "https://raw.githubusercontent.com/labscommunity/intelinside/main/results/schema.json",
+  "rig": "1",
+  "component": "intel-arc-pro-b70",
+  "componentQuantity": 1,
+  "model": "qwen3-8-27b",
+  "quant": "int4",
+  "runtime": "openvino-genai",
+  "runtimeVersion": "OpenVINO GenAI 2026.4 (VLMPipeline)",
+  "runtimeFlags": "official Intel VLM IR; INT4; GPU",
+  "decodeTps": 12.4,
+  "batchSize": 1,
+  "runDate": "2026-09-18",
+  "notes": "Dense 27B hybrid-attention (GDN). 1x Arc Pro B70, official Intel VLM IR (Qwen3.8-27B-int4-ov, 16G on NVMe). Load ~20s. Steady decode 12.4 tok/s. int4 loads fine where int8 hung forever (bug #14 fixed). Slowest big-model path on this stack; llama.cpp/vLLM beat it (existing submissions), included for the dense-vs-MoE comparison."
+}
