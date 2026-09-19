@@ -1,0 +1,16 @@
+{
+  "$schema": "https://raw.githubusercontent.com/labscommunity/intelinside/main/results/schema.json",
+  "rig": "1",
+  "component": "intel-arc-pro-b70",
+  "componentQuantity": 1,
+  "model": "qwen3-8-27b",
+  "quant": "int4",
+  "runtime": "cascadia",
+  "runtimeVersion": "Cascadia 0.2.3 source build (OV GenAI 2026.5.0.0 beta1)",
+  "runtimeFlags": "ov-genai VLMPipeline; VLM IR; INT4; batch 1",
+  "decodeTps": 22.7,
+  "batchSize": 1,
+  "runDate": "2026-09-19",
+  "evidenceUrl": "https://github.com/labscommunity/cascadia/pull/160",
+  "notes": "Dense 27B hybrid-attention (GDN). 1x Arc Pro B70, INT4 VLM IR, source build from labsbranch 1eb6dc4 with --features openvino against OV GenAI 2026.5.0.0 beta1 (lib openvino_genai.so.2650). Wall decode over 128 completion tokens in 5.64 s via /v1/chat/completions (client wall time, includes prefill tail). This build fixes the SIGSEGV at runner load that blocks every VLM IR on the bundled OV 2026.2 (see cascadia PR #160)."
+}
