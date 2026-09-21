@@ -72,7 +72,7 @@ export function Podium({ rows, runtimes, models, quants }: { rows: BoardRow[]; r
             <div className="mt-auto">
               <div className="text-xs font-medium uppercase tracking-label text-muted-foreground">Runtime</div>
               <div className="mt-1 text-sm">
-                <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1"><RuntimeBadge runtime={rt[result.runtimeId]} version={result.runtimeVersion} />{result.customRuntime ? <CustomRuntimeLink build={result.customRuntime} className="text-xs" /> : <ExecutionBadge result={result} iconOnly />}</span>
+                <span className="inline-flex max-w-full flex-wrap items-center gap-x-2 gap-y-1"><RuntimeBadge runtime={rt[result.runtimeId]} version={result.runtimeVersion} wrap />{result.customRuntime ? <CustomRuntimeLink build={result.customRuntime} className="min-w-0 text-xs [overflow-wrap:anywhere]" /> : <ExecutionBadge result={result} iconOnly />}</span>
               </div>
             </div>
           </div>
