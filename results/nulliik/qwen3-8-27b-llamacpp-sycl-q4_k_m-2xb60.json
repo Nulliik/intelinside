@@ -1,0 +1,16 @@
+{
+  "$schema": "https://raw.githubusercontent.com/labscommunity/intelinside/main/results/schema.json",
+  "rig": "4",
+  "component": "intel-arc-pro-b60",
+  "componentQuantity": 2,
+  "model": "qwen3-8-27b",
+  "quant": "q4_k_m",
+  "runtime": "llamacpp",
+  "runtimeVersion": "b11100 (7ab4ee7b)",
+  "runtimeFlags": "Windows 11, SYCL F16 JIT backend, oneAPI 2026.1.1, -ngl 99 -fa 1, split-mode layer, -ts 1.25/0.75, -b 4096 -ub 4096",
+  "decodeTps": 16.1223,
+  "promptTps": 609.16,
+  "batchSize": 1,
+  "runDate": "2026-09-22",
+  "notes": "Windows 11 Pro. Measured with llama-bench on 2x Intel Arc Pro B60 24GB (Maxsun Dual 48G Turbo). Custom JIT SYCL build (GGML_SYCL_F16=ON, GGML_SYCL_DNN=ON, Level-Zero driver). Model: Swift-Qwen3.8-27B (Swift-Qwen3.8-27B-Q4_K_L.gguf, 17.72 GiB). Stock layer-split decode is 16.12 tok/s; native embedded Q8_0 MTP draft head (--spec-type draft-mtp --spec-draft-device SYCL0 --spec-draft-n-max 3) achieves 24.00 tok/s synthetic (+48.9%) and 19.93 tok/s in real chat requests (81% acceptance). Prefill reaches 609.16 tok/s at pp512, scaling to 911.78 tok/s at 8k, 787 tok/s at 32k, 685 tok/s at 64k, and 572 tok/s at 128k (Q8 KV). Special thanks to SergiioB for the Intel Arc Pro B70 inference cookbook (https://github.com/SergiioB/intel-arc-pro-b70-inference-cookbook)."
+}
