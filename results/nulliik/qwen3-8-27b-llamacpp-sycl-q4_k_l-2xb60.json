@@ -4,7 +4,7 @@
   "component": "intel-arc-pro-b60",
   "componentQuantity": 2,
   "model": "qwen3-8-27b",
-  "quant": "q4_k_m",
+  "quant": "q4_k_l",
   "runtime": "llamacpp",
   "runtimeVersion": "b11100 (7ab4ee7b)",
   "runtimeFlags": "Windows 11, SYCL F16 JIT backend, oneAPI 2026.1.1, -ngl 99 -fa 1, split-mode layer, -ts 1.25/0.75, -b 4096 -ub 4096, KV q8_0, native draft-mtp (n_max 3)",
